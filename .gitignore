@@ -17,7 +17,8 @@ bin/
 
 .idea/**
 out
-
+ae_code.txt
+code.txt
 
 ### NetBeans ###
 /nbproject/private/
@@ -25,6 +26,7 @@ out
 /dist/
 /nbdist/
 /.nb-gradle/
+
 
 ### VS Code ###
 .vscode/
