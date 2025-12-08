@@ -1,6 +1,4 @@
-package org.plovdev.audioengine.tracks.format.factories;
-
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+package org.plovdev.audioengine.tracks.format;
 
 import static org.plovdev.audioengine.tracks.format.factories.TrackFormatFactory.*;
 import static org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory.*;

@@ -22,9 +22,9 @@ public interface TrackLoader {
     TrackMetaData readTrackMetadata(InputStream src);
     TrackMetaData readTrackMetadata(URI src);
 
-    TrackFormat getTackFormat(String src);
-    TrackFormat getTackFormat(InputStream src);
-    TrackFormat getTackFormat(URI src);
+    TrackFormat getTrackFormat(String src);
+    TrackFormat getTrackFormat(InputStream src);
+    TrackFormat getTrackFormat(URI src);
 
     boolean isSupported(String filename);
     boolean isSupported(InputStream stream);
