@@ -3,7 +3,7 @@ package org.plovdev.audioengine.loaders;
 import org.plovdev.audioengine.exceptions.TrackLoadException;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.meta.TrackMetaData;
+import org.plovdev.audioengine.tracks.meta.TrackMetadata;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -18,9 +18,9 @@ public interface TrackLoader {
     List<Track> batchLoadTrack(InputStream... stream) throws TrackLoadException;
     List<Track> batchLoadTrack(URI... uri) throws TrackLoadException;
 
-    TrackMetaData readTrackMetadata(String src);
-    TrackMetaData readTrackMetadata(InputStream src);
-    TrackMetaData readTrackMetadata(URI src);
+    TrackMetadata readTrackMetadata(String src);
+    TrackMetadata readTrackMetadata(InputStream src);
+    TrackMetadata readTrackMetadata(URI src);
 
     TrackFormat getTrackFormat(String src);
     TrackFormat getTrackFormat(InputStream src);

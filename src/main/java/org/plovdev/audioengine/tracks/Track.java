@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.tracks;
 
 import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.meta.TrackMetaData;
+import org.plovdev.audioengine.tracks.meta.TrackMetadata;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -11,9 +11,9 @@ public class Track {
     private final ByteBuffer trackData;
     private final Duration duration;
     private final TrackFormat format;
-    private TrackMetaData metaData;
+    private TrackMetadata metaData;
 
-    public Track(ByteBuffer trackData, Duration duration, TrackFormat format, TrackMetaData metaData) {
+    public Track(ByteBuffer trackData, Duration duration, TrackFormat format, TrackMetadata metaData) {
         this.trackData = Objects.requireNonNull(trackData);
         this.duration = duration;
         this.format = Objects.requireNonNull(format);
@@ -30,11 +30,11 @@ public class Track {
     public TrackFormat getFormat() {
         return format;
     }
-    public TrackMetaData getMetaData() {
+    public TrackMetadata getMetaData() {
         return metaData;
     }
 
-    public void setMetaData(TrackMetaData metaData) {
+    public void setMetaData(TrackMetadata metaData) {
         this.metaData = metaData;
     }
 

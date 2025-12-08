@@ -9,13 +9,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TrackMetaData {
+public class TrackMetadata {
     private final Map<MetaKey, MetadataEntry> metadata = new ConcurrentHashMap<>();
 
-    public TrackMetaData() {
+    public TrackMetadata() {
     }
 
-    private  <T> void putMetadata(MetaKey key, T value) {
+    private <T> void putMetadata(MetaKey key, T value) {
         if (key == null) {
             throw new IllegalArgumentException("Metadata key cannot be null");
         }
@@ -343,7 +343,7 @@ public class TrackMetaData {
 
     @Override
     public String toString() {
-        return "TrackMetaData{" +
+        return "TrackMetadata{" +
                 "metadata=" + metadata +
                 '}';
     }
