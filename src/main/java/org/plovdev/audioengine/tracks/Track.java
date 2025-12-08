@@ -1,8 +1,8 @@
-package main.java.org.plovdev.audioengine.tracks;
+package org.plovdev.audioengine.tracks;
 
-import main.java.org.plovdev.audioengine.tracks.format.TrackFormat;
-import main.java.org.plovdev.audioengine.tracks.meta.MetadataUtils;
-import main.java.org.plovdev.audioengine.tracks.meta.TrackMetaData;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.meta.MetadataUtils;
+import org.plovdev.audioengine.tracks.meta.TrackMetaData;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;

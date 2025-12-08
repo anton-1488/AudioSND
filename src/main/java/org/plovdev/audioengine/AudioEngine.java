@@ -1,11 +1,11 @@
-package main.java.org.plovdev.audioengine;
+package org.plovdev.audioengine;
 
-import main.java.org.plovdev.audioengine.exceptions.TrackLoadException;
-import main.java.org.plovdev.audioengine.loaders.TrackLoader;
-import main.java.org.plovdev.audioengine.mixer.TrackMixer;
-import main.java.org.plovdev.audioengine.tracks.TrackPlayer;
-import main.java.org.plovdev.audioengine.tracks.Track;
-import main.java.org.plovdev.audioengine.utils.AudioEngineConfig;
+import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.loaders.TrackLoader;
+import org.plovdev.audioengine.mixer.TrackMixer;
+import org.plovdev.audioengine.tracks.TrackPlayer;
+import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.utils.AudioEngineConfig;
 
 import java.io.InputStream;
 import java.net.URI;

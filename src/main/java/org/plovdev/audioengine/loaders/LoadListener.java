@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.loaders;
+package org.plovdev.audioengine.loaders;
 
 public interface LoadListener {
 

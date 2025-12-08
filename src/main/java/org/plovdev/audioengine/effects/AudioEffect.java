@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.effects;
+package org.plovdev.audioengine.effects;
 
 public interface AudioEffect {
     void applyEffect();

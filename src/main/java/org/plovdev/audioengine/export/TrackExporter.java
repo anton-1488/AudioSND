@@ -1,7 +1,7 @@
-package main.java.org.plovdev.audioengine.export;
+package org.plovdev.audioengine.export;
 
-import main.java.org.plovdev.audioengine.tracks.Track;
-import main.java.org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.io.OutputStream;
 

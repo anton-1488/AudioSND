@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.tracks.meta;
+package org.plovdev.audioengine.tracks.meta;
 
 public class MetadataUtils {
     public static String convertId3ToReadable(String id3Key) {

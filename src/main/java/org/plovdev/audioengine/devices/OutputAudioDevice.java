@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.devices;
+package org.plovdev.audioengine.devices;
 
 import java.nio.ByteBuffer;
 

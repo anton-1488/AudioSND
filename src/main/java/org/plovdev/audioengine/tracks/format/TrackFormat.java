@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.tracks.format;
+package org.plovdev.audioengine.tracks.format;
 
 import java.nio.ByteOrder;
 import java.util.Objects;

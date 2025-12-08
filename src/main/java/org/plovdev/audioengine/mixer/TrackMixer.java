@@ -1,8 +1,8 @@
-package main.java.org.plovdev.audioengine.mixer;
+package org.plovdev.audioengine.mixer;
 
-import main.java.org.plovdev.audioengine.exceptions.MixingException;
-import main.java.org.plovdev.audioengine.tracks.Track;
-import main.java.org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.exceptions.MixingException;
+import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.util.List;
 

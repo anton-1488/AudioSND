@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.tracks;
+package org.plovdev.audioengine.tracks;
 
 public enum TrackStatus {
     INITED, PLAYED, PAUSED, STOPPED, DESTROYED

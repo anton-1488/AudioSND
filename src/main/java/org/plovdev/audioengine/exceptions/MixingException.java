@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.exceptions;
+package org.plovdev.audioengine.exceptions;
 
 public class MixingException extends IllegalStateException {
     public MixingException(String message) {

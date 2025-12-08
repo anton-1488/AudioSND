@@ -1,6 +1,6 @@
-package main.java.org.plovdev.audioengine.tracks;
+package org.plovdev.audioengine.tracks;
 
-import main.java.org.plovdev.audioengine.effects.TrackEqualizer;
+import org.plovdev.audioengine.effects.TrackEqualizer;
 
 import java.time.Duration;
 

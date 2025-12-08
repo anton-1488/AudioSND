@@ -1,4 +1,4 @@
-package main.java.org.plovdev.audioengine.exceptions;
+package org.plovdev.audioengine.exceptions;
 
 public class OpenAudioDeviceExcpetion extends AudioDeviceException {
     public OpenAudioDeviceExcpetion(String message) {
