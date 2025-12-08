@@ -2,7 +2,7 @@ package org.plovdev.audioengine.devices;
 
 import org.plovdev.audioengine.exceptions.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.OpenAudioDeviceExcpetion;
-import main.java.org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.util.Set;
 

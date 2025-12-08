@@ -1,7 +1,6 @@
 package org.plovdev.audioengine.tracks;
 
 import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.meta.MetadataUtils;
 import org.plovdev.audioengine.tracks.meta.TrackMetaData;
 
 import java.nio.ByteBuffer;
@@ -41,6 +40,6 @@ public class Track {
 
     public Track cloneTrack() {
         TrackFormat copiedFprmat = new TrackFormat(format.extension(), format.channels(), format.bitsPerSample(), format.sampleRate(), format.signed(), format.byteOrder());
-        return new Track(trackData.duplicate(), Duration.ofMillis(duration.toMillis()), copiedFprmat, MetadataUtils.merge(metaData));
+        return new Track(trackData.duplicate(), Duration.ofMillis(duration.toMillis()), copiedFprmat, metaData);
     }
 }

@@ -26,12 +26,4 @@ public class MetadataUtils {
             default -> id3Key.toLowerCase();
         };
     }
-
-    public synchronized static TrackMetaData merge(TrackMetaData ... metadatas) {
-        TrackMetaData metadata = new TrackMetaData();
-        for (TrackMetaData data : metadatas) {
-            metadata.getMetadataMap().putAll(data.getMetadataMap());
-        }
-        return metadata;
-    }
 }
