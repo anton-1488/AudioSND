@@ -55,4 +55,10 @@ public class TrackMetadataTest {
 
         assertTrue(metadata.isEmpty());
     }
+
+    @Test
+    public void testThrowNPEMetaData() {
+        TrackMetadata metadata = new TrackMetadata();
+        assertThrows(Exception.class, () -> metadata.setTitle(null));
+    }
 }

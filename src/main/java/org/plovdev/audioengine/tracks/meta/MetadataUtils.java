@@ -1,9 +1,9 @@
 package org.plovdev.audioengine.tracks.meta;
 
 public class MetadataUtils {
-    public static String convertId3ToReadable(String id3Key) {
+    public static String convertId3ToReadable(MetaKey id3Key) {
         // Преобразуем ID3 ключи в читаемые названия
-        return switch (id3Key) {
+        return switch (id3Key.getKey()) {
             case "TIT2" -> "title";
             case "TPE1" -> "artist";
             case "TALB" -> "album";
@@ -23,7 +23,7 @@ public class MetadataUtils {
             case "TCOP" -> "copyright";
             case "COMM" -> "comment";
             case "TPOS" -> "disc_number";
-            default -> id3Key.toLowerCase();
+            default -> id3Key.getKey().toLowerCase();
         };
     }
 }

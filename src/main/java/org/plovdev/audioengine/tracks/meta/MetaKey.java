@@ -77,6 +77,6 @@ public enum MetaKey {
 
     @Override
     public String toString() {
-        return String.format("Field: %s, class type: %s.", MetadataUtils.convertId3ToReadable(getKey()), type.getSimpleName());
+        return String.format("Field: %s, class type: %s.", MetadataUtils.convertId3ToReadable(this), type.getSimpleName());
     }
 }

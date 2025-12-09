@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.tracks.meta;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.awt.*;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -15,16 +17,9 @@ public class TrackMetadata {
     public TrackMetadata() {
     }
 
-    private <T> void putMetadata(MetaKey key, T value) {
-        if (key == null) {
-            throw new IllegalArgumentException("Metadata key cannot be null");
-        }
-
+    private <T> void putMetadata(@NotNull MetaKey key, @NotNull T value) {
         Class<?> type = key.getType();
-        if (type == null) {
-            throw new IllegalArgumentException("Type cannot be null");
-        }
-        if (value != null && !type.isInstance(value)) {
+        if (!type.isInstance(value)) {
             throw new ClassCastException("Value " + value + " is not of type " + type);
         }
 
