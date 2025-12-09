@@ -1,7 +1,7 @@
 package org.plovdev.audioengine;
 
 import org.plovdev.audioengine.exceptions.TrackLoadException;
-import org.plovdev.audioengine.loaders.TrackLodaerManager;
+import org.plovdev.audioengine.loaders.TrackLoaderManager;
 import org.plovdev.audioengine.mixer.TrackMixer;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.TrackPlayer;
@@ -26,9 +26,9 @@ public interface AudioEngine extends AutoCloseable {
     TrackMixer getMixer();
     TrackPlayer getTrackPlayer(Track track);
 
-    void addLoaderManager(TrackLodaerManager loader);
-    void removeLoaderManager(TrackLodaerManager loader);
-    List<TrackLodaerManager> getAvailableLoaders();
+    void addLoaderManager(TrackLoaderManager loader);
+    void removeLoaderManager(TrackLoaderManager loader);
+    List<TrackLoaderManager> getAvailableLoaders();
 
     @Override
     void close();

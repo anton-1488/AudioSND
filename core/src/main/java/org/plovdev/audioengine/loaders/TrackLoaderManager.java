@@ -4,7 +4,7 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.util.Set;
 
-public interface TrackLodaerManager {
+public interface TrackLoaderManager {
     TrackLoader getTrackLoader();
     Set<TrackFormat> getSupportedFormats();
     TrackExporter getTrackExported();
