@@ -1,5 +1,11 @@
 package org.plovdev.audioengine.tracks.meta;
 
+/**
+ * Primitive metadata storage
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class MetadataEntry {
     private Object value;
     private Class<?> type;

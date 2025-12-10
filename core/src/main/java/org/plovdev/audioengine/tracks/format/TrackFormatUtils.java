@@ -5,6 +5,15 @@ import static org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFact
 import static org.plovdev.audioengine.tracks.format.factories.Mp3TrackFormatFactory.*;
 import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.*;
 
+/**
+ * Provide utilities to comfort working with TrackFormat
+ *
+ * @see TrackFormat
+ * see also: track format factories
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class TrackFormatUtils {
     private TrackFormatUtils() {}
 

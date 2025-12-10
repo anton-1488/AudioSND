@@ -6,16 +6,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class EventManager {
-    private static EventManager instanse = null;
     private final ExecutorService broadcastExecutor = Executors.newCachedThreadPool();
     private final List<EventListener> listeners = new CopyOnWriteArrayList<>();
 
-    public static EventManager getInstance() {
-        if (instanse == null) instanse = new EventManager();
-        return instanse;
-    }
-
-    private EventManager() {
+    public EventManager() {
         Runtime.getRuntime().addShutdownHook(new Thread(broadcastExecutor::shutdownNow));
     }
 

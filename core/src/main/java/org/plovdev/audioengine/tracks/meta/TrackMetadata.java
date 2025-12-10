@@ -1,6 +1,7 @@
 package org.plovdev.audioengine.tracks.meta;
 
 import org.jetbrains.annotations.NotNull;
+import org.plovdev.audioengine.tracks.Track;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -11,7 +12,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Track metadata storage.
+ *
+ * @see Track
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class TrackMetadata {
+    // in memory meta storage
     private final Map<MetaKey, MetadataEntry> metadata = new ConcurrentHashMap<>();
 
     public TrackMetadata() {

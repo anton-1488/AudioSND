@@ -5,6 +5,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Date;
 
+/**
+ * Enum of ID3 metadata keys.
+ *
+ * @see TrackMetadata
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public enum MetaKey {
     TITLE("TIT2", String.class),           // Название трека
     ARTIST("TPE1", String.class),          // Основной исполнитель

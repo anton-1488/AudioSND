@@ -4,6 +4,13 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.nio.ByteOrder;
 
+/**
+ * Factory of .ogg(and simily) formats.
+ * Contains different methods to create ogg audio.
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class OggTrackFormatFactory {
     private OggTrackFormatFactory() {}
 

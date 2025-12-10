@@ -4,6 +4,13 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.nio.ByteOrder;
 
+/**
+ * Factory of .aiff(and simily) formats.
+ * Contains different methods to create aiff audio.
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class AiffTrackFormatFactory {
     public static TrackFormat aiff16bitStereo44kHz() {
         return new TrackFormat(

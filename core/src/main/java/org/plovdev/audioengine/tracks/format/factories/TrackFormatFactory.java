@@ -4,6 +4,13 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.nio.ByteOrder;
 
+/**
+ * Factory of commons track formats.
+ * Contains different methods to create different audio.
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class TrackFormatFactory {
     public static TrackFormat dsd64Stereo() {
         return new TrackFormat(

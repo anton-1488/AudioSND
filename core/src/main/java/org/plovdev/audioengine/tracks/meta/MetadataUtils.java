@@ -1,8 +1,15 @@
 package org.plovdev.audioengine.tracks.meta;
 
+/**
+ * Utilities for extension work with metadata.
+ *
+ * @see TrackMetadata
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public class MetadataUtils {
     public static String convertId3ToReadable(MetaKey id3Key) {
-        // Преобразуем ID3 ключи в читаемые названия
         return switch (id3Key.getKey()) {
             case "TIT2" -> "title";
             case "TPE1" -> "artist";

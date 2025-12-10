@@ -1,20 +1,22 @@
 package org.plovdev.audioengine.callback.rx;
 
+/**
+ * Enum of different EventChannel types.
+ *
+ * @see EventManager
+ * @see EventListener
+ * @see EventsChannel
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public enum ChannelType {
-    TRACK_PLAY_STARTED, TRACK_PLAY_PAUSED, TRACK_PLAY_STOPPED,
+    MIXER_CHANNEL_ADDED,     // Chanell has been added to the mixer.
+    MIXER_CHANNEL_REMOVED,   // Chanell has been added to the mixer.
 
-    TRACK_LOAD_STARTED,      // Началась загрузка трека
-    TRACK_LOAD_PROGRESS,     // Прогресс загрузки
-    TRACK_LOAD_COMPLETED,    // Загрузка завершена
-    TRACK_LOAD_FAILED,       // Ошибка загрузки
+    MIXER_VOLUME_CHANGED,    // Volume has been changed
 
-    MIXER_CHANNEL_ADDED,     // Добавлен канал в микшер
-    MIXER_CHANNEL_REMOVED,   // Удален канал из микшера
-    MIXER_VOLUME_CHANGED,    // Изменена громкость
+    EFFECT_APPLIED,          // Applied effect
 
-    EFFECT_APPLIED,          // Применен эффект
-    EFFECT_CHAIN_UPDATED,    // Обновлена цепочка эффектов
-
-    DEVICE_CHANGED,          // Изменилось аудио-устройство
-    BUFFER_UNDERRUN,         // Проблемы с буфером (задержки)
+    DEVICE_CHANGED,          // Audio device has been changed(user connect other speakers to PC)
 }

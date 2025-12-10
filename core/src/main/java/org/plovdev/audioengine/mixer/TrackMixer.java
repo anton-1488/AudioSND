@@ -6,57 +6,52 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.util.List;
 
+/**
+ * Tracks mixing manager.
+ *
+ * @author Anton
+ * @version 1.0
+ */
 public interface TrackMixer {
     /**
-     * Установить выходной формат микшера
+     * Setup output track format(after mixing)
      */
     void setOutputFormat(TrackFormat format);
 
     /**
-     * Получить текущий выходной формат
+     * Get setuped output track format
      */
     TrackFormat getOutputFormat();
 
-    // ==== Управление треками ====
 
-    /**
-     * Добавить трек в микшер
-     */
     void addTrack(Track track);
 
-    /**
-     * Добавить трек с каналом
-     */
-    void addTrack(Track track, int channel);
 
-    /**
-     * Удалить трек из микшера
-     */
     void removeTrack(Track track);
 
     /**
-     * Получить все треки в микшере
+     * Get all tracks, which will be mixing.
+     * @return mixing tracks
      */
     List<Track> getMixingTracks();
 
     /**
-     * Очистить все треки
+     * Clear tracks from mixer
      */
     void clearTracks();
 
-    // ==== Микширование ====
-
     /**
-     * Выполнить микширование всех треков
+     * Mix all track in list.
+     * @throws MixingException when mixing failed.
      */
     Track doMixing() throws MixingException;
-    /**
-     * Проверить, пуст ли микшер
-     */
+
+
     boolean isEmpty();
 
     /**
-     * Получить количество треков
+     * Returns tracks in mixer.
+     * @return mixing tracks.
      */
     int getTrackCount();
 }
