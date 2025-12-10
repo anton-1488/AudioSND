@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="AudioEngine:jar">
-    <output-path>$USER_HOME$/JavaLibs/MyLibs/AE/</output-path>
-    <root id="archive" name="AudioEngine.jar">
-      <element id="module-output" name="AudioSND"/>
-    </root>
-  </artifact>
-</component>

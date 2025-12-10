@@ -11,6 +11,7 @@
     <name>AudioSND</name>
     <modules>
         <module>core</module>
+        <module>implementation</module>
     </modules>
 
     <properties>
