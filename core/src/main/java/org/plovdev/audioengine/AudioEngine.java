@@ -1,6 +1,5 @@
 package org.plovdev.audioengine;
 
-import org.plovdev.audioengine.callback.rx.EventManager;
 import org.plovdev.audioengine.devices.InputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
@@ -50,12 +49,6 @@ public interface AudioEngine extends AutoCloseable {
      * @throws IllegalStateException if not initialized
      */
     AudioEngineConfig getConfig();
-
-    /**
-     * Return the local event manager for listening event into engine.
-     * @return local event manager
-     */
-    EventManager getEventManager();
 
     // Load track from different sources.
     Track loadTrack(String path) throws TrackLoadException;
