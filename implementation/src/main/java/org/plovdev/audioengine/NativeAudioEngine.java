@@ -1,7 +1,6 @@
 package org.plovdev.audioengine;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.callback.rx.EventManager;
 import org.plovdev.audioengine.devices.InputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
@@ -42,7 +41,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class NativeAudioEngine implements AudioEngine {
     private static final Logger log = LoggerFactory.getLogger(NativeAudioEngine.class);
     private final List<TrackLoaderManager> loaderManagers = new CopyOnWriteArrayList<>();
-    private final EventManager eventManager = new EventManager();
     private AudioEngineConfig config = AudioEngineConfig.load();
     private volatile boolean isInited = false;
 
@@ -93,15 +91,6 @@ public class NativeAudioEngine implements AudioEngine {
         return config;
     }
 
-    /**
-     * Return the local event manager for listening event into engine.
-     *
-     * @return local event manager
-     */
-    @Override
-    public EventManager getEventManager() {
-        return eventManager;
-    }
 
     @Override
     public Track loadTrack(@NotNull String path) throws TrackLoadException {
