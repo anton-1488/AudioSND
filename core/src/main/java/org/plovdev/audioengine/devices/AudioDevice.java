@@ -4,8 +4,6 @@ import org.plovdev.audioengine.exceptions.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
-import java.util.Set;
-
 /**
  * Base interface for all audio devices (input or output).
  * Most abstractly device desctiption.
@@ -28,24 +26,22 @@ public interface AudioDevice extends AutoCloseable {
     void open(TrackFormat format) throws OpenAudioDeviceException;
 
     /**
-     * Return system audio device name
-     * @return name
+     * Check, supported audio device this fromat?
+     * @param format checking format.
+     * @return is supported
      */
-    String getName();
+    boolean isSupportedFormat(TrackFormat format);
 
     /**
-     * Return system audio device id
-     * @return id
+     * Return all info about audio device
+     * @return deivce info
      */
-    String getDeviceId();
+    AudioDeviceInfo getDeviceInfo();
 
     /**
-     * Return formats, which audio device supported
-     * @return supporteds format
+     * Return status of audio device, which as opened, closed, etc.
+     * @return device status
      */
-    Set<TrackFormat> getSupportedFormats();
-
-
     AudioDeviceStatus getDeviceStatus();
 
     /**
