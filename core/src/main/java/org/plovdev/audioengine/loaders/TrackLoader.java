@@ -30,6 +30,10 @@ public interface TrackLoader {
     boolean isSupported(InputStream stream);
     boolean isSupported(URI uri);
 
+    boolean isSupporteds(String... filename);
+    boolean isSupporteds(InputStream... stream);
+    boolean isSupporteds(URI... uri);
+
     void setLoadListener(LoadListener listener);
     LoadListener getLoadListener();
 }

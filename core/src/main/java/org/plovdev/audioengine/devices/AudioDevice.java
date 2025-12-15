@@ -34,6 +34,12 @@ public interface AudioDevice extends AutoCloseable {
     String getName();
 
     /**
+     * Return system audio device id
+     * @return id
+     */
+    String getDeviceId();
+
+    /**
      * Return formats, which audio device supported
      * @return supporteds format
      */
