@@ -1,6 +1,7 @@
 package org.plovdev.audioengine;
 
 import org.jetbrains.annotations.NotNull;
+import org.plovdev.audioengine.devices.AudioDeviceManager;
 import org.plovdev.audioengine.devices.InputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
@@ -44,14 +45,19 @@ public class NativeAudioEngine implements AudioEngine {
     private AudioEngineConfig config = AudioEngineConfig.load();
     private volatile boolean isInited = false;
 
-    public NativeAudioEngine() {}
+    public NativeAudioEngine() {
+        try {
+            init(config);
+        } catch (AudioEngineException e) {
+            log.error("Initializing error: ", e);
+        }
+    }
 
     public NativeAudioEngine(AudioEngineConfig config) {
         this.config = config;
         try {
             init(config);
         } catch (AudioEngineException e) {
-
             log.error("Initializing error: ", e);
         }
     }
@@ -194,13 +200,13 @@ public class NativeAudioEngine implements AudioEngine {
     @Override
     public List<InputAudioDevice> getAvailableInputAudioDevices() {
         checkIfInited();
-        return List.of();
+        return AudioDeviceManager.getInstance().getInputDevices();
     }
 
     @Override
     public List<OutputAudioDevice> getAvailableOutputAudioDevices() {
         checkIfInited();
-        return List.of();
+        return AudioDeviceManager.getInstance().getOutputDevices();
     }
 
     /**

@@ -7,5 +7,5 @@ package org.plovdev.audioengine.devices;
  * @version 1.0
  */
 public enum AudioDeviceStatus {
-    OPENING, OPENED, RUNNING, PAUSED, STOPPED, CLOSING, CLOSED, DESTROYED, UNAVAILABLE, ERROR
+    OPENING, OPENED, RUNNING, CLOSING, CLOSED, DESTROYED, UNAVAILABLE, ERROR
 }
