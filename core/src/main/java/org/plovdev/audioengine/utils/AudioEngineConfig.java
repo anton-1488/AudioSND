@@ -60,7 +60,7 @@ public class AudioEngineConfig {
      */
     public static AudioEngineConfig load(String prefsKey) {
         Preferences prefs = Preferences.userRoot().node(prefsKey);
-        NativeLib lib = NativeLib.valueOf(prefs.get(NATIVE_LIB_KEY, NativeLib.DEFAULT.toString()));
+        NativeLib lib = NativeLib.valueOf(prefs.get(NATIVE_LIB_KEY, NativeLib.DEFAULT.name()));
         int bufferSize = prefs.getInt(BUFFER_SIZE_KEY, 4096);
         int count = prefs.getInt(PLAYER_THREADS_KEY, 20);
 
@@ -84,7 +84,7 @@ public class AudioEngineConfig {
      */
     public void save(String prefsKey) {
         Preferences prefs = Preferences.userRoot().node(prefsKey);
-        prefs.put(NATIVE_LIB_KEY, nativeLib.toString());
+        prefs.put(NATIVE_LIB_KEY, nativeLib.name());
         prefs.putInt(BUFFER_SIZE_KEY, bufferSize);
         prefs.putInt(PLAYER_THREADS_KEY, bufferCount);
     }

@@ -10,7 +10,7 @@ public class NativeTrackMixer implements TrackMixer {
     /**
      * Setup output track format(after mixing)
      *
-     * @param format
+     * @param format output format
      */
     @Override
     public void setOutputFormat(TrackFormat format) {
