@@ -4,7 +4,6 @@ import org.plovdev.audioengine.exceptions.AudioEngineException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class AudioDeviceManager {
     private static AudioDeviceManager INSTANSE = null;
@@ -33,20 +32,20 @@ public class AudioDeviceManager {
     }
 
 
-    public InputAudioDevice getDefaultInputDevice() {
+    public NativeInputAudioDevice getDefaultInputDevice() {
         List<InputAudioDevice> devices = getInputDevices();
         if (!devices.isEmpty()) {
-            return devices.getFirst();
+            return new NativeInputAudioDevice(devices.getFirst().getDeviceInfo());
         }
         throw new AudioEngineException("Default audio device not found.");
     }
 
-    public Optional<OutputAudioDevice> getDefaultOutputDevice() {
+    public NativeOutputAudioDevice getDefaultOutputDevice() {
         List<OutputAudioDevice> devices = getOutputDevices();
         if (!devices.isEmpty()) {
-            return Optional.ofNullable(devices.getFirst());
+            return new NativeOutputAudioDevice(devices.getFirst().getDeviceInfo());
         }
-        return Optional.empty();
+        throw new AudioEngineException("Default audio device not found.");
     }
 
     public native List<InputAudioDevice> getInputDevices();

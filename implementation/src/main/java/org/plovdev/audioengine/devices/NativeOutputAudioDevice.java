@@ -16,6 +16,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     private TrackFormat trackFormat;
     private volatile AudioDeviceStatus status = AudioDeviceStatus.UNAVAILABLE;
     private final AtomicBoolean isInited = new AtomicBoolean(false);
+    private long nativeHandle = 0;
     private Runnable onStatusChanged = () -> {
     };
 
@@ -65,13 +66,14 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         try {
             setStatus(AudioDeviceStatus.OPENING);
             trackFormat = format;
-            _open(format);
+            _open(info.id(), format);
             setStatus(AudioDeviceStatus.OPENED);
             isInited.set(true);
         } catch (Throwable e) {
             log.error("Initiliazing error: ", e);
             setStatus(AudioDeviceStatus.ERROR);
             trackFormat = null;
+            nativeHandle = 0;
             throw new OpenAudioDeviceException("Failed to open device");
         }
     }
@@ -112,13 +114,14 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         if (isInited.get()) {
             try {
                 setStatus(AudioDeviceStatus.CLOSING);
-                _close();
+                _close(info.id());
                 isInited.set(false);
             } catch (Exception e) {
                 log.error("Closing error: ", e);
                 setStatus(AudioDeviceStatus.ERROR);
                 throw new CloseAudioDeviceException("Failed to close device");
             } finally {
+                nativeHandle = 0;
                 trackFormat = null;
             }
         }
@@ -162,11 +165,11 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         return info.toString();
     }
 
-    private native void _open(TrackFormat format);
+    private native void _open(String id, TrackFormat format);
 
     private native int _write(ByteBuffer buffer);
 
     private native void _flush();
 
-    private native void _close();
+    private native void _close(String id);
 }
