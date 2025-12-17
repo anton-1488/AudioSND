@@ -18,6 +18,7 @@ core/src/main/java/org/plovdev/audioengine/tracks/format/factories/Mp3TrackForma
 core/src/main/java/org/plovdev/audioengine/tracks/format/factories/TrackFormatFactory.java
 core/src/main/java/org/plovdev/audioengine/tracks/format/factories/FlacTrackFormatFactory.java
 core/src/main/java/org/plovdev/audioengine/tracks/TrackPlayer.java
+core/src/main/java/org/plovdev/audioengine/tracks/TrackGenerator.java
 core/src/main/java/org/plovdev/audioengine/utils/TrackLoaderSearcher.java
 core/src/main/java/org/plovdev/audioengine/utils/AudioEngineConfig.java
 core/src/main/java/org/plovdev/audioengine/exceptions/OpenAudioDeviceException.java
