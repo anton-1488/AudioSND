@@ -1,5 +1,10 @@
 org/plovdev/audioengine/utils/TrackUtils.class
-org/plovdev/audioengine/device/AudioDeviceManager.class
 org/plovdev/audioengine/NativeAudioEngine.class
+org/plovdev/audioengine/devices/AudioDeviceManager.class
+org/plovdev/audioengine/devices/Microphone.class
 org/plovdev/audioengine/mixer/NativeTrackMixer.class
+org/plovdev/audioengine/devices/NativeInputAudioDevice.class
+org/plovdev/audioengine/Main.class
 org/plovdev/audioengine/tracks/NativeTrackPlayer.class
+org/plovdev/audioengine/Main$1.class
+org/plovdev/audioengine/devices/NativeOutputAudioDevice.class

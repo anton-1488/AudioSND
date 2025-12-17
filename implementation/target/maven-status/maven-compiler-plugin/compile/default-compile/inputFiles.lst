@@ -1,5 +1,9 @@
+/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/Main.java
 /Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/NativeAudioEngine.java
-/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/device/AudioDeviceManager.java
+/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/devices/AudioDeviceManager.java
+/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/devices/Microphone.java
+/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/devices/NativeInputAudioDevice.java
+/Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/devices/NativeOutputAudioDevice.java
 /Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/mixer/NativeTrackMixer.java
 /Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/tracks/NativeTrackPlayer.java
 /Users/mac/IdeaProjects/AudioSND/implementation/src/main/java/org/plovdev/audioengine/utils/TrackUtils.java
