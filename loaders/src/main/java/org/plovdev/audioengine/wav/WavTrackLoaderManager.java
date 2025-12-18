@@ -6,6 +6,10 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 import java.util.Set;
 
 public class WavTrackLoaderManager implements TrackLoaderManager {
+    public WavTrackLoaderManager() {
+
+    }
+
     @Override
     public TrackLoader getTrackLoader() {
         return new WavTrackLoader();

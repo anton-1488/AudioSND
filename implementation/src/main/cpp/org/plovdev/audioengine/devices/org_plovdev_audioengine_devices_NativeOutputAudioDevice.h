@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
+ * Method:    _setProvider
+ * Signature: (Lorg/plovdev/audioengine/devices/ChunkProvider;)V
+ */
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1setProvider
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _open
  * Signature: (Ljava/lang/String;Lorg/plovdev/audioengine/tracks/format/TrackFormat;)V
  */
@@ -38,6 +46,14 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
  */
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
+ * Method:    _onNextChunkRequired
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1onNextChunkRequired
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

@@ -1,21 +1,56 @@
 package org.plovdev.audioengine.tracks;
 
+import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
+import org.plovdev.audioengine.exceptions.AudioDeviceException;
+import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
+import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 public class NativeTrackPlayer implements TrackPlayer {
+    private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
     private final Track track;
-    private OutputAudioDevice audioDevice;
+    private final NativeOutputAudioDevice audioDevice;
+    private final ByteBuffer data;
+    private final AtomicInteger position = new AtomicInteger(0);
+    private final AtomicBoolean isPlaying = new AtomicBoolean(false);
+    private final AtomicBoolean isInited = new AtomicBoolean(false);
+    private TrackStatus status = TrackStatus.UNAVAILABLE;
+    private final int chunkSize;
+    private Runnable onStatusChanged = () -> {
+    };
 
     public NativeTrackPlayer(Track track, OutputAudioDevice device) {
         this.track = track;
-        audioDevice = device;
+        audioDevice = new NativeOutputAudioDevice(device.getDeviceInfo());
+        data = track.getTrackData();
+
+        log.error("Initing");
+        initPlayer();
+        log.info("Inited");
+
+        chunkSize = TrackFormatUtils.calculateChunkSizeInBytes(track.getFormat());
     }
 
     @Override
     public void initPlayer() {
-        audioDevice.open(track.getFormat());
+        if (!isInited.get()) {
+            try {
+                audioDevice.open(track.getFormat());
+                isInited.set(true);
+                setStatus(TrackStatus.INITED);
+            } catch (OpenAudioDeviceException e) {
+                setStatus(TrackStatus.UNAVAILABLE);
+                throw new OpenAudioDeviceException(e.getMessage());
+            }
+        }
     }
 
     /**
@@ -24,8 +59,20 @@ public class NativeTrackPlayer implements TrackPlayer {
      * @throws IllegalStateException if player is not prepared
      */
     @Override
-    public void play() {
+    public synchronized void play() {
+        checkIfInited();
 
+        if (isPlaying.get()) {
+            return;
+        }
+
+        isPlaying.set(true);
+        setStatus(TrackStatus.PLAYING);
+
+        Thread audioThread = new Thread(this::audioLoop, "audio-playback-loop");
+        audioThread.setDaemon(true);
+        audioThread.setPriority(Thread.MAX_PRIORITY);
+        audioThread.start();
     }
 
     /**
@@ -34,8 +81,13 @@ public class NativeTrackPlayer implements TrackPlayer {
      * @throws IllegalStateException if player is not playing
      */
     @Override
-    public void pause() {
+    public synchronized void pause() {
+        checkIfInited();
+        if (!isPlaying.get()) return;
 
+        isPlaying.set(false);
+        audioDevice.flush();
+        setStatus(TrackStatus.PAUSED);
     }
 
     /**
@@ -45,8 +97,15 @@ public class NativeTrackPlayer implements TrackPlayer {
      * @throws IllegalStateException if player is not active
      */
     @Override
-    public void stop() {
+    public synchronized void stop() {
+        checkIfInited();
 
+        isPlaying.set(false);
+        position.set(0);
+
+        audioDevice.flush();
+
+        setStatus(TrackStatus.STOPPED);
     }
 
     /**
@@ -86,7 +145,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public TrackStatus getStatus() {
-        return null;
+        return status;
     }
 
     /**
@@ -94,7 +153,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public Duration getCurrentTime() {
-        return null;
+        return Duration.ofMillis(position.get() / chunkSize);
     }
 
     /**
@@ -149,6 +208,59 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public void close() {
-        audioDevice.close();
+        if (isInited.get()) {
+            stop();
+            audioDevice.close();
+        }
+    }
+
+    private void checkIfInited() {
+        if (!isInited.get()) {
+            throw new AudioDeviceException("TrackPlayer is not ready!");
+        }
+    }
+
+    public void setOnStatusChanged(Runnable onChange) {
+        onStatusChanged = onChange;
+    }
+
+    private void setStatus(TrackStatus status) {
+        if (this.status != status) { // Только при реальном изменении
+            this.status = status;
+            try {
+                onStatusChanged.run();
+            } catch (Exception e) {
+                log.error("Error in status change callback", e);
+            }
+        }
+    }
+
+    private void audioLoop() {
+        final int limit = data.limit();
+        log.info("Start playing");
+        while (isPlaying.get()) {
+            int start = position.get();
+            int rem = limit - start;
+            if (start >= limit || rem <= 0) {
+                stop();
+                break;
+            }
+
+
+            ByteBuffer chunk = data.slice(start, Math.min(chunkSize, rem));
+            audioDevice.write(chunk);
+
+            position.set(Math.min(start + chunkSize, limit));
+
+            LockSupport.parkNanos(700000);
+        }
+    }
+
+    public boolean isInited() {
+        return isInited.get();
+    }
+
+    public Runnable getOnStatusChanged() {
+        return onStatusChanged;
     }
 }

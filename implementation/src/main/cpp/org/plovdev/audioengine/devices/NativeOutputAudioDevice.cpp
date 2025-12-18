@@ -7,7 +7,6 @@
 #include <jni.h>
 #include <vector>
 #include <mutex>
-#include <condition_variable>
 #include <cstring>
 
 #include "org_plovdev_audioengine_devices_NativeOutputAudioDevice.h"
@@ -19,11 +18,34 @@ struct AudioContext {
     size_t readPos = 0;
     size_t bufferSize = 0;
     std::mutex mtx;
-    std::condition_variable cv;
     bool running = false;
+    JavaVM* jvm = nullptr;
+    jobject chunkProviderGlobal = nullptr;
 };
 
 static AudioContext* ctx = nullptr;
+
+// Вспомогательная функция для вызова Java ChunkProvider
+static void fillBufferFromProvider(uint8_t* out, size_t totalBytes) {
+    if (!ctx || !ctx->chunkProviderGlobal) {
+        std::memset(out, 0, totalBytes);
+        return;
+    }
+
+    JNIEnv* env = nullptr;
+    ctx->jvm->AttachCurrentThread((void**)&env, nullptr);
+
+    jclass cls = env->GetObjectClass(ctx->chunkProviderGlobal);
+    jmethodID mid = env->GetMethodID(cls, "onNextChunkRequired", "(I)Ljava/nio/ByteBuffer;");
+    jobject buf = env->CallObjectMethod(ctx->chunkProviderGlobal, mid, (jint)totalBytes);
+
+    if (buf != nullptr) {
+        uint8_t* data = (uint8_t*)env->GetDirectBufferAddress(buf);
+        std::memcpy(out, data, totalBytes);
+    } else {
+        std::memset(out, 0, totalBytes);
+    }
+}
 
 static OSStatus audioRenderCallback(void* inRefCon,
                                     AudioUnitRenderActionFlags* ioActionFlags,
@@ -31,21 +53,26 @@ static OSStatus audioRenderCallback(void* inRefCon,
                                     UInt32 inBusNumber,
                                     UInt32 inNumberFrames,
                                     AudioBufferList* ioData) {
-    AudioContext* ctx = (AudioContext*)inRefCon;
 
+    AudioContext* ctx = (AudioContext*)inRefCon;
     size_t bytesPerFrame = ioData->mBuffers[0].mDataByteSize / inNumberFrames;
     size_t totalBytes = inNumberFrames * bytesPerFrame;
+    uint8_t* out = (uint8_t*)ioData->mBuffers[0].mData;
 
     std::unique_lock<std::mutex> lock(ctx->mtx);
 
-    uint8_t* out = (uint8_t*)ioData->mBuffers[0].mData;
-
-    for (size_t i = 0; i < totalBytes; ++i) {
+    // Копируем из кольцевого буфера, если есть данные
+    size_t bytesCopied = 0;
+    while (bytesCopied < totalBytes) {
         if (ctx->readPos != ctx->writePos) {
-            out[i] = ctx->ringBuffer[ctx->readPos];
+            out[bytesCopied] = ctx->ringBuffer[ctx->readPos];
             ctx->readPos = (ctx->readPos + 1) % ctx->bufferSize;
+            bytesCopied++;
         } else {
-            out[i] = 0; // тишина, если буфер пуст
+            // Если данных нет — дергаем provider для оставшейся части
+            fillBufferFromProvider(&out[bytesCopied], totalBytes - bytesCopied);
+            ctx->readPos = ctx->writePos; // синхронизируем позиции
+            break;
         }
     }
 
@@ -55,32 +82,18 @@ static OSStatus audioRenderCallback(void* inRefCon,
 extern "C" {
 
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
-  (JNIEnv* env, jobject jobj, jstring deviceId, jobject format) {
+(JNIEnv* env, jobject jobj, jstring deviceId, jobject format) {
 
     if (!ctx) ctx = new AudioContext();
 
-    // Найти классы и методы
+    env->GetJavaVM(&ctx->jvm);
+
+    // Получаем параметры TrackFormat
     jclass clsTrackFormat = env->GetObjectClass(format);
-    jmethodID midSampleRate = env->GetMethodID(clsTrackFormat, "sampleRate", "()I");
-    jmethodID midChannels = env->GetMethodID(clsTrackFormat, "channels", "()I");
-    jmethodID midBitsPerSample = env->GetMethodID(clsTrackFormat, "bitsPerSample", "()I");
-    jmethodID midSigned = env->GetMethodID(clsTrackFormat, "signed", "()Z");
-    jmethodID midByteOrder = env->GetMethodID(clsTrackFormat, "byteOrder", "()Ljava/nio/ByteOrder;");
+    jint sampleRate = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "sampleRate", "()I"));
+    jint channels = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "channels", "()I"));
+    jint bitsPerSample = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "bitsPerSample", "()I"));
 
-    // Вызвать методы
-    jint sampleRate = env->CallIntMethod(format, midSampleRate);
-    jint channels = env->CallIntMethod(format, midChannels);
-    jint bitsPerSample = env->CallIntMethod(format, midBitsPerSample);
-    jboolean isSigned = env->CallBooleanMethod(format, midSigned);
-    jobject byteOrderObj = env->CallObjectMethod(format, midByteOrder);
-
-    // Определяем порядок байтов
-    jclass clsByteOrder = env->FindClass("java/nio/ByteOrder");
-    jfieldID fidBIG = env->GetStaticFieldID(clsByteOrder, "BIG_ENDIAN", "Ljava/nio/ByteOrder;");
-    jobject bigEndian = env->GetStaticObjectField(clsByteOrder, fidBIG);
-    jboolean isBigEndian = env->IsSameObject(byteOrderObj, bigEndian);
-
-    // Создаем AudioStreamBasicDescription
     AudioStreamBasicDescription asbd{};
     asbd.mSampleRate = sampleRate;
     asbd.mChannelsPerFrame = channels;
@@ -89,22 +102,14 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
     asbd.mFramesPerPacket = 1;
     asbd.mBytesPerPacket = asbd.mBytesPerFrame;
     asbd.mFormatID = kAudioFormatLinearPCM;
-    asbd.mFormatFlags = kAudioFormatFlagIsPacked;
-    if (isSigned) asbd.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
-    if (isBigEndian) {
-        asbd.mFormatFlags |= kAudioFormatFlagIsBigEndian;
-    } else {
-        //asbd.mFormatFlags |= kAudioFormatFlagIsLittleEndian;
-    }
+    asbd.mFormatFlags = kAudioFormatFlagIsPacked | kAudioFormatFlagIsSignedInteger;
 
-    ctx->bufferSize = asbd.mBytesPerFrame * 44100; // 1 сек кольцевой буфер
+    ctx->bufferSize = asbd.mBytesPerFrame * (size_t)(asbd.mSampleRate * 2); // 2 секунды
     ctx->ringBuffer.resize(ctx->bufferSize);
-    ctx->writePos = 0;
-    ctx->readPos = 0;
+    ctx->readPos = ctx->writePos = 0;
     ctx->running = true;
 
-    // Создание RemoteIO AudioUnit
-    AudioComponentDescription desc{};
+AudioComponentDescription desc{};
     desc.componentType = kAudioUnitType_Output;
     desc.componentSubType = kAudioUnitSubType_DefaultOutput;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -135,7 +140,7 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
 }
 
 JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
-  (JNIEnv* env, jobject jobj, jobject buffer) {
+(JNIEnv* env, jobject jobj, jobject buffer) {
 
     if (!ctx || !ctx->running) return 0;
 
@@ -147,23 +152,26 @@ JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
     for (jlong i = 0; i < size; ++i) {
         ctx->ringBuffer[ctx->writePos] = data[i];
         ctx->writePos = (ctx->writePos + 1) % ctx->bufferSize;
-
-        // Если write догнал read, отрезаем старые данные (или можно блокировать)
-        if (ctx->writePos == ctx->readPos) {
-            ctx->readPos = (ctx->readPos + 1) % ctx->bufferSize;
-        }
+        if (ctx->writePos == ctx->readPos) ctx->readPos = (ctx->readPos + 1) % ctx->bufferSize;
     }
 
     return (jint)size;
 }
+
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1setProvider
+(JNIEnv* env, jobject jobj, jobject provider) {
+    if (!ctx) return;
+    if (ctx->chunkProviderGlobal) env->DeleteGlobalRef(ctx->chunkProviderGlobal);
+    ctx->chunkProviderGlobal = env->NewGlobalRef(provider);
+}
+
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-  (JNIEnv* env, jobject jobj) {
-    // Можно ничего не делать, кольцевой буфер сам поддерживает непрерывность
+  (JNIEnv *, jobject) {
+    // не нужно ничего, буфер сам поддерживает непрерывность
 }
 
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
-  (JNIEnv* env, jobject jobj, jstring deviceId) {
-
+(JNIEnv* env, jobject jobj, jstring deviceId) {
     if (!ctx) return;
 
     ctx->running = false;
@@ -174,6 +182,9 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
         AudioComponentInstanceDispose(ctx->unit);
         ctx->unit = nullptr;
     }
+
+    if (ctx->chunkProviderGlobal) env->DeleteGlobalRef(ctx->chunkProviderGlobal);
+    ctx->chunkProviderGlobal = nullptr;
 
     delete ctx;
     ctx = nullptr;

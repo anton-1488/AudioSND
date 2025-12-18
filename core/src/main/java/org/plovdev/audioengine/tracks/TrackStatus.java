@@ -9,5 +9,5 @@ package org.plovdev.audioengine.tracks;
  * @version 1.0
  */
 public enum TrackStatus {
-    INITED, PLAYED, PAUSED, STOPPED, DESTROYED
+    INITED, PLAYING, PAUSED, STOPPED, DESTROYED, UNAVAILABLE
 }

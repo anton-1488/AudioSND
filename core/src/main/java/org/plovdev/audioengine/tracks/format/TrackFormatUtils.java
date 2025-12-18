@@ -8,14 +8,14 @@ import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFac
 /**
  * Provide utilities to comfort working with TrackFormat
  *
- * @see TrackFormat
- * see also: track format factories
- *
  * @author Anton
  * @version 1.0
+ * @see TrackFormat
+ * see also: track format factories
  */
 public class TrackFormatUtils {
-    private TrackFormatUtils() {}
+    private TrackFormatUtils() {
+    }
 
     public static TrackFormat fromQualityPreset(QualityPreset preset) {
         return switch (preset) {
@@ -115,5 +115,13 @@ public class TrackFormatUtils {
             // Для PCM форматов
             return format.sampleRate() * format.bitsPerSample() * format.channels() * durationSeconds / 8;
         }
+    }
+
+    public static int calculateChunkSizeInBytes(TrackFormat f) {
+        int bytesPerSample = f.bitsPerSample() / 8;
+        int bytesPerFrame = bytesPerSample * f.channels();
+        int framesPerMs = Math.max(1, f.sampleRate() / 1000);
+
+        return (framesPerMs * bytesPerFrame);
     }
 }

@@ -17,6 +17,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     private volatile AudioDeviceStatus status = AudioDeviceStatus.UNAVAILABLE;
     private final AtomicBoolean isInited = new AtomicBoolean(false);
     private long nativeHandle = 0;
+    private ChunkProvider provider;
     private Runnable onStatusChanged = () -> {
     };
 
@@ -58,9 +59,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         }
 
         if (!isSupportedFormat(format)) {
-            throw new OpenAudioDeviceException(
-                    String.format("Format %s is not supported by device %s", format, info.name())
-            );
+            throw new OpenAudioDeviceException(String.format("Format %s is not supported by device %s", format, info.name()));
         }
 
         try {
@@ -76,6 +75,25 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
             nativeHandle = 0;
             throw new OpenAudioDeviceException("Failed to open device");
         }
+    }
+
+    private ByteBuffer onNextChunkRequested(int requestedBytes) {
+        if (provider != null) {
+            ByteBuffer buf = provider.onNextChunkRequired(requestedBytes);
+            if (buf != null) return buf;
+        }
+        return ByteBuffer.allocateDirect(requestedBytes); // тишина
+    }
+
+    public ChunkProvider getProvider() {
+        return provider;
+    }
+
+    private native void _setProvider(ChunkProvider provider);
+
+    public void setProvider(ChunkProvider provider) {
+        this.provider = provider;
+        _setProvider(provider);
     }
 
     /**
@@ -142,6 +160,8 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         }
     }
 
+
+
     private void checkForInited() {
         if (!isInited.get()) {
             throw new AudioDeviceException("Audio device not opened!");
@@ -172,4 +192,6 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     private native void _flush();
 
     private native void _close(String id);
+
+    private native void _onNextChunkRequired();
 }

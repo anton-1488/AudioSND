@@ -179,7 +179,7 @@ public class NativeAudioEngine implements AudioEngine {
     @Override
     public TrackPlayer getTrackPlayer(@NotNull Track track) {
         checkIfInited();
-        return new NativeTrackPlayer(track, getAvailableOutputAudioDevices().getFirst());
+        return new NativeTrackPlayer(track, AudioDeviceManager.getInstance().getDefaultOutputDevice());
     }
 
     @Override
