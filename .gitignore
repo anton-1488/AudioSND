@@ -17,6 +17,11 @@ bin/
 
 core/target/**
 
+/testdata/
+/testdata/44100/
+/testdata/48000/
+/testdata/96000/
+
 
 .idea/**
 out
