@@ -61,10 +61,10 @@ public class Main {
     public static void main(String[] args) {
         // инициализируем движок
         try (AudioEngine engine = new NativeAudioEngine();
-             // получаем плеер(или ручками через OutputDevice)
-             TrackPlayer player = engine.getTrackPlayer(track)) {
             // загружаем трек/песню
             Track track = engine.loadTrack("test1.wav");
+            // получаем плеер(или ручками через OutputDevice)
+            TrackPlayer player = engine.getTrackPlayer(track)) {
             // запускаем воспроизведение
             player.play();
             // ждем окончания(условно)
