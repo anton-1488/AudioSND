@@ -19,7 +19,8 @@ public class AiffTrackFormatFactory {
                 16,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -30,7 +31,8 @@ public class AiffTrackFormatFactory {
                 24,
                 48000,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 }

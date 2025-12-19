@@ -59,7 +59,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         }
 
         if (!isSupportedFormat(format)) {
-            throw new OpenAudioDeviceException(String.format("Format %s is not supported by device %s", format, info.name()));
+            log.warn("Format {} is not supported by device {}", format, info.name());
         }
 
         try {

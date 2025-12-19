@@ -21,7 +21,8 @@ public class Mp3TrackFormatFactory {
                 0,     // compressed
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.MP3
         );
     }
 
@@ -32,7 +33,8 @@ public class Mp3TrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.MP3
         );
     }
 
@@ -43,7 +45,8 @@ public class Mp3TrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.MP3
         );
     }
 
@@ -54,7 +57,8 @@ public class Mp3TrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.MP3
         );
     }
 }

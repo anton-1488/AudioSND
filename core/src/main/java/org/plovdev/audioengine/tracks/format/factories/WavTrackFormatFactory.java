@@ -21,7 +21,8 @@ public class WavTrackFormatFactory {
                 8,
                 44100,
                 false,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM8
         );
     }
 
@@ -32,7 +33,8 @@ public class WavTrackFormatFactory {
                 16,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -43,7 +45,8 @@ public class WavTrackFormatFactory {
                 16,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -54,7 +57,8 @@ public class WavTrackFormatFactory {
                 24,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -65,7 +69,8 @@ public class WavTrackFormatFactory {
                 32,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM32
         );
     }
 
@@ -76,7 +81,8 @@ public class WavTrackFormatFactory {
                 16,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -87,7 +93,8 @@ public class WavTrackFormatFactory {
                 24,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -98,7 +105,8 @@ public class WavTrackFormatFactory {
                 32,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM32
         );
     }
 
@@ -109,7 +117,8 @@ public class WavTrackFormatFactory {
                 16,
                 96000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -120,7 +129,8 @@ public class WavTrackFormatFactory {
                 24,
                 96000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -131,7 +141,8 @@ public class WavTrackFormatFactory {
                 24,
                 192000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -142,7 +153,8 @@ public class WavTrackFormatFactory {
                 16,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -153,7 +165,8 @@ public class WavTrackFormatFactory {
                 32,
                 96000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM32
         );
     }
 
@@ -164,7 +177,8 @@ public class WavTrackFormatFactory {
                 24,
                 96000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -175,7 +189,8 @@ public class WavTrackFormatFactory {
                 32,
                 192000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM32
         );
     }
 }

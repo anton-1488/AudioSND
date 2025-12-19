@@ -24,6 +24,13 @@ public class NativeTrackPlayer implements TrackPlayer {
     private final AtomicBoolean isInited = new AtomicBoolean(false);
     private TrackStatus status = TrackStatus.UNAVAILABLE;
     private final int chunkSize;
+    private int currentCycle = 0;
+
+    private float speed = 1.0f;
+    private float volume = 0.5f;
+
+    private int totalCycles = 1;
+
     private Runnable onStatusChanged = () -> {
     };
 
@@ -32,7 +39,6 @@ public class NativeTrackPlayer implements TrackPlayer {
         audioDevice = new NativeOutputAudioDevice(device.getDeviceInfo());
         data = track.getTrackData();
 
-        log.error("Initing");
         initPlayer();
         log.info("Inited");
 
@@ -113,7 +119,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public float getVolume() {
-        return 0;
+        return volume;
     }
 
     /**
@@ -121,7 +127,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public float getSpeed() {
-        return 0;
+        return speed;
     }
 
     /**
@@ -129,7 +135,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public int getCycles() {
-        return 0;
+        return totalCycles;
     }
 
     /**
@@ -137,7 +143,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public int getCurrentCycle() {
-        return 0;
+        return currentCycle;
     }
 
     /**
@@ -164,7 +170,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public void setVolume(float volume) {
-
+        this.volume = volume;
     }
 
     /**
@@ -176,7 +182,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public void setSpeed(float speed) {
-
+        this.speed = speed;
     }
 
     /**
@@ -187,7 +193,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public void setLoopCount(int count) {
-
+        totalCycles = count;
     }
 
     /**
@@ -199,7 +205,14 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public void seek(Duration position) {
+        checkIfInited();
 
+        int toPosition = (int) position.toMillis() * chunkSize;
+        int limit = data.limit();
+        if (toPosition >= limit) {
+            toPosition = limit;
+        }
+        this.position.set(toPosition);
     }
 
     /**
@@ -238,6 +251,8 @@ public class NativeTrackPlayer implements TrackPlayer {
     private void audioLoop() {
         final int limit = data.limit();
         log.info("Start playing");
+        currentCycle++;
+
         while (isPlaying.get()) {
             int start = position.get();
             int rem = limit - start;
@@ -253,6 +268,13 @@ public class NativeTrackPlayer implements TrackPlayer {
             position.set(Math.min(start + chunkSize, limit));
 
             LockSupport.parkNanos(700000);
+        }
+        setStatus(TrackStatus.STOPPED);
+
+        if (currentCycle < totalCycles || totalCycles < 0) {
+            isPlaying.set(true);
+            setStatus(TrackStatus.PLAYING);
+            audioLoop();
         }
     }
 

@@ -21,7 +21,8 @@ public class OggTrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.VORBIS
         );
     }
 
@@ -32,7 +33,8 @@ public class OggTrackFormatFactory {
                 0,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.OPUS
         );
     }
 }

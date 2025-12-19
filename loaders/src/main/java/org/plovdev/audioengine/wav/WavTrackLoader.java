@@ -2,6 +2,7 @@ package org.plovdev.audioengine.wav;
 
 import org.plovdev.audioengine.exceptions.TrackLoadException;
 import org.plovdev.audioengine.loaders.LoadListener;
+import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.TrackLoader;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
@@ -13,16 +14,27 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WavTrackLoader implements TrackLoader {
+    private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
+
+    public void addLoactor(PathLocator locator) {
+        locators.add(locator);
+    }
+
+    public WavTrackLoader() {
+
+    }
+
+    public WavTrackLoader(List<PathLocator> locators) {
+        this.locators.addAll(locators);
+    }
 
     @Override
     public Track loadTrack(String path) throws TrackLoadException {
         try {
-            File file = new File(path);
-            if (!file.exists()) {
-                throw new TrackLoadException("File not found: " + path);
-            }
+            File file = getFile(path);
 
             byte[] fileData = readFileToByteArray(file);
             return parseWavData(fileData, file.getName());
@@ -153,6 +165,13 @@ public class WavTrackLoader implements TrackLoader {
         long totalSamples = parser.getNumSamples();
         Duration duration = calculateDuration(totalSamples, parser.getSampleRate());
 
+        TrackFormat.AudioCodec codec = switch (parser.getBitDepth()) {
+            case 8 -> TrackFormat.AudioCodec.PCM8;
+            case 24 -> TrackFormat.AudioCodec.PCM24;
+            case 32 -> TrackFormat.AudioCodec.PCM32;
+            default -> TrackFormat.AudioCodec.PCM16;
+        };
+
         // Создаем формат
         TrackFormat format = new TrackFormat(
                 "wav",
@@ -160,11 +179,17 @@ public class WavTrackLoader implements TrackLoader {
                 parser.getBitDepth(),
                 parser.getSampleRate(),
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                codec
         );
 
         // Создаем метаданные
         TrackMetadata metadata = new TrackMetadata();
+        metadata.setBitDepth(parser.getBitDepth());
+        metadata.setBitrate(format.bitRate());
+        metadata.setChannels(parser.getChannels());
+        metadata.setDuration(duration);
+
 
         return new Track(directBuffer, duration, format, metadata);
     }
@@ -190,6 +215,21 @@ public class WavTrackLoader implements TrackLoader {
             bos.write(buffer, 0, bytesRead);
         }
         return bos.toByteArray();
+    }
+
+    private File getFile(String originalPath) {
+        File file = new File(originalPath);
+        if (!file.exists()) {
+            for (PathLocator locator : locators) {
+                String newPath = locator.getPath().toString() + "/" + originalPath;
+                File newFile = new File(newPath);
+                if (newFile.exists()) {
+                    return newFile;
+                }
+            }
+            throw new TrackLoadException("Wav track not found!");
+        }
+        return file;
     }
 
     private Duration calculateDuration(long totalSamples, int sampleRate) {

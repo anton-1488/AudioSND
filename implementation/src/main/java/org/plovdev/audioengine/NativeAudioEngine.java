@@ -49,7 +49,7 @@ public class NativeAudioEngine implements AudioEngine {
         try {
             init(config);
         } catch (AudioEngineException e) {
-            log.error("Initializing error: ", e);
+            throw new AudioEngineException(e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class NativeAudioEngine implements AudioEngine {
         try {
             init(config);
         } catch (AudioEngineException e) {
-            log.error("Initializing error: ", e);
+            throw new AudioEngineException(e.getMessage());
         }
     }
 
@@ -242,6 +242,15 @@ public class NativeAudioEngine implements AudioEngine {
         }
     }
 
+    @Override
+    public Optional<TrackLoaderManager> getLoader(Class<? extends TrackLoaderManager> loader) {
+        for (TrackLoaderManager manager : getAvailableLoaders()) {
+            if (manager.getClass().isAssignableFrom(loader)) {
+                return Optional.of(manager);
+            }
+        }
+        return Optional.empty();
+    }
 
     //====== Natives ======\\
     private native void _init();

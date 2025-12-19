@@ -13,6 +13,7 @@
         <module>core</module>
         <module>implementation</module>
         <module>loaders</module>
+        <module>generator</module>
     </modules>
 
     <properties>

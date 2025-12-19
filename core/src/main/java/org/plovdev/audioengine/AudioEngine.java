@@ -77,6 +77,8 @@ public interface AudioEngine extends AutoCloseable {
      */
     Optional<TrackLoaderManager> findLoaderFor(TrackFormat format);
 
+    Optional<TrackLoaderManager> getLoader(Class<? extends TrackLoaderManager> loader);
+
     @Override
     void close();
 }

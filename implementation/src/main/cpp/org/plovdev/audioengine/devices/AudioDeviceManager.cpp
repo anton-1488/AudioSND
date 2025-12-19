@@ -131,6 +131,38 @@ jobject createAudioDeviceInfo(
     );
 }
 
+jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asbd) {
+    jclass clsAudioCodec = env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec");
+    if (!clsAudioCodec) return nullptr;
+
+    bool isFloat  = (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0;
+    bool isSigned = (asbd.mFormatFlags & kAudioFormatFlagIsSignedInteger) != 0;
+
+    jfieldID fidCodec = nullptr;
+
+    if (isFloat) {
+        if (asbd.mBitsPerChannel == 32) {
+            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT32", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+        } else if (asbd.mBitsPerChannel == 64) {
+            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT64", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+        }
+    } else if (isSigned) {
+        switch(asbd.mBitsPerChannel) {
+            case 8:  fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM8",  "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 16: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 24: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 32: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM32", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+        }
+    } else {
+        // Можно добавить поддержку ALAW, ULAW и других кодеков здесь
+        fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); // fallback
+    }
+
+    if (!fidCodec) return nullptr;
+
+    return env->GetStaticObjectField(clsAudioCodec, fidCodec);
+}
+
 
 jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels) {
     // Создаём HashSet и получаем ссылки JNI (этот блок остается прежним)
@@ -147,7 +179,7 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
     ctorTrackFormat = env->GetMethodID(
             clsTrackFormat,
             "<init>",
-            "(Ljava/lang/String;IIIZLjava/nio/ByteOrder;)V"
+            "(Ljava/lang/String;IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
     );
 
     if (!clsTrackFormat || !ctorTrackFormat) {
@@ -169,8 +201,6 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
     for (UInt32 i = 0; i < streamCount; i++) {
         AudioStreamID streamID = streams[i];
 
-        // !!! КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ !!!
-        // Запрашиваем ВСЕ доступные физические форматы
         UInt32 availableFormatsSize = 0;
         AudioObjectPropertyAddress addrFormats{
             kAudioStreamPropertyPhysicalFormats,
@@ -198,6 +228,8 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
             bool isFloat  = (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0;
             jboolean signedFlag = isSigned || isFloat;
 
+            jobject codecEnum = getAudioCodecForASBD(env, asbd);
+
             // Создаём TrackFormat и добавляем в HashSet
             jobject tf = env->NewObject(
                 clsTrackFormat, ctorTrackFormat,
@@ -206,7 +238,8 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
                 (jint)asbd.mBitsPerChannel,
                 (jint)asbd.mSampleRate,
                 signedFlag,
-                byteOrderLE
+                byteOrderLE,
+                codecEnum
             );
 
             if (tf) env->CallBooleanMethod(set, hashSetAdd, tf);

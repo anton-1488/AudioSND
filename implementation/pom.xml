@@ -27,6 +27,10 @@
             <artifactId>loaders</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.plovdev</groupId>
+            <artifactId>generator</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
-
 </project>

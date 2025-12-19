@@ -21,7 +21,8 @@ public class FlacTrackFormatFactory {
                 16,
                 44100,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.FLAC
         );
     }
 
@@ -32,7 +33,8 @@ public class FlacTrackFormatFactory {
                 24,
                 96000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.FLAC
         );
     }
 }

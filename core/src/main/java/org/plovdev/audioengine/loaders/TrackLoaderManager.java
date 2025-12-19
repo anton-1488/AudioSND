@@ -3,8 +3,6 @@ package org.plovdev.audioengine.loaders;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
-import java.util.Set;
-
 /**
  * Node of track load managing.
  * Provide all tool for load/decode track
@@ -21,8 +19,9 @@ import java.util.Set;
  */
 public interface TrackLoaderManager {
     TrackLoader getTrackLoader();
-    Set<TrackFormat> getSupportedFormats();
-    TrackExporter getTrackExported();
+    TrackExporter getTrackExporter();
     TrackEncoder getTrackEncoder();
     TrackDecoder getTrackDecoder();
+
+    void registerPathLocator(PathLocator locator);
 }

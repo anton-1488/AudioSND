@@ -21,7 +21,8 @@ public class AacTrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.AAC
         );
     }
 
@@ -32,7 +33,8 @@ public class AacTrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.AAC
         );
     }
 }

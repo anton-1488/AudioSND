@@ -1,37 +1,42 @@
 package org.plovdev.audioengine.wav;
 
 import org.plovdev.audioengine.loaders.*;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-
-import java.util.Set;
 
 public class WavTrackLoaderManager implements TrackLoaderManager {
-    public WavTrackLoaderManager() {
+    private final WavTrackLoader loader;
+    private final WavTrackExporter exporter;
+    private final WavTrackEncoder encoder;
+    private final WavTrackDecoder decoder;
 
+    public WavTrackLoaderManager() {
+        loader = new WavTrackLoader();
+        exporter = new WavTrackExporter();
+        encoder = new WavTrackEncoder();
+        decoder = new WavTrackDecoder();
     }
 
     @Override
     public TrackLoader getTrackLoader() {
-        return new WavTrackLoader();
+        return loader;
     }
 
     @Override
-    public Set<TrackFormat> getSupportedFormats() {
-        return Set.of();
-    }
-
-    @Override
-    public TrackExporter getTrackExported() {
-        return null;
+    public TrackExporter getTrackExporter() {
+        return exporter;
     }
 
     @Override
     public TrackEncoder getTrackEncoder() {
-        return null;
+        return encoder;
     }
 
     @Override
     public TrackDecoder getTrackDecoder() {
-        return null;
+        return decoder;
+    }
+
+    @Override
+    public void registerPathLocator(PathLocator locator) {
+        loader.addLoactor(locator);
     }
 }

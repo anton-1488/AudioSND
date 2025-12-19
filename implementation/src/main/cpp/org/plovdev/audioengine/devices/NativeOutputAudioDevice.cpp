@@ -1,115 +1,166 @@
 #include <AudioToolbox/AudioToolbox.h>
-#include <CoreAudio/CoreAudioTypes.h>
 #include <AudioUnit/AudioUnit.h>
-#include <AudioUnit/AudioComponent.h>
-#include <AudioUnit/AudioUnitProperties.h>
-#include <AudioUnit/AudioOutputUnit.h>
 #include <jni.h>
-#include <vector>
-#include <mutex>
+
+#include <atomic>
+#include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "org_plovdev_audioengine_devices_NativeOutputAudioDevice.h"
 
+// ======================================================
+// RingBuffer (lock-free, frames-based, float32)
+// ======================================================
+
+struct RingBuffer {
+    float* data = nullptr;          // interleaved float samples
+    uint32_t frames = 0;            // total frames
+    uint32_t channels = 0;
+
+    std::atomic<uint32_t> read{0};  // frame index
+    std::atomic<uint32_t> write{0}; // frame index
+};
+
+static inline uint32_t rbAvailable(const RingBuffer& rb) {
+    return (rb.write.load(std::memory_order_acquire)
+          - rb.read.load(std::memory_order_acquire)) % rb.frames;
+}
+
+static inline uint32_t rbFree(const RingBuffer& rb) {
+    return rb.frames - rbAvailable(rb) - 1;
+}
+
+// ======================================================
+// AudioContext
+// ======================================================
+
 struct AudioContext {
     AudioUnit unit = nullptr;
-    std::vector<uint8_t> ringBuffer;
-    size_t writePos = 0;
-    size_t readPos = 0;
-    size_t bufferSize = 0;
-    std::mutex mtx;
-    bool running = false;
-    JavaVM* jvm = nullptr;
-    jobject chunkProviderGlobal = nullptr;
+
+    RingBuffer rb;
+
+    uint32_t sampleRate = 0;
+    uint32_t channels = 0;
+
+    std::atomic<bool> running{false};
+    std::atomic<uint64_t> underruns{0};
 };
 
 static AudioContext* ctx = nullptr;
 
-// Вспомогательная функция для вызова Java ChunkProvider
-static void fillBufferFromProvider(uint8_t* out, size_t totalBytes) {
-    if (!ctx || !ctx->chunkProviderGlobal) {
-        std::memset(out, 0, totalBytes);
-        return;
+// ======================================================
+// CoreAudio render callback (REALTIME SAFE)
+// ======================================================
+
+static OSStatus audioRenderCallback(
+        void* refCon,
+        AudioUnitRenderActionFlags*,
+        const AudioTimeStamp*,
+        UInt32,
+        UInt32 inNumberFrames,
+        AudioBufferList* ioData) {
+
+    auto* c = static_cast<AudioContext*>(refCon);
+    float* out = static_cast<float*>(ioData->mBuffers[0].mData);
+
+    const uint32_t channels = c->channels;
+    const uint32_t samplesRequested = inNumberFrames * channels;
+
+    if (!c || !c->running.load(std::memory_order_relaxed)) {
+        memset(out, 0, samplesRequested * sizeof(float));
+        return noErr;
     }
 
-    JNIEnv* env = nullptr;
-    ctx->jvm->AttachCurrentThread((void**)&env, nullptr);
+    RingBuffer& rb = c->rb;
+    uint32_t availableFrames = rbAvailable(rb);
 
-    jclass cls = env->GetObjectClass(ctx->chunkProviderGlobal);
-    jmethodID mid = env->GetMethodID(cls, "onNextChunkRequired", "(I)Ljava/nio/ByteBuffer;");
-    jobject buf = env->CallObjectMethod(ctx->chunkProviderGlobal, mid, (jint)totalBytes);
+    if (availableFrames < inNumberFrames) {
+        memset(out, 0, samplesRequested * sizeof(float));
+        c->underruns.fetch_add(1, std::memory_order_relaxed);
+        return noErr;
+    }
 
-    if (buf != nullptr) {
-        uint8_t* data = (uint8_t*)env->GetDirectBufferAddress(buf);
-        std::memcpy(out, data, totalBytes);
+    uint32_t readFrame = rb.read.load(std::memory_order_relaxed);
+    uint32_t firstFrames = rb.frames - readFrame;
+
+    if (firstFrames >= inNumberFrames) {
+        memcpy(out,
+               rb.data + readFrame * channels,
+               samplesRequested * sizeof(float));
     } else {
-        std::memset(out, 0, totalBytes);
+        uint32_t firstSamples = firstFrames * channels;
+        uint32_t secondSamples = (inNumberFrames - firstFrames) * channels;
+
+        memcpy(out,
+               rb.data + readFrame * channels,
+               firstSamples * sizeof(float));
+
+        memcpy(out + firstSamples,
+               rb.data,
+               secondSamples * sizeof(float));
     }
-}
 
-static OSStatus audioRenderCallback(void* inRefCon,
-                                    AudioUnitRenderActionFlags* ioActionFlags,
-                                    const AudioTimeStamp* inTimeStamp,
-                                    UInt32 inBusNumber,
-                                    UInt32 inNumberFrames,
-                                    AudioBufferList* ioData) {
-
-    AudioContext* ctx = (AudioContext*)inRefCon;
-    size_t bytesPerFrame = ioData->mBuffers[0].mDataByteSize / inNumberFrames;
-    size_t totalBytes = inNumberFrames * bytesPerFrame;
-    uint8_t* out = (uint8_t*)ioData->mBuffers[0].mData;
-
-    std::unique_lock<std::mutex> lock(ctx->mtx);
-
-    // Копируем из кольцевого буфера, если есть данные
-    size_t bytesCopied = 0;
-    while (bytesCopied < totalBytes) {
-        if (ctx->readPos != ctx->writePos) {
-            out[bytesCopied] = ctx->ringBuffer[ctx->readPos];
-            ctx->readPos = (ctx->readPos + 1) % ctx->bufferSize;
-            bytesCopied++;
-        } else {
-            // Если данных нет — дергаем provider для оставшейся части
-            fillBufferFromProvider(&out[bytesCopied], totalBytes - bytesCopied);
-            ctx->readPos = ctx->writePos; // синхронизируем позиции
-            break;
-        }
-    }
+    rb.read.store((readFrame + inNumberFrames) % rb.frames,
+                  std::memory_order_release);
 
     return noErr;
 }
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
-(JNIEnv* env, jobject jobj, jstring deviceId, jobject format) {
+// ======================================================
+// open()
+// ======================================================
 
-    if (!ctx) ctx = new AudioContext();
+JNIEXPORT void JNICALL
+Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
+(JNIEnv* env, jobject, jstring, jobject format) {
 
-    env->GetJavaVM(&ctx->jvm);
+    if (ctx) return;
+    ctx = new AudioContext();
 
-    // Получаем параметры TrackFormat
-    jclass clsTrackFormat = env->GetObjectClass(format);
-    jint sampleRate = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "sampleRate", "()I"));
-    jint channels = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "channels", "()I"));
-    jint bitsPerSample = env->CallIntMethod(format, env->GetMethodID(clsTrackFormat, "bitsPerSample", "()I"));
+    jclass fmtCls = env->GetObjectClass(format);
 
-    AudioStreamBasicDescription asbd{};
-    asbd.mSampleRate = sampleRate;
-    asbd.mChannelsPerFrame = channels;
-    asbd.mBitsPerChannel = bitsPerSample;
-    asbd.mBytesPerFrame = channels * (bitsPerSample / 8);
+    ctx->sampleRate = env->CallIntMethod(
+        format, env->GetMethodID(fmtCls, "sampleRate", "()I"));
+
+    ctx->channels = env->CallIntMethod(
+        format, env->GetMethodID(fmtCls, "channels", "()I"));
+
+    // ===============================
+    // AudioStreamBasicDescription
+    // ===============================
+
+AudioStreamBasicDescription asbd{};
+    asbd.mSampleRate = ctx->sampleRate;
+    asbd.mChannelsPerFrame = ctx->channels;
+    asbd.mBitsPerChannel = 32;
     asbd.mFramesPerPacket = 1;
+    asbd.mBytesPerFrame = ctx->channels * sizeof(float);
     asbd.mBytesPerPacket = asbd.mBytesPerFrame;
     asbd.mFormatID = kAudioFormatLinearPCM;
-    asbd.mFormatFlags = kAudioFormatFlagIsPacked | kAudioFormatFlagIsSignedInteger;
+    asbd.mFormatFlags =
+        kAudioFormatFlagIsFloat |
+        kAudioFormatFlagIsPacked;
 
-    ctx->bufferSize = asbd.mBytesPerFrame * (size_t)(asbd.mSampleRate * 2); // 2 секунды
-    ctx->ringBuffer.resize(ctx->bufferSize);
-    ctx->readPos = ctx->writePos = 0;
-    ctx->running = true;
+    // ===============================
+    // RingBuffer: 5 seconds
+    // ===============================
 
-AudioComponentDescription desc{};
+    ctx->rb.frames = ctx->sampleRate * 5;
+    ctx->rb.channels = ctx->channels;
+    ctx->rb.data = static_cast<float*>(
+        malloc(ctx->rb.frames * ctx->channels * sizeof(float)));
+
+    ctx->rb.read.store(0);
+    ctx->rb.write.store(0);
+
+    // ===============================
+    // AudioUnit setup
+    // ===============================
+
+    AudioComponentDescription desc{};
     desc.componentType = kAudioUnitType_Output;
     desc.componentSubType = kAudioUnitSubType_DefaultOutput;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -117,74 +168,107 @@ AudioComponentDescription desc{};
     AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
     AudioComponentInstanceNew(comp, &ctx->unit);
 
-    AudioUnitSetProperty(ctx->unit,
-                         kAudioUnitProperty_StreamFormat,
-                         kAudioUnitScope_Input,
-                         0,
-                         &asbd,
-                         sizeof(asbd));
+    AudioUnitSetProperty(
+        ctx->unit,
+        kAudioUnitProperty_StreamFormat,
+        kAudioUnitScope_Input,
+        0,
+        &asbd,
+        sizeof(asbd));
 
     AURenderCallbackStruct cb{};
     cb.inputProc = audioRenderCallback;
     cb.inputProcRefCon = ctx;
 
-    AudioUnitSetProperty(ctx->unit,
-                         kAudioUnitProperty_SetRenderCallback,
-                         kAudioUnitScope_Input,
-                         0,
-                         &cb,
-                         sizeof(cb));
+    AudioUnitSetProperty(
+        ctx->unit,
+        kAudioUnitProperty_SetRenderCallback,
+        kAudioUnitScope_Input,
+        0,
+        &cb,
+        sizeof(cb));
 
     AudioUnitInitialize(ctx->unit);
+    ctx->running.store(true, std::memory_order_release);
     AudioOutputUnitStart(ctx->unit);
 }
 
-JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
-(JNIEnv* env, jobject jobj, jobject buffer) {
+// ======================================================
+// write() — PCM16 → float32
+// ======================================================
 
-    if (!ctx || !ctx->running) return 0;
+JNIEXPORT jint JNICALL
+Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
+(JNIEnv* env, jobject, jobject buffer) {
 
-    uint8_t* data = (uint8_t*)env->GetDirectBufferAddress(buffer);
-    jlong size = env->GetDirectBufferCapacity(buffer);
+    if (!ctx || !ctx->running.load(std::memory_order_relaxed)) return 0;
 
-    std::unique_lock<std::mutex> lock(ctx->mtx);
+    auto* pcm = static_cast<int16_t*>(
+        env->GetDirectBufferAddress(buffer));
 
-    for (jlong i = 0; i < size; ++i) {
-        ctx->ringBuffer[ctx->writePos] = data[i];
-        ctx->writePos = (ctx->writePos + 1) % ctx->bufferSize;
-        if (ctx->writePos == ctx->readPos) ctx->readPos = (ctx->readPos + 1) % ctx->bufferSize;
+    jlong bytes = env->GetDirectBufferCapacity(buffer);
+    if (!pcm || bytes <= 0) return 0;
+
+    uint32_t frames =
+        static_cast<uint32_t>(
+            bytes / (sizeof(int16_t) * ctx->channels));
+
+    RingBuffer& rb = ctx->rb;
+    uint32_t freeFrames = rbFree(rb);
+    uint32_t framesToWrite =
+        (frames < freeFrames) ? frames : freeFrames;
+
+    uint32_t writeFrame = rb.write.load(std::memory_order_relaxed);
+
+    for (uint32_t f = 0; f < framesToWrite; ++f) {
+        uint32_t dstFrame = writeFrame % rb.frames;
+        uint32_t dstBase = dstFrame * rb.channels;
+        uint32_t srcBase = f * rb.channels;
+
+        for (uint32_t ch = 0; ch < rb.channels; ++ch) {
+            rb.data[dstBase + ch] =
+                static_cast<float>(pcm[srcBase + ch]) / 32768.0f;
+        }
+        writeFrame++;
     }
 
-    return (jint)size;
+    rb.write.store(writeFrame % rb.frames,
+                   std::memory_order_release);
+
+    return framesToWrite;
 }
 
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1setProvider
-(JNIEnv* env, jobject jobj, jobject provider) {
+// ======================================================
+// flush()
+// ======================================================
+
+JNIEXPORT void JNICALL
+Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
+(JNIEnv*, jobject) {
+    // intentionally no-op
+}
+
+// ======================================================
+// close()
+// ======================================================
+
+JNIEXPORT void JNICALL
+Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
+(JNIEnv*, jobject, jstring) {
+
     if (!ctx) return;
-    if (ctx->chunkProviderGlobal) env->DeleteGlobalRef(ctx->chunkProviderGlobal);
-    ctx->chunkProviderGlobal = env->NewGlobalRef(provider);
-}
 
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-  (JNIEnv *, jobject) {
-    // не нужно ничего, буфер сам поддерживает непрерывность
-}
-
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
-(JNIEnv* env, jobject jobj, jstring deviceId) {
-    if (!ctx) return;
-
-    ctx->running = false;
+    ctx->running.store(false, std::memory_order_release);
 
     if (ctx->unit) {
         AudioOutputUnitStop(ctx->unit);
         AudioUnitUninitialize(ctx->unit);
         AudioComponentInstanceDispose(ctx->unit);
-        ctx->unit = nullptr;
     }
 
-    if (ctx->chunkProviderGlobal) env->DeleteGlobalRef(ctx->chunkProviderGlobal);
-    ctx->chunkProviderGlobal = nullptr;
+    if (ctx->rb.data) {
+        free(ctx->rb.data);
+    }
 
     delete ctx;
     ctx = nullptr;

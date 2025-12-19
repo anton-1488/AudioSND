@@ -19,7 +19,8 @@ public class TrackFormatFactory {
                 1,     // DSD 1-bit
                 2822400, // 2.8224 MHz
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.OTHER
         );
     }
 
@@ -30,7 +31,8 @@ public class TrackFormatFactory {
                 16,
                 22050,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -41,7 +43,8 @@ public class TrackFormatFactory {
                 16,
                 32000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -54,7 +57,8 @@ public class TrackFormatFactory {
                 16,
                 8000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM16
         );
     }
 
@@ -65,7 +69,8 @@ public class TrackFormatFactory {
                 0,
                 8000,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.OTHER
         );
     }
 
@@ -78,7 +83,8 @@ public class TrackFormatFactory {
                 24,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -89,7 +95,8 @@ public class TrackFormatFactory {
                 24,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM24
         );
     }
 
@@ -100,7 +107,8 @@ public class TrackFormatFactory {
                 32,
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.PCM32
         );
     }
 
@@ -111,7 +119,8 @@ public class TrackFormatFactory {
                 0,     // compressed
                 48000,
                 true,
-                ByteOrder.LITTLE_ENDIAN
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.OTHER
         );
     }
 
@@ -122,7 +131,8 @@ public class TrackFormatFactory {
                 0,
                 44100,
                 true,
-                ByteOrder.BIG_ENDIAN
+                ByteOrder.BIG_ENDIAN,
+                TrackFormat.AudioCodec.OTHER
         );
     }
 }
