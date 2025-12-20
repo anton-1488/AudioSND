@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
 
 public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
@@ -25,6 +24,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     private TrackStatus status = TrackStatus.UNAVAILABLE;
     private final int chunkSize;
     private int currentCycle = 0;
+    private final int ms = 10000;
 
     private float speed = 1.0f;
     private float volume = 0.5f;
@@ -42,7 +42,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         initPlayer();
         log.info("Inited");
 
-        chunkSize = TrackFormatUtils.calculateChunkSizeInBytes(track.getFormat());
+        chunkSize = TrackFormatUtils.calculateChunkSizeInBytes(track.getFormat(), ms);
     }
 
     @Override
@@ -75,10 +75,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(true);
         setStatus(TrackStatus.PLAYING);
 
-        Thread audioThread = new Thread(this::audioLoop, "audio-playback-loop");
-        audioThread.setDaemon(true);
-        audioThread.setPriority(Thread.MAX_PRIORITY);
-        audioThread.start();
+        audioLoop();
     }
 
     /**
@@ -159,7 +156,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public Duration getCurrentTime() {
-        return Duration.ofMillis(position.get() / chunkSize);
+        return Duration.ofMillis((position.get() / chunkSize) / ms);
     }
 
     /**
@@ -207,7 +204,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     public void seek(Duration position) {
         checkIfInited();
 
-        int toPosition = (int) position.toMillis() * chunkSize;
+        int toPosition = (int) position.toMillis() * (chunkSize / ms);
         int limit = data.limit();
         if (toPosition >= limit) {
             toPosition = limit;
@@ -251,14 +248,13 @@ public class NativeTrackPlayer implements TrackPlayer {
     private void audioLoop() {
         final int limit = data.limit();
         log.info("Start playing");
-        currentCycle++;
 
-        while (isPlaying.get()) {
+        audioDevice.setProvider(req -> {
             int start = position.get();
             int rem = limit - start;
+
             if (start >= limit || rem <= 0) {
                 stop();
-                break;
             }
 
 
@@ -266,16 +262,10 @@ public class NativeTrackPlayer implements TrackPlayer {
             audioDevice.write(chunk);
 
             position.set(Math.min(start + chunkSize, limit));
-
-            LockSupport.parkNanos(700000);
-        }
+        });
+        currentCycle++;
+        log.info("Stop playing");
         setStatus(TrackStatus.STOPPED);
-
-        if (currentCycle < totalCycles || totalCycles < 0) {
-            isPlaying.set(true);
-            setStatus(TrackStatus.PLAYING);
-            audioLoop();
-        }
     }
 
     public boolean isInited() {

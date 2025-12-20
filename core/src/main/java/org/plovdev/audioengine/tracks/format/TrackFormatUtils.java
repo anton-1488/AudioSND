@@ -1,9 +1,10 @@
 package org.plovdev.audioengine.tracks.format;
 
+import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.flac16bitStereo44kHz;
+import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.flac24bitStereo96kHz;
+import static org.plovdev.audioengine.tracks.format.factories.Mp3TrackFormatFactory.*;
 import static org.plovdev.audioengine.tracks.format.factories.TrackFormatFactory.*;
 import static org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory.*;
-import static org.plovdev.audioengine.tracks.format.factories.Mp3TrackFormatFactory.*;
-import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.*;
 
 /**
  * Provide utilities to comfort working with TrackFormat
@@ -117,11 +118,21 @@ public class TrackFormatUtils {
         }
     }
 
-    public static int calculateChunkSizeInBytes(TrackFormat f) {
+    public static long calculateDurationMs(TrackFormat format, int size) {
+        long sampleRate = format.sampleRate(); // частота дискретизации (Гц)
+        long bitsPerSample = format.bitsPerSample(); // бит на сэмпл
+        long channels = format.channels(); // количество каналов
+
+        long bytesPerSecond = (sampleRate * bitsPerSample * channels) / 8;
+
+        return (sampleRate * 1000) / bytesPerSecond;
+    }
+
+    public static int calculateChunkSizeInBytes(TrackFormat f, int ms) {
         int bytesPerSample = f.bitsPerSample() / 8;
         int bytesPerFrame = bytesPerSample * f.channels();
         int framesPerMs = Math.max(1, f.sampleRate() / 1000);
 
-        return (framesPerMs * bytesPerFrame);
+        return (framesPerMs * bytesPerFrame) * ms;
     }
 }

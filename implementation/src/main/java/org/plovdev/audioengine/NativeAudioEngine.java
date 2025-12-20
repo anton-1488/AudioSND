@@ -6,6 +6,7 @@ import org.plovdev.audioengine.devices.InputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
 import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.loaders.TrackExporter;
 import org.plovdev.audioengine.loaders.TrackLoader;
 import org.plovdev.audioengine.loaders.TrackLoaderManager;
 import org.plovdev.audioengine.mixer.NativeTrackMixer;
@@ -20,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -135,43 +137,7 @@ public class NativeAudioEngine implements AudioEngine {
     }
 
     @Override
-    public List<Track> batchLoadTrack(String... path) throws TrackLoadException {
-        checkIfInited();
-        for (TrackLoaderManager manager : getAvailableLoaders()) {
-            TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupporteds(path)) {
-                return loader.batchLoadTrack(path);
-            }
-        }
-        return List.of();
-    }
-
-    @Override
-    public List<Track> batchLoadTrack(InputStream... stream) throws TrackLoadException {
-        checkIfInited();
-        for (TrackLoaderManager manager : getAvailableLoaders()) {
-            TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupporteds(stream)) {
-                return loader.batchLoadTrack(stream);
-            }
-        }
-        return List.of();
-    }
-
-    @Override
-    public List<Track> batchLoadTrack(URI... uri) throws TrackLoadException {
-        checkIfInited();
-        for (TrackLoaderManager manager : getAvailableLoaders()) {
-            TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupporteds(uri)) {
-                return loader.batchLoadTrack(uri);
-            }
-        }
-        return List.of();
-    }
-
-    @Override
-    public TrackMixer getMixer() {
+    public TrackMixer getTrackMixer() {
         checkIfInited();
         return new NativeTrackMixer();
     }
@@ -243,13 +209,21 @@ public class NativeAudioEngine implements AudioEngine {
     }
 
     @Override
-    public Optional<TrackLoaderManager> getLoader(Class<? extends TrackLoaderManager> loader) {
+    public Optional<TrackLoaderManager> getTrackLoaderManager(Class<? extends TrackLoaderManager> loader) {
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             if (manager.getClass().isAssignableFrom(loader)) {
                 return Optional.of(manager);
             }
         }
         return Optional.empty();
+    }
+
+    @Override
+    public void exportTrack(Track track, OutputStream outputStream) {
+        findLoaderFor(track.getFormat()).ifPresent(trackLoaderManager -> {
+            TrackExporter exporter = trackLoaderManager.getTrackExporter();
+            exporter.save(track, outputStream);
+        });
     }
 
     //====== Natives ======\\
