@@ -20,6 +20,7 @@ core/src/main/java/org/plovdev/audioengine/tracks/format/factories/FlacTrackForm
 core/src/main/java/org/plovdev/audioengine/tracks/TrackPlayer.java
 core/src/main/java/org/plovdev/audioengine/utils/TrackLoaderSearcher.java
 core/src/main/java/org/plovdev/audioengine/utils/AudioEngineConfig.java
+core/src/main/java/org/plovdev/audioengine/utils/AudioEngineUtils.java
 core/src/main/java/org/plovdev/audioengine/exceptions/OpenAudioDeviceException.java
 core/src/main/java/org/plovdev/audioengine/exceptions/CloseAudioDeviceException.java
 core/src/main/java/org/plovdev/audioengine/exceptions/MixingException.java

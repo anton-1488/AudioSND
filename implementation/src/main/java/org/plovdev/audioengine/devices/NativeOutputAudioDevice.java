@@ -77,23 +77,12 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         }
     }
 
-    private ByteBuffer onNextChunkRequested(int requestedBytes) {
-        if (provider != null) {
-            ByteBuffer buf = provider.onNextChunkRequired(requestedBytes);
-            if (buf != null) return buf;
-        }
-        return ByteBuffer.allocateDirect(requestedBytes); // тишина
-    }
-
     public ChunkProvider getProvider() {
         return provider;
     }
 
-    private native void _setProvider(ChunkProvider provider);
-
     public void setProvider(ChunkProvider provider) {
         this.provider = provider;
-        _setProvider(provider);
     }
 
     /**
@@ -192,6 +181,4 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     private native void _flush();
 
     private native void _close(String id);
-
-    private native void _onNextChunkRequired();
 }

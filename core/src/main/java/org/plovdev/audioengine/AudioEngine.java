@@ -12,6 +12,7 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.utils.AudioEngineConfig;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -55,12 +56,8 @@ public interface AudioEngine extends AutoCloseable {
     Track loadTrack(InputStream stream) throws TrackLoadException;
     Track loadTrack(URI uri) throws TrackLoadException;
 
-    List<Track> batchLoadTrack(String... path) throws TrackLoadException;
-    List<Track> batchLoadTrack(InputStream... stream) throws TrackLoadException;
-    List<Track> batchLoadTrack(URI... uri) throws TrackLoadException;
 
-
-    TrackMixer getMixer();
+    TrackMixer getTrackMixer();
     TrackPlayer getTrackPlayer(Track track);
 
     void addLoaderManager(TrackLoaderManager loader);
@@ -77,7 +74,9 @@ public interface AudioEngine extends AutoCloseable {
      */
     Optional<TrackLoaderManager> findLoaderFor(TrackFormat format);
 
-    Optional<TrackLoaderManager> getLoader(Class<? extends TrackLoaderManager> loader);
+    Optional<TrackLoaderManager> getTrackLoaderManager(Class<? extends TrackLoaderManager> loader);
+
+    void exportTrack(Track track, OutputStream outputStream);
 
     @Override
     void close();
