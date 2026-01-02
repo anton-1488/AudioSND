@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
@@ -24,7 +25,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     private TrackStatus status = TrackStatus.UNAVAILABLE;
     private final int chunkSize;
     private int currentCycle = 0;
-    private final int ms = 10000;
+    private final int ms = 1;
 
     private float speed = 1.0f;
     private float volume = 0.5f;
@@ -75,7 +76,10 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(true);
         setStatus(TrackStatus.PLAYING);
 
-        audioLoop();
+        Thread thread = new Thread(this::audioLoop, "audio-loop");
+        thread.setDaemon(true);
+        thread.setPriority(Thread.MAX_PRIORITY);
+        thread.start();
     }
 
     /**
@@ -249,12 +253,13 @@ public class NativeTrackPlayer implements TrackPlayer {
         final int limit = data.limit();
         log.info("Start playing");
 
-        audioDevice.setProvider(req -> {
+        while (isPlaying.get()) {
             int start = position.get();
             int rem = limit - start;
 
             if (start >= limit || rem <= 0) {
                 stop();
+                break;
             }
 
 
@@ -262,7 +267,9 @@ public class NativeTrackPlayer implements TrackPlayer {
             audioDevice.write(chunk);
 
             position.set(Math.min(start + chunkSize, limit));
-        });
+            LockSupport.parkNanos(700000);
+        }
+
         currentCycle++;
         log.info("Stop playing");
         setStatus(TrackStatus.STOPPED);

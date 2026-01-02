@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>implementation</artifactId>
+    <artifactId>examples</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -19,8 +19,20 @@
     <dependencies>
         <dependency>
             <groupId>org.plovdev</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>implementation</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.plovdev</groupId>
+            <artifactId>loaders</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.plovdev</groupId>
+            <artifactId>generator</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
+
 </project>

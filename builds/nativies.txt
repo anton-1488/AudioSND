@@ -1,0 +1,4 @@
+implementation/src/main/cpp/org/plovdev/audioengine/AudioEngine.cpp
+implementation/src/main/cpp/org/plovdev/audioengine/mixer/NativeTrackMixer.cpp
+implementation/src/main/cpp/org/plovdev/audioengine/devices/AudioDeviceManager.cpp
+implementation/src/main/cpp/org/plovdev/audioengine/devices/NativeOutputAudioDevice.cpp

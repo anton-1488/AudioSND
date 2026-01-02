@@ -1,0 +1,9 @@
+implementation/src/main/java/org/plovdev/audioengine/tracks/NativeTrackPlayer.java
+implementation/src/main/java/org/plovdev/audioengine/utils/TrackUtils.java
+implementation/src/main/java/org/plovdev/audioengine/NativeAudioEngine.java
+implementation/src/main/java/org/plovdev/audioengine/mixer/NativeTrackMixer.java
+implementation/src/main/java/org/plovdev/audioengine/devices/NativeInputAudioDevice.java
+implementation/src/main/java/org/plovdev/audioengine/devices/Microphone.java
+implementation/src/main/java/org/plovdev/audioengine/devices/ChunkProvider.java
+implementation/src/main/java/org/plovdev/audioengine/devices/AudioDeviceManager.java
+implementation/src/main/java/org/plovdev/audioengine/devices/NativeOutputAudioDevice.java

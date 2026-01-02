@@ -1,0 +1,5 @@
+generator/src/main/java/org/plovdev/audioengine/generator/WaveType.java
+generator/src/main/java/org/plovdev/audioengine/generator/Note.java
+generator/src/main/java/org/plovdev/audioengine/generator/TrackGeneratorHelper.java
+generator/src/main/java/org/plovdev/audioengine/generator/GeneratorConfig.java
+generator/src/main/java/org/plovdev/audioengine/generator/TrackGenerator.java

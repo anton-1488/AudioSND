@@ -7,13 +7,13 @@ package org.plovdev.audioengine.generator;
  * @param amplitude note volume
  */
 public record Note(float frequency, float amplitude, int octaveShift, int semitoneShift) {
-    public static Note C4 = ofFreq(261.63f);
-    public static Note D4 = ofFreq(293.66f);
-    public static Note E4 = ofFreq(329.63f);
-    public static Note F4 = ofFreq(349.23f);
-    public static Note G4 = ofFreq(392.00f);
-    public static Note A4 = ofFreq(440.00f);
-    public static Note B4 = ofFreq(492.88f);
+    public static Note C2 = ofFreq(261.63f);
+    public static Note D2 = ofFreq(293.66f);
+    public static Note E2 = ofFreq(329.63f);
+    public static Note F2 = ofFreq(349.23f);
+    public static Note G2 = ofFreq(392.00f);
+    public static Note A2 = ofFreq(440.00f);
+    public static Note B2 = ofFreq(492.88f);
 
 
 

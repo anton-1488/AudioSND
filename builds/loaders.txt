@@ -1,0 +1,13 @@
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/write/WavChunkWriter.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/write/WavTrackExporter.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackEncoder.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/read/WavChunkReader.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/read/WavParser.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackLoader.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackDecoder.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/struct/WavChunkId.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/struct/Chunk.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/chunks/FormatChunk.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/chunks/DataChunk.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackLoaderManager.java
+loaders/src/main/java/org/plovdev/audioengine/loaders/ExportUtils.java

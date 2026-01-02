@@ -16,6 +16,7 @@ import java.util.Objects;
  * @author Anton
  * @version 1.0
  */
+
 public record TrackFormat(String extension, int channels, int bitsPerSample, int sampleRate, boolean signed, ByteOrder byteOrder, AudioCodec audioCodec) {
     public enum AudioCodec {
         PCM8,       // 8-bit PCM

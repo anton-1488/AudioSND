@@ -118,14 +118,20 @@ public class TrackFormatUtils {
         }
     }
 
-    public static long calculateDurationMs(TrackFormat format, int size) {
-        long sampleRate = format.sampleRate(); // частота дискретизации (Гц)
-        long bitsPerSample = format.bitsPerSample(); // бит на сэмпл
-        long channels = format.channels(); // количество каналов
+    public static long calculateDurationMs(TrackFormat format, int sizeInBytes) {
+        long sampleRate = format.sampleRate();        // Гц (например, 44100)
+        long bitsPerSample = format.bitsPerSample();  // бит (например, 16)
+        long channels = format.channels();            // каналов (например, 2)
 
-        long bytesPerSecond = (sampleRate * bitsPerSample * channels) / 8;
+        // Байт в секунду = (сэмплов/сек) * (байт/сэмпл) * каналы
+        long bytesPerSecond = (sampleRate * (bitsPerSample / 8) * channels);
 
-        return (sampleRate * 1000) / bytesPerSecond;
+        if (bytesPerSecond == 0) {
+            return 0; // Защита от деления на ноль
+        }
+
+        // Миллисекунд = (байт * 1000) / (байт/сек)
+        return (sizeInBytes * 1000L) / bytesPerSecond;
     }
 
     public static int calculateChunkSizeInBytes(TrackFormat f, int ms) {
