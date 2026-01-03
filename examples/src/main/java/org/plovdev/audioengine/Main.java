@@ -11,25 +11,27 @@ import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine()) {
             TrackMixer mixer = new NativeTrackMixer();
+            mixer.setOutputFormat(WavTrackFormatFactory.wav16bitStereo44kHz());
+
             Track loaded = engine.loadTrack("testdata/48000/melody1.wav");
-            Track generated = TrackGenerator.generateSine(WavTrackFormatFactory.wav16bitStereo96kHz(), loaded.getDuration(), Note.C2);
+            Track generated = TrackGenerator.generateSine(WavTrackFormatFactory.wav16bitStereo44kHz(), Duration.ofSeconds(4), Note.C2);
 
             mixer.addTrack(loaded);
             mixer.addTrack(generated);
 
             Track mixed = mixer.doMixing();
 
-            System.out.println(mixed);
-
             engine.getTrackPlayer(mixed).play();
-
-            Thread.sleep(mixed.getDuration());
+            System.out.println(mixed.getDuration().toMillis());
+            Thread.sleep(loaded.getDuration().toMillis());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
