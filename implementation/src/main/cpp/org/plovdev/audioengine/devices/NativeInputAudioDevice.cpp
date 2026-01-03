@@ -295,6 +295,15 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevi
         if (status != noErr) {
             throw std::runtime_error("Failed to initialize audio unit");
         }
+
+        Float32 gain = 150.0;
+        status = AudioUnitSetParameter(deviceContext->audioUnit,
+                                      kHALOutputParam_Volume,
+                                      kAudioUnitScope_Input, // Важно: Scope Input для микрофона!
+                                      1, // Input bus
+                                      gain,
+                                      0);
+
         deviceContext->isInitialized = true;
 
         // Инициализируем буфер
