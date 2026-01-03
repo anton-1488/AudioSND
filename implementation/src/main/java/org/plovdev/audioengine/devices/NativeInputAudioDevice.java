@@ -17,7 +17,8 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     private volatile AudioDeviceStatus status = AudioDeviceStatus.UNAVAILABLE;
     private volatile boolean isInited = false;
 
-    private Runnable onStatusChanged = () -> {};
+    private Runnable onStatusChanged = () -> {
+    };
 
     public NativeInputAudioDevice(AudioDeviceInfo info) {
         this.info = info;
@@ -25,10 +26,9 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
 
     @Override
     public int read(ByteBuffer byteBuffer) {
-        status = RUNNING;
         checkForInited();
-        _read(byteBuffer);
-        return 0;
+        status = RUNNING;
+        return _read(byteBuffer);
     }
 
     /**
@@ -46,13 +46,13 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
 
         setStatus(OPENING);
         try {
-            _open(format);
+            _open(format, info);
+            isInited = true;
+            setStatus(OPENED);
         } catch (Throwable e) {
             setStatus(ERROR);
             throw new OpenAudioDeviceException("Fail to open audio device: " + e.getMessage());
         }
-        isInited = true;
-        setStatus(OPENED);
     }
 
     /**
@@ -96,10 +96,11 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         setStatus(CLOSING);
         try {
             _close();
+            isInited = false;
             setStatus(CLOSED);
         } catch (Throwable e) {
             status = DESTROYED;
-            _destroy();
+            throw new CloseAudioDeviceException("Failed to close audio device: " + e.getMessage());
         }
     }
 
@@ -108,9 +109,12 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     }
 
     private void setStatus(AudioDeviceStatus status) {
-        this.status = status;
-        onStatusChanged.run();
+        if (this.status != status) {
+            this.status = status;
+            onStatusChanged.run();
+        }
     }
+
     private void checkForInited() {
         if (!isInited) {
             throw new AudioDeviceException("Audio device not opened!");
@@ -130,9 +134,9 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         return info.toString();
     }
 
-    private native void _read(ByteBuffer buffer);
+    private native void _open(TrackFormat format, AudioDeviceInfo info);
 
-    private native void _open(TrackFormat format);
+    private native int _read(ByteBuffer buffer);
+
     private native void _close();
-    private native void _destroy();
 }

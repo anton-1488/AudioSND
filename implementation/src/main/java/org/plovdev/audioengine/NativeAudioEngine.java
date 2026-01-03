@@ -5,6 +5,7 @@ import org.plovdev.audioengine.devices.AudioDeviceManager;
 import org.plovdev.audioengine.devices.InputAudioDevice;
 import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
+import org.plovdev.audioengine.exceptions.TrackExportException;
 import org.plovdev.audioengine.exceptions.TrackLoadException;
 import org.plovdev.audioengine.loaders.TrackExporter;
 import org.plovdev.audioengine.loaders.TrackLoader;
@@ -220,10 +221,15 @@ public class NativeAudioEngine implements AudioEngine {
 
     @Override
     public void exportTrack(Track track, OutputStream outputStream) {
-        findLoaderFor(track.getFormat()).ifPresent(trackLoaderManager -> {
+        Optional<TrackLoaderManager> exporterOptional = findLoaderFor(track.getFormat());
+
+        if (exporterOptional.isPresent()) {
+            TrackLoaderManager trackLoaderManager = exporterOptional.get();
             TrackExporter exporter = trackLoaderManager.getTrackExporter();
             exporter.save(track, outputStream);
-        });
+        } else {
+            throw new TrackExportException("Cann't find situable exporter");
+        }
     }
 
     //====== Natives ======\\

@@ -9,18 +9,18 @@ extern "C" {
 #endif
 /*
  * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
- * Method:    _read
- * Signature: (Ljava/nio/ByteBuffer;)V
+ * Method:    _open
+ * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V
  */
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1read
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
- * Method:    _open
- * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;)V
+ * Method:    _read
+ * Signature: (Ljava/nio/ByteBuffer;)I
  */
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open
+JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1read
   (JNIEnv *, jobject, jobject);
 
 /*
@@ -29,14 +29,6 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevi
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1close
-  (JNIEnv *, jobject);
-
-/*
- * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
- * Method:    _destroy
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1destroy
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

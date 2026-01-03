@@ -1,801 +1,309 @@
-#include <iostream>
 #include <jni.h>
 #include <vector>
-#include <cstring>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <memory>
-#include <mutex>
-#include <atomic>
-#include <immintrin.h>
+#include <stdexcept>
 
-#include "org_plovdev_audioengine_mixer_NativeTrackMixer.h"
-
-using namespace std;
-
-// Включить SIMD оптимизации если доступно
-#ifdef __AVX2__
-#define USE_SIMD 1
-#else
-#define USE_SIMD 0
-#endif
-
-// Структура для хранения аудиоданных
-struct AudioData {
-    vector<float> samples;      // интерливированные семплы [L,R,L,R,...]
+struct TrackData {
+    std::vector<float> samples; // нормализуем в float [-1.0, 1.0]
     int channels;
     int sampleRate;
-    size_t frameCount;          // количество фреймов (семплов на канал)
-
-    AudioData() : channels(0), sampleRate(0), frameCount(0) {}
-
-    // Оптимизированный конструктор перемещения
-    AudioData(AudioData&& other) noexcept
-        : samples(move(other.samples))
-        , channels(other.channels)
-        , sampleRate(other.sampleRate)
-        , frameCount(other.frameCount) {
-        other.channels = 0;
-        other.sampleRate = 0;
-        other.frameCount = 0;
-    }
-
-    AudioData& operator=(AudioData&& other) noexcept {
-        if (this != &other) {
-            samples = move(other.samples);
-            channels = other.channels;
-            sampleRate = other.sampleRate;
-            frameCount = other.frameCount;
-            other.channels = 0;
-            other.sampleRate = 0;
-            other.frameCount = 0;
-        }
-        return *this;
-    }
-
-    // Запрещаем копирование для избежания накладных расходов
-    AudioData(const AudioData&) = delete;
-    AudioData& operator=(const AudioData&) = delete;
 };
 
-// Кэш для JNI классов и методов
-struct JNICache {
-    jclass trackClass = nullptr;
-    jclass formatClass = nullptr;
-    jclass durationClass = nullptr;
-    jclass listClass = nullptr;
-    jclass metadataClass = nullptr;
-    jclass exceptionClass = nullptr;
-
-    jmethodID formatChannels = nullptr;
-    jmethodID formatSampleRate = nullptr;
-    jmethodID formatBits = nullptr;
-    jmethodID formatSigned = nullptr;
-
-    jmethodID listSize = nullptr;
-    jmethodID listGet = nullptr;
-
-    jmethodID trackGetData = nullptr;
-    jmethodID trackGetFormat = nullptr;
-    jmethodID trackGetDuration = nullptr;
-    jmethodID trackConstructor = nullptr;
-
-    jmethodID durationToMillis = nullptr;
-    jmethodID durationOfMillis = nullptr;
-
-    jmethodID exceptionConstructor = nullptr;
-
-    atomic<bool> initialized{false};
-    mutex initMutex;
-
-    ~JNICache() {
-        // JVM автоматически очистит глобальные ссылки при выгрузке нативной библиотеки
-    }
-};
-
-static JNICache gCache;
-
-// Инициализация кэша
-void initCache(JNIEnv* env) {
-    if (gCache.initialized.load()) return;
-
-    lock_guard<mutex> lock(gCache.initMutex);
-    if (gCache.initialized.load()) return;
-
-    // Кэшируем классы как глобальные ссылки
-    jclass localTrackClass = env->FindClass("org/plovdev/audioengine/tracks/Track");
-    jclass localFormatClass = env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat");
-    jclass localDurationClass = env->FindClass("java/time/Duration");
-    jclass localListClass = env->FindClass("java/util/List");
-    jclass localMetadataClass = env->FindClass("org/plovdev/audioengine/tracks/meta/TrackMetadata");
-    jclass localExceptionClass = env->FindClass("org/plovdev/audioengine/exceptions/MixingException");
-
-    if (!localTrackClass || !localFormatClass || !localDurationClass ||
-        !localListClass || !localMetadataClass || !localExceptionClass) {
-        // Не удалось найти классы
-        return;
-    }
-
-    gCache.trackClass = static_cast<jclass>(env->NewGlobalRef(localTrackClass));
-    gCache.formatClass = static_cast<jclass>(env->NewGlobalRef(localFormatClass));
-    gCache.durationClass = static_cast<jclass>(env->NewGlobalRef(localDurationClass));
-    gCache.listClass = static_cast<jclass>(env->NewGlobalRef(localListClass));
-    gCache.metadataClass = static_cast<jclass>(env->NewGlobalRef(localMetadataClass));
-    gCache.exceptionClass = static_cast<jclass>(env->NewGlobalRef(localExceptionClass));
-
-    // Кэшируем методы
-    gCache.formatChannels = env->GetMethodID(gCache.formatClass, "channels", "()I");
-    gCache.formatSampleRate = env->GetMethodID(gCache.formatClass, "sampleRate", "()I");
-    gCache.formatBits = env->GetMethodID(gCache.formatClass, "bitsPerSample", "()I");
-    gCache.formatSigned = env->GetMethodID(gCache.formatClass, "signed", "()Z");
-
-    gCache.listSize = env->GetMethodID(gCache.listClass, "size", "()I");
-    gCache.listGet = env->GetMethodID(gCache.listClass, "get", "(I)Ljava/lang/Object;");
-
-    gCache.trackGetData = env->GetMethodID(gCache.trackClass, "getTrackData", "()Ljava/nio/ByteBuffer;");
-    gCache.trackGetFormat = env->GetMethodID(gCache.trackClass, "getFormat",
-        "()Lorg/plovdev/audioengine/tracks/format/TrackFormat;");
-    gCache.trackGetDuration = env->GetMethodID(gCache.trackClass, "getDuration",
-        "()Ljava/time/Duration;");
-    gCache.trackConstructor = env->GetMethodID(gCache.trackClass, "<init>",
-        "(Ljava/nio/ByteBuffer;Ljava/time/Duration;Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/tracks/meta/TrackMetadata;)V");
-
-    gCache.durationToMillis = env->GetMethodID(gCache.durationClass, "toMillis", "()J");
-    gCache.durationOfMillis = env->GetStaticMethodID(gCache.durationClass, "ofMillis",
-        "(J)Ljava/time/Duration;");
-
-    gCache.exceptionConstructor = env->GetMethodID(gCache.exceptionClass, "<init>",
-        "(Ljava/lang/String;)V");
-
-    // Очищаем локальные ссылки
-    env->DeleteLocalRef(localTrackClass);
-    env->DeleteLocalRef(localFormatClass);
-    env->DeleteLocalRef(localDurationClass);
-    env->DeleteLocalRef(localListClass);
-    env->DeleteLocalRef(localMetadataClass);
-    env->DeleteLocalRef(localExceptionClass);
-
-    gCache.initialized.store(true);
-}
-
-// RAII обертка для локального фрейма JNI
-class JNILocalFrame {
-    JNIEnv* env;
-public:
-    JNILocalFrame(JNIEnv* e, int capacity = 32) : env(e) {
-        env->PushLocalFrame(capacity);
-    }
-    ~JNILocalFrame() {
-        env->PopLocalFrame(nullptr);
-    }
-};
-
-void throwException(JNIEnv* env, const char* message) {
-    if (!gCache.initialized.load()) {
-        initCache(env);
-    }
-
-    if (gCache.exceptionClass != nullptr) {
-        jstring jMessage = env->NewStringUTF(message);
-        jobject exception = env->NewObject(gCache.exceptionClass,
-                                          gCache.exceptionConstructor, jMessage);
-        env->Throw(static_cast<jthrowable>(exception));
-        env->DeleteLocalRef(jMessage);
-        env->DeleteLocalRef(exception);
+// Конвертация PCM в float
+float pcmToFloat(const uint8_t* data, int bitsPerSample, int channel, int channels) {
+    if (bitsPerSample == 8) {
+        int8_t sample = ((int8_t*)data)[channel];
+        return sample / 128.0f;
+    } else if (bitsPerSample == 16) {
+        int16_t* ptr = (int16_t*)data;
+        return ptr[channel] / 32768.0f;
+    } else if (bitsPerSample == 24) {
+        const uint8_t* ptr = data + channel * 3;
+        // Little-endian для 24-бит
+        int32_t sample = (ptr[0] << 8) | (ptr[1] << 16) | (ptr[2] << 24);
+        sample >>= 8; // Приводим к signed 24-bit
+        return sample / 8388608.0f;
+    } else if (bitsPerSample == 32) {
+        int32_t* ptr = (int32_t*)data;
+        return ptr[channel] / 2147483648.0f;
+    } else {
+        return 0.0f;
     }
 }
 
-// Оптимизированная SIMD функция сложения
-#if USE_SIMD
-void addSamplesSIMD(float* dst, const float* src, size_t count) {
-    size_t i = 0;
-
-    // Обрабатываем по 8 семплов за раз (AVX)
-    for (; i + 7 < count; i += 8) {
-        __m256 dstVec = _mm256_loadu_ps(&dst[i]);
-        __m256 srcVec = _mm256_loadu_ps(&src[i]);
-        __m256 result = _mm256_add_ps(dstVec, srcVec);
-        _mm256_storeu_ps(&dst[i], result);
-    }
-
-    // Обрабатываем по 4 семпла за раз (SSE)
-    for (; i + 3 < count; i += 4) {
-        __m128 dstVec = _mm_loadu_ps(&dst[i]);
-        __m128 srcVec = _mm_loadu_ps(&src[i]);
-        __m128 result = _mm_add_ps(dstVec, srcVec);
-        _mm_storeu_ps(&dst[i], result);
-    }
-
-    // Оставшиеся семплы
-    for (; i < count; i++) {
-        dst[i] += src[i];
-    }
-}
-#endif
-
-// Базовая функция сложения (без SIMD)
-void addSamplesBasic(float* dst, const float* src, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        dst[i] += src[i];
+// Конвертация float в PCM
+void floatToPcm(float sample, uint8_t* out, int bitsPerSample) {
+    sample = std::clamp(sample, -1.0f, 1.0f);
+    if (bitsPerSample == 8) {
+        out[0] = (uint8_t)((int8_t)(sample * 127));
+    } else if (bitsPerSample == 16) {
+        int16_t* ptr = (int16_t*)out;
+        ptr[0] = (int16_t)(sample * 32767);
+    } else if (bitsPerSample == 24) {
+        int32_t val = (int32_t)(sample * 8388607);
+        // Little-endian
+        out[0] = val & 0xFF;
+        out[1] = (val >> 8) & 0xFF;
+        out[2] = (val >> 16) & 0xFF;
+    } else if (bitsPerSample == 32) {
+        int32_t* ptr = (int32_t*)out;
+        ptr[0] = (int32_t)(sample * 2147483647);
     }
 }
 
-// Векторизованная функция сложения
-void addSamples(float* dst, const float* src, size_t count) {
-#if USE_SIMD
-    addSamplesSIMD(dst, src, count);
-#else
-    addSamplesBasic(dst, src, count);
-#endif
-}
+// Безопасный ресемплинг
+std::vector<float> resample(const std::vector<float>& input, int inRate, int outRate, int channels) {
+    if (inRate == outRate || input.empty()) return input;
 
-// Конвертация байтов в float
-vector<float> convertToFloat(const void* data, size_t byteCount,
-                             int bitsPerSample, int channels, bool isSigned) {
-    if (!data || byteCount == 0) {
-        return {};
-    }
+    size_t inFrames = input.size() / channels;
+    if (inFrames == 0) return {};
 
-    size_t sampleCount = byteCount / (bitsPerSample / 8);
-    if (sampleCount == 0) {
-        return {};
-    }
+    size_t outFrames = inFrames * outRate / inRate;
+    size_t outSize = outFrames * channels;
 
-    vector<float> result;
-    result.reserve(sampleCount);
+    std::vector<float> out(outSize, 0.0f);
 
-    if (bitsPerSample == 16 && isSigned) {
-        const int16_t* src = static_cast<const int16_t*>(data);
-        const float scale = 1.0f / 32768.0f;
+    for (size_t i = 0; i < outFrames; ++i) {
+        for (int ch = 0; ch < channels; ++ch) {
+            float pos = (float)i * inRate / outRate;
+            int idx = (int)pos;
 
-        for (size_t i = 0; i < sampleCount; i++) {
-            result.push_back(src[i] * scale);
-        }
-    }
-    else if (bitsPerSample == 32) {
-        const float* src = static_cast<const float*>(data);
-        result.assign(src, src + sampleCount);
-    }
-    else if (bitsPerSample == 8 && !isSigned) {
-        const uint8_t* src = static_cast<const uint8_t*>(data);
-        const float scale = 1.0f / 128.0f;
-        const float offset = -1.0f;
-
-        for (size_t i = 0; i < sampleCount; i++) {
-            result.push_back(src[i] * scale + offset);
-        }
-    }
-    else if (bitsPerSample == 24) {
-        // Поддержка 24-bit формата
-        const uint8_t* src = static_cast<const uint8_t*>(data);
-        const float scale = 1.0f / 8388608.0f; // 2^23
-
-        for (size_t i = 0; i < sampleCount; i++) {
-            int32_t sample = 0;
-            // Little endian (наиболее распространенный)
-            sample = (src[i * 3] << 8) | (src[i * 3 + 1] << 16) | (src[i * 3 + 2] << 24);
-            sample >>= 8; // Приводим к signed 24-bit
-
-            result.push_back(sample * scale);
-        }
-    }
-
-    return result;
-}
-
-// Конвертация float в выходной формат
-vector<uint8_t> convertFromFloat(const vector<float>& samples,
-                                 int bitsPerSample, bool isSigned) {
-    if (samples.empty()) {
-        return {};
-    }
-
-    size_t sampleCount = samples.size();
-    vector<uint8_t> result(sampleCount * (bitsPerSample / 8));
-
-    if (bitsPerSample == 16 && isSigned) {
-        int16_t* dst = reinterpret_cast<int16_t*>(result.data());
-        const float scale = 32767.0f;
-
-        for (size_t i = 0; i < sampleCount; i++) {
-            float clipped = max(-1.0f, min(1.0f, samples[i]));
-            dst[i] = static_cast<int16_t>(clipped * scale);
-        }
-    }
-    else if (bitsPerSample == 32) {
-        float* dst = reinterpret_cast<float*>(result.data());
-        copy(samples.begin(), samples.end(), dst);
-    }
-    else if (bitsPerSample == 8 && !isSigned) {
-        uint8_t* dst = result.data();
-        const float scale = 128.0f;
-        const float offset = 128.0f;
-
-        for (size_t i = 0; i < sampleCount; i++) {
-            float clipped = max(-1.0f, min(1.0f, samples[i]));
-            dst[i] = static_cast<uint8_t>(clipped * scale + offset);
-        }
-    }
-
-    return result;
-}
-
-// Оптимизированный ресамплинг с линейной интерполяцией
-// Исправленный ресамплинг с линейной интерполяцией
-vector<float> resample(const vector<float>& input, int inputRate,
-                       int outputRate, int channels) {
-    if (inputRate == outputRate || input.empty()) {
-        return input;
-    }
-
-    // Проверка параметров
-    if (inputRate <= 0 || outputRate <= 0 || channels <= 0) {
-        return {};
-    }
-
-    size_t inputFrames = input.size() / channels;
-    if (inputFrames == 0 || input.size() % channels != 0) {
-        return {};
-    }
-
-    // Более точный расчет соотношения и выходной длины
-    double ratio = static_cast<double>(inputRate) / outputRate;
-
-    // Правильный расчет выходной длины: выходная_длина = входная_длина * (вых_частота / вход_частота)
-    size_t outputFrames = static_cast<size_t>(
-        ceil(static_cast<double>(inputFrames) * outputRate / inputRate));
-
-    if (outputFrames == 0) {
-        outputFrames = 1;
-    }
-
-    vector<float> result(outputFrames * channels);
-
-    // Обработка моно
-    if (channels == 1) {
-        for (size_t i = 0; i < outputFrames; i++) {
-            // Важно: используем double для точности при больших значениях
-            double pos = i * ratio;
-
-            // Граничные случаи
-            if (pos >= inputFrames - 1) {
-                result[i] = input[inputFrames - 1];
-                continue;
-            }
-
-            size_t idx1 = static_cast<size_t>(floor(pos));
-            size_t idx2 = idx1 + 1;
-
-            if (idx2 >= inputFrames) {
-                idx2 = inputFrames - 1;
-            }
-
-            double frac = pos - idx1;
-            double sample1 = input[idx1];
-            double sample2 = input[idx2];
-
-            result[i] = static_cast<float>(sample1 * (1.0 - frac) + sample2 * frac);
-        }
-    }
-    // Обработка стерео
-    else if (channels == 2) {
-        for (size_t i = 0; i < outputFrames; i++) {
-            double pos = i * ratio;
-
-            if (pos >= inputFrames - 1) {
-                size_t lastFrame = inputFrames - 1;
-                result[i * 2] = input[lastFrame * 2];
-                result[i * 2 + 1] = input[lastFrame * 2 + 1];
-                continue;
-            }
-
-            size_t idx1 = static_cast<size_t>(floor(pos));
-            size_t idx2 = idx1 + 1;
-
-            if (idx2 >= inputFrames) {
-                idx2 = inputFrames - 1;
-            }
-
-            double frac = pos - idx1;
-            double invFrac = 1.0 - frac;
-
-            size_t inIdx1 = idx1 * 2;
-            size_t inIdx2 = idx2 * 2;
-
-            result[i * 2] = static_cast<float>(
-                input[inIdx1] * invFrac + input[inIdx2] * frac);
-            result[i * 2 + 1] = static_cast<float>(
-                input[inIdx1 + 1] * invFrac + input[inIdx2 + 1] * frac);
-        }
-    }
-    // Общий случай
-    else {
-        for (size_t i = 0; i < outputFrames; i++) {
-            double pos = i * ratio;
-
-            if (pos >= inputFrames - 1) {
-                size_t lastFrame = inputFrames - 1;
-                for (int ch = 0; ch < channels; ch++) {
-                    result[i * channels + ch] = input[lastFrame * channels + ch];
+            if (idx >= (int)inFrames - 1) {
+                // За пределами - используем последний доступный сэмпл
+                int lastIdx = std::min((int)inFrames - 1, idx) * channels + ch;
+                if (lastIdx < (int)input.size()) {
+                    out[i * channels + ch] = input[lastIdx];
                 }
                 continue;
             }
 
-            size_t idx1 = static_cast<size_t>(floor(pos));
-            size_t idx2 = idx1 + 1;
+            float frac = pos - idx;
+            int idx0 = idx * channels + ch;
+            int idx1 = (idx + 1) * channels + ch;
 
-            if (idx2 >= inputFrames) {
-                idx2 = inputFrames - 1;
-            }
-
-            double frac = pos - idx1;
-            double invFrac = 1.0 - frac;
-
-            for (int ch = 0; ch < channels; ch++) {
-                result[i * channels + ch] = static_cast<float>(
-                    input[idx1 * channels + ch] * invFrac +
-                    input[idx2 * channels + ch] * frac);
+            if (idx0 < (int)input.size() && idx1 < (int)input.size()) {
+                out[i * channels + ch] = input[idx0] + frac * (input[idx1] - input[idx0]);
             }
         }
     }
-
-    return result;
+    return out;
 }
 
-// Конвертация каналов
-vector<float> convertChannels(const vector<float>& input,
-                             int inputChannels, int outputChannels) {
-    if (inputChannels == outputChannels || input.empty()) {
-        return input;
-    }
+// Безопасное микширование
+std::vector<float> mixTracks(const std::vector<TrackData>& tracks, int outChannels, int outSampleRate) {
+    if (tracks.empty()) return {};
 
-    size_t inputFrames = input.size() / inputChannels;
-    vector<float> result(inputFrames * outputChannels);
-
-    if (inputChannels == 1 && outputChannels == 2) {
-        // Моно -> стерео
-        for (size_t i = 0; i < inputFrames; i++) {
-            result[i * 2] = input[i];
-            result[i * 2 + 1] = input[i];
-        }
-    }
-    else if (inputChannels == 2 && outputChannels == 1) {
-        // Стерео -> моно (усредняем)
-        for (size_t i = 0; i < inputFrames; i++) {
-            result[i] = (input[i * 2] + input[i * 2 + 1]) * 0.5f;
-        }
-    }
-
-    return result;
-}
-
-// Находит максимальную длину среди всех треков
-size_t findMaxFrames(const vector<AudioData>& tracks,
-                     int outputChannels, int outputSampleRate) {
+    // Находим максимальную длину в кадрах (frames)
     size_t maxFrames = 0;
+    for (auto& t : tracks) {
+        if (t.samples.empty() || t.channels == 0) continue;
 
-    for (const auto& track : tracks) {
-        size_t trackFrames = track.frameCount;
-
-        // Учитываем ресамплинг при определении длины
-        if (track.sampleRate != outputSampleRate) {
-            float ratio = static_cast<float>(track.sampleRate) / outputSampleRate;
-            trackFrames = static_cast<size_t>(trackFrames / ratio + 0.5f);
-        }
-
-        maxFrames = max(maxFrames, trackFrames);
+        size_t frames = t.samples.size() / t.channels;
+        size_t resampledFrames = frames * outSampleRate / t.sampleRate;
+        maxFrames = std::max(maxFrames, resampledFrames);
     }
 
-    return maxFrames;
-}
+    if (maxFrames == 0) return {};
 
-// Основная функция микширования
-AudioData mixTracks(const vector<AudioData>& tracks,
-                   int outputChannels, int outputSampleRate) {
-    // Проверка параметров
-    if (outputChannels <= 0 || outputSampleRate <= 0) {
-        return AudioData();
-    }
+    size_t maxLen = maxFrames * outChannels;
+    std::vector<float> mix(maxLen, 0.0f);
 
-    if (tracks.empty()) {
-        return AudioData();
-    }
+    for (auto& t : tracks) {
+        if (t.samples.empty() || t.channels == 0) continue;
 
-    // Находим максимальную длину
-    size_t maxFrames = findMaxFrames(tracks, outputChannels, outputSampleRate);
+        std::vector<float> resampled = resample(t.samples, t.sampleRate, outSampleRate, t.channels);
 
-    if (maxFrames == 0) {
-        return AudioData();
-    }
+        // Адаптация количества каналов
+        if (t.channels != outChannels) {
+            std::vector<float> adapted(maxLen, 0.0f);
+            size_t frames = std::min(resampled.size() / t.channels, maxFrames);
 
-    size_t totalSamples = maxFrames * outputChannels;
-
-    AudioData result;
-    result.channels = outputChannels;
-    result.sampleRate = outputSampleRate;
-    result.frameCount = maxFrames;
-    result.samples.resize(totalSamples, 0.0f);
-
-    // Микшируем все треки
-    for (const auto& track : tracks) {
-        if (track.samples.empty()) {
-            continue;
-        }
-
-        vector<float> processed = track.samples;
-
-        // Ресамплинг если нужно
-        if (track.sampleRate != outputSampleRate) {
-            processed = resample(processed, track.sampleRate,
-                                outputSampleRate, track.channels);
-        }
-
-        // Конвертация каналов если нужно
-        if (track.channels != outputChannels) {
-            processed = convertChannels(processed, track.channels, outputChannels);
-        }
-
-        // Добавляем к результату
-        size_t samplesToMix = min(processed.size(), totalSamples);
-        addSamples(result.samples.data(), processed.data(), samplesToMix);
-    }
-
-    // Нормализация с умягчением (soft knee)
-    float maxSample = 0.001f; // начальное значение для избежания деления на 0
-
-    // Находим максимальное абсолютное значение
-    for (float sample : result.samples) {
-        float absSample = fabsf(sample);
-        if (absSample > maxSample) {
-            maxSample = absSample;
-        }
-    }
-
-    // Применяем умягчение если необходимо
-    if (maxSample > 1.0f) {
-        float threshold = 0.9f;
-        float kneeWidth = 0.1f;
-
-        if (maxSample > threshold + kneeWidth) {
-            // Жесткое ограничение для сильного перегруза
-            float gain = threshold / maxSample;
-            for (float& sample : result.samples) {
-                sample *= gain;
-            }
-        }
-        else if (maxSample > threshold - kneeWidth) {
-            // Умягчение в зоне knee
-            float kneeStart = threshold - kneeWidth;
-            float kneeEnd = threshold + kneeWidth;
-
-            for (float& sample : result.samples) {
-                float absSample = fabsf(sample);
-                if (absSample > kneeStart) {
-                    float x = (absSample - kneeStart) / (2.0f * kneeWidth);
-                    float compression = 1.0f - (1.0f - threshold / maxSample) * x;
-                    sample *= compression;
+            for (size_t i = 0; i < frames; ++i) {
+                for (int ch = 0; ch < outChannels; ++ch) {
+                    int srcCh = (outChannels == 1) ? 0 : std::min(ch, t.channels-1);
+                    int srcIdx = i * t.channels + srcCh;
+                    if (srcIdx < (int)resampled.size()) {
+                        adapted[i * outChannels + ch] = resampled[srcIdx];
+                    }
                 }
             }
+            resampled = std::move(adapted);
         }
-        // Если maxSample <= 1.0f, нормализация не нужна
+
+        // Сложение с проверкой границ
+        size_t mixSize = std::min(mix.size(), resampled.size());
+        for (size_t i = 0; i < mixSize; ++i) {
+            mix[i] += resampled[i];
+        }
     }
 
-    return result;
+    // Нормализация
+    float maxAmp = 0.01f; // минимальное значение для избежания деления на 0
+    for (auto v : mix) {
+        maxAmp = std::max(maxAmp, std::abs(v));
+    }
+    if (maxAmp > 1.0f) {
+        for (auto &v : mix) v /= maxAmp;
+    }
+
+    return mix;
 }
 
-// Создание Java Track объекта
-jobject createJavaTrack(JNIEnv* env, const vector<uint8_t>& data,
-                       jobject outputFormat, long durationMillis) {
-    if (!gCache.initialized.load()) {
-        initCache(env);
-    }
+// JNI wrapper
+extern "C"
+JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1doMixing(
+    JNIEnv* env, jobject obj, jobject trackList, jobject formatObj) {
 
-    JNILocalFrame frame(env, 8); // Создаем локальный фрейм для автоматического очищения
-
-    try {
-        // 1. Создаем ByteBuffer
-        jobject byteBuffer = env->NewDirectByteBuffer(
-            const_cast<uint8_t*>(data.data()),
-            static_cast<jlong>(data.size())
-        );
-
-        if (!byteBuffer) {
-            throwException(env, "Failed to create ByteBuffer");
-            return nullptr;
-        }
-
-        // 2. Создаем Duration
-        jobject duration = env->CallStaticObjectMethod(
-            gCache.durationClass, gCache.durationOfMillis,
-            static_cast<jlong>(durationMillis));
-
-        if (!duration) {
-            throwException(env, "Failed to create Duration");
-            return nullptr;
-        }
-
-        // 3. Создаем TrackMetadata
-        jobject metadata = env->NewObject(gCache.metadataClass,
-            env->GetMethodID(gCache.metadataClass, "<init>", "()V"));
-
-        if (!metadata) {
-            throwException(env, "Failed to create TrackMetadata");
-            return nullptr;
-        }
-
-        // 4. Создаем Track
-        jobject track = env->NewObject(gCache.trackClass, gCache.trackConstructor,
-            byteBuffer, duration, outputFormat, metadata);
-
-        // Объекты будут автоматически удалены при выходе из фрейма
-        return track ? env->NewLocalRef(track) : nullptr;
-
-    } catch (...) {
-        throwException(env, "Failed to create Java Track object");
+    // Проверка входных параметров
+    if (!env || !trackList || !formatObj) {
         return nullptr;
     }
-}
 
-extern "C" {
-    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1doMixing(
-        JNIEnv* env, jobject jobj, jobject mixingTracks, jobject outputFormat) {
+    try {
+        jclass trackCls = env->FindClass("org/plovdev/audioengine/tracks/Track");
+        if (!trackCls) {
+            env->ThrowNew(env->FindClass("java/lang/ClassNotFoundException"),
+                         "Track class not found");
+            return nullptr;
+        }
 
-        // Инициализируем кэш если нужно
-        if (!gCache.initialized.load()) {
-            initCache(env);
-            if (!gCache.initialized.load()) {
-                throwException(env, "Failed to initialize JNI cache");
-                return nullptr;
+        jmethodID getTrackData = env->GetMethodID(trackCls, "getTrackData", "()Ljava/nio/ByteBuffer;");
+        jmethodID getFormat = env->GetMethodID(trackCls, "getFormat", "()Lorg/plovdev/audioengine/tracks/format/TrackFormat;");
+
+        jclass formatCls = env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat");
+        if (!formatCls) {
+            env->ThrowNew(env->FindClass("java/lang/ClassNotFoundException"),
+                         "TrackFormat class not found");
+            return nullptr;
+        }
+
+        jmethodID getChannels = env->GetMethodID(formatCls, "channels", "()I");
+        jmethodID getSampleRate = env->GetMethodID(formatCls, "sampleRate", "()I");
+        jmethodID getBitsPerSample = env->GetMethodID(formatCls, "bitsPerSample", "()I");
+
+        jclass listCls = env->GetObjectClass(trackList);
+        jmethodID sizeID = env->GetMethodID(listCls, "size", "()I");
+        jmethodID getID = env->GetMethodID(listCls, "get", "(I)Ljava/lang/Object;");
+
+        int listSize = env->CallIntMethod(trackList, sizeID);
+        if (listSize <= 0) {
+            env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"),
+                         "Empty track list");
+            return nullptr;
+        }
+
+        std::vector<TrackData> tracks;
+        tracks.reserve(listSize);
+
+        for (int i = 0; i < listSize; ++i) {
+            jobject track = env->CallObjectMethod(trackList, getID, i);
+            if (!track) continue;
+
+            jobject buffer = env->CallObjectMethod(track, getTrackData);
+            if (!buffer) continue;
+
+            uint8_t* bufPtr = (uint8_t*)env->GetDirectBufferAddress(buffer);
+            jlong bufSize = env->GetDirectBufferCapacity(buffer);
+
+            if (!bufPtr || bufSize <= 0) continue;
+
+            jobject fmt = env->CallObjectMethod(track, getFormat);
+            if (!fmt) continue;
+
+            int ch = env->CallIntMethod(fmt, getChannels);
+            int rate = env->CallIntMethod(fmt, getSampleRate);
+            int bps = env->CallIntMethod(fmt, getBitsPerSample);
+
+            if (ch <= 0 || rate <= 0 || bps <= 0) continue;
+
+            std::vector<float> samples;
+            int bytesPerFrame = (bps * ch + 7) / 8; // байт на кадр
+
+            for (jlong j = 0; j < bufSize; j += bytesPerFrame) {
+                for (int c = 0; c < ch; ++c) {
+                    samples.push_back(pcmToFloat(bufPtr + j, bps, c, ch));
+                }
+            }
+
+            if (!samples.empty()) {
+                tracks.push_back({samples, ch, rate});
             }
         }
 
-        // Используем RAII для управления локальными ссылками
-        JNILocalFrame frame(env, 64);
-
-        try {
-            // 1. Получаем параметры выходного формата
-            int outputChannels = env->CallIntMethod(outputFormat, gCache.formatChannels);
-            int outputSampleRate = env->CallIntMethod(outputFormat, gCache.formatSampleRate);
-            int outputBitsPerSample = env->CallIntMethod(outputFormat, gCache.formatBits);
-            bool outputSigned = env->CallBooleanMethod(outputFormat, gCache.formatSigned);
-
-            // Проверка параметров
-            if (outputChannels <= 0 || outputSampleRate <= 0 ||
-                (outputBitsPerSample != 8 && outputBitsPerSample != 16 &&
-                 outputBitsPerSample != 24 && outputBitsPerSample != 32)) {
-                throwException(env, "Invalid output format parameters");
-                return nullptr;
-            }
-
-            // 2. Получаем список треков
-            jint trackCount = env->CallIntMethod(mixingTracks, gCache.listSize);
-
-            if (trackCount == 0) {
-                throwException(env, "Track list is empty");
-                return nullptr;
-            }
-
-            // 3. Собираем данные всех треков
-            vector<AudioData> tracks;
-            tracks.reserve(trackCount);
-
-            for (jint i = 0; i < trackCount; i++) {
-                jobject track = env->CallObjectMethod(mixingTracks, gCache.listGet, i);
-                if (!track) {
-                    continue;
-                }
-
-                // Получаем ByteBuffer с данными
-                jobject byteBuffer = env->CallObjectMethod(track, gCache.trackGetData);
-                if (!byteBuffer) {
-                    env->DeleteLocalRef(track);
-                    continue;
-                }
-
-                void* bufferPtr = env->GetDirectBufferAddress(byteBuffer);
-                jlong bufferSize = env->GetDirectBufferCapacity(byteBuffer);
-
-                if (!bufferPtr || bufferSize <= 0) {
-                    env->DeleteLocalRef(byteBuffer);
-                    env->DeleteLocalRef(track);
-                    continue;
-                }
-
-                // Получаем формат трека
-                jobject trackFormat = env->CallObjectMethod(track, gCache.trackGetFormat);
-                if (!trackFormat) {
-                    env->DeleteLocalRef(byteBuffer);
-                    env->DeleteLocalRef(track);
-                    continue;
-                }
-
-                int channels = env->CallIntMethod(trackFormat, gCache.formatChannels);
-                int sampleRate = env->CallIntMethod(trackFormat, gCache.formatSampleRate);
-                int bitsPerSample = env->CallIntMethod(trackFormat, gCache.formatBits);
-                bool isSigned = env->CallBooleanMethod(trackFormat, gCache.formatSigned);
-
-                // Проверка формата трека
-                if (channels <= 0 || sampleRate <= 0 ||
-                    (bitsPerSample != 8 && bitsPerSample != 16 &&
-                     bitsPerSample != 24 && bitsPerSample != 32)) {
-                    env->DeleteLocalRef(trackFormat);
-                    env->DeleteLocalRef(byteBuffer);
-                    env->DeleteLocalRef(track);
-                    continue;
-                }
-
-                // Конвертируем в float
-                vector<float> floatSamples = convertToFloat(
-                    bufferPtr, static_cast<size_t>(bufferSize),
-                    bitsPerSample, channels, isSigned);
-
-                if (floatSamples.empty()) {
-                    env->DeleteLocalRef(trackFormat);
-                    env->DeleteLocalRef(byteBuffer);
-                    env->DeleteLocalRef(track);
-                    continue;
-                }
-
-                AudioData audioData;
-                audioData.samples = move(floatSamples);
-                audioData.channels = channels;
-                audioData.sampleRate = sampleRate;
-                audioData.frameCount = audioData.samples.size() / channels;
-
-                tracks.push_back(move(audioData));
-
-                // Очищаем локальные ссылки (автоматически при выходе из фрейма)
-                env->DeleteLocalRef(trackFormat);
-                env->DeleteLocalRef(byteBuffer);
-                env->DeleteLocalRef(track);
-            }
-
-            if (tracks.empty()) {
-                throwException(env, "No valid tracks to mix");
-                return nullptr;
-            }
-
-            // 4. Микшируем треки
-            AudioData mixed = mixTracks(tracks, outputChannels, outputSampleRate);
-
-            if (mixed.samples.empty()) {
-                throwException(env, "Mixing produced empty result");
-                return nullptr;
-            }
-
-            // 5. Конвертируем обратно в выходной формат
-            vector<uint8_t> outputData = convertFromFloat(
-                mixed.samples, outputBitsPerSample, outputSigned);
-
-            if (outputData.empty()) {
-                throwException(env, "Failed to convert mixed data to output format");
-                return nullptr;
-            }
-
-            // 6. Рассчитываем длительность результата
-            long durationMillis = static_cast<long>(
-                (mixed.frameCount * 1000L) / outputSampleRate);
-
-            // 7. Создаем Java Track объект
-            jobject result = createJavaTrack(env, outputData, outputFormat, durationMillis);
-
-            if (!result) {
-                throwException(env, "Failed to create result Track object");
-                return nullptr;
-            }
-
-            return env->NewLocalRef(result);
-
-        } catch (const bad_alloc& e) {
-            throwException(env, "Memory allocation failed during mixing");
-            return nullptr;
-        } catch (const exception& e) {
-            throwException(env, e.what());
-            return nullptr;
-        } catch (...) {
-            throwException(env, "Unknown error during mixing");
+        if (tracks.empty()) {
+            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                         "No valid tracks to mix");
             return nullptr;
         }
+
+        // Получаем выходной формат
+        jclass outputFormatCls = env->GetObjectClass(formatObj);
+        jmethodID outputGetChannels = env->GetMethodID(outputFormatCls, "channels", "()I");
+        jmethodID outputGetSampleRate = env->GetMethodID(outputFormatCls, "sampleRate", "()I");
+        jmethodID outputGetBitsPerSample = env->GetMethodID(outputFormatCls, "bitsPerSample", "()I");
+
+        int outChannels = env->CallIntMethod(formatObj, outputGetChannels);
+        int outSampleRate = env->CallIntMethod(formatObj, outputGetSampleRate);
+        int outBits = env->CallIntMethod(formatObj, outputGetBitsPerSample);
+
+        if (outChannels <= 0 || outSampleRate <= 0 || outBits <= 0) {
+            env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"),
+                         "Invalid output format");
+            return nullptr;
+        }
+
+        // Микшируем
+        std::vector<float> mixed = mixTracks(tracks, outChannels, outSampleRate);
+
+        if (mixed.empty()) {
+            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                         "Mixing produced no audio");
+            return nullptr;
+        }
+
+        // Создаем DirectByteBuffer
+        int outBytesPerSample = (outBits + 7) / 8;
+        size_t byteSize = mixed.size() * outBytesPerSample;
+
+        uint8_t* buffer = new uint8_t[byteSize];
+        std::fill(buffer, buffer + byteSize, 0);
+
+        for (size_t i = 0; i < mixed.size(); ++i) {
+            floatToPcm(mixed[i], buffer + i * outBytesPerSample, outBits);
+        }
+
+        jobject resultBuffer = env->NewDirectByteBuffer(buffer, byteSize);
+
+        // Вычисляем длительность
+        double seconds = (double)mixed.size() / (outSampleRate * outChannels);
+        jlong millis = (jlong)(seconds * 1000);
+
+        jclass durationCls = env->FindClass("java/time/Duration");
+        jmethodID ofMillis = env->GetStaticMethodID(durationCls, "ofMillis", "(J)Ljava/time/Duration;");
+        jobject durationObj = env->CallStaticObjectMethod(durationCls, ofMillis, millis);
+
+        jclass metadataCls = env->FindClass("org/plovdev/audioengine/tracks/meta/TrackMetadata");
+        jmethodID metadataCtor = env->GetMethodID(metadataCls, "<init>", "()V");
+        jobject metadataObj = env->NewObject(metadataCls, metadataCtor);
+
+        // Создаем новый Track объект
+        jmethodID trackCtor = env->GetMethodID(trackCls, "<init>", "(Ljava/nio/ByteBuffer;Ljava/time/Duration;Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/tracks/meta/TrackMetadata;)V");
+        jobject newTrack = env->NewObject(trackCls, trackCtor, resultBuffer, durationObj, formatObj, metadataObj);
+
+        // Освобождаем память (в продакшене нужно использовать finalizer или Cleaner)
+        // delete[] buffer; // Не удаляем - буфер принадлежит Java DirectByteBuffer
+
+        return newTrack;
+
+    } catch (const std::exception& e) {
+        env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+        return nullptr;
+    } catch (...) {
+        env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                     "Unknown native error during mixing");
+        return nullptr;
     }
 }
