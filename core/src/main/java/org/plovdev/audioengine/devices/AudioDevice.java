@@ -1,5 +1,6 @@
 package org.plovdev.audioengine.devices;
 
+import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.exceptions.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
@@ -19,27 +20,33 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 public interface AudioDevice extends AutoCloseable {
 
     /**
-     * Open audio device.
+     * Open audio device with specified format.
+     *
      * @param format working format
      * @throws OpenAudioDeviceException when opening failed.
      */
-    void open(TrackFormat format) throws OpenAudioDeviceException;
+    void open(@NotNull TrackFormat format) throws OpenAudioDeviceException;
 
     /**
-     * Check, supported audio device this fromat?
+     * Check, supported audio device this format?
+     *
      * @param format checking format.
      * @return is supported
      */
-    boolean isSupportedFormat(TrackFormat format);
+    default boolean isSupportedFormat(@NotNull TrackFormat format) {
+        return getDeviceInfo().supportedFormats().contains(format);
+    }
 
     /**
      * Return all info about audio device
-     * @return deivce info
+     *
+     * @return device info
      */
     AudioDeviceInfo getDeviceInfo();
 
     /**
      * Return status of audio device, which as opened, closed, etc.
+     *
      * @return device status
      */
     AudioDeviceStatus getDeviceStatus();
@@ -49,6 +56,16 @@ public interface AudioDevice extends AutoCloseable {
      */
     default boolean isReady() {
         return getDeviceStatus() == AudioDeviceStatus.OPENED;
+    }
+
+    /**
+     * Check if device open.
+     * @return is device opened.
+     */
+    default boolean isOpen() {
+        AudioDeviceStatus status = getDeviceStatus();
+        return status == AudioDeviceStatus.OPENED ||
+                status == AudioDeviceStatus.RUNNING;
     }
 
     @Override

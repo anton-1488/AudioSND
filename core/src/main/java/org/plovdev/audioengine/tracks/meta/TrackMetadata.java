@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  */
 public class TrackMetadata {
-    // in memory meta storage
     private final Map<MetaKey, MetadataEntry> metadata = new ConcurrentHashMap<>();
 
     public TrackMetadata() {

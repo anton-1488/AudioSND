@@ -1,5 +1,6 @@
 package org.plovdev.audioengine.devices;
 
+import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.exceptions.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
@@ -8,9 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import static org.plovdev.audioengine.devices.AudioDeviceStatus.*;
 
+/**
+ * Класс, который обеспечивает чтение с аудио устройства.
+ *
+ * @version 1.0
+ * @author Anton
+ */
 public final class NativeInputAudioDevice implements InputAudioDevice {
     private static final Logger log = LoggerFactory.getLogger(NativeInputAudioDevice.class);
     private final AudioDeviceInfo info;
@@ -20,15 +28,31 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     private Runnable onStatusChanged = () -> {
     };
 
+    /**
+     * Создает экземпляр для работы над аудио устройстовм
+     * @param info устройство с которым будет работать класс.
+     */
     public NativeInputAudioDevice(AudioDeviceInfo info) {
+        Objects.requireNonNull(info);
         this.info = info;
     }
 
+
+    /**
+     * Read data from input audio device to buffer.
+     *
+     * @param byteBuffer buffer to read.
+     * @return readed bytes.
+     */
     @Override
-    public int read(ByteBuffer byteBuffer) {
+    public int read(@NotNull ByteBuffer byteBuffer) {
         checkForInited();
-        status = RUNNING;
-        return _read(byteBuffer);
+        try {
+            status = RUNNING;
+            return _read(byteBuffer);
+        } finally {
+            status = OPENED;
+        }
     }
 
     /**
@@ -38,10 +62,15 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
      * @throws OpenAudioDeviceException when opening failed.
      */
     @Override
-    public void open(TrackFormat format) throws OpenAudioDeviceException {
+    public synchronized void open(TrackFormat format) throws OpenAudioDeviceException {
         if (isInited) {
-            log.warn("Audio device already inited.");
+            log.warn("Audio device {} already initialized.", info.id());
             return;
+        }
+
+        if (!isSupportedFormat(format)) {
+            log.warn("Device {} does not support this format: {}. See supported formats in getDeviceInfo().supportedFormats()", info.id(), format);
+            // если юзер хочет/знает что формат будет работать, то пусть пробует.
         }
 
         setStatus(OPENING);
@@ -49,21 +78,11 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
             _open(format, info);
             isInited = true;
             setStatus(OPENED);
+            log.debug("Audio device {} opened", info.id());
         } catch (Throwable e) {
             setStatus(ERROR);
             throw new OpenAudioDeviceException("Fail to open audio device: " + e.getMessage());
         }
-    }
-
-    /**
-     * Check, supported audio device this fromat?
-     *
-     * @param format checking format.
-     * @return is supported
-     */
-    @Override
-    public boolean isSupportedFormat(TrackFormat format) {
-        return getDeviceInfo().supportedForamts().contains(format);
     }
 
     /**
@@ -87,9 +106,9 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     }
 
     @Override
-    public void close() throws CloseAudioDeviceException {
+    public synchronized void close() throws CloseAudioDeviceException {
         if (!isInited) {
-            log.warn("Audio Device not inited for close.");
+            log.warn("Audio device {} not initialized for closing.", info.id());
             return;
         }
 
@@ -98,17 +117,18 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
             _close();
             isInited = false;
             setStatus(CLOSED);
+            log.debug("Audio device {} closed", info.id());
         } catch (Throwable e) {
-            status = DESTROYED;
+            setStatus(ERROR);
             throw new CloseAudioDeviceException("Failed to close audio device: " + e.getMessage());
         }
     }
 
-    public void setOnStatusChanged(Runnable onChange) {
+    public synchronized void setOnStatusChanged(Runnable onChange) {
         onStatusChanged = onChange;
     }
 
-    private void setStatus(AudioDeviceStatus status) {
+    private synchronized void setStatus(AudioDeviceStatus status) {
         if (this.status != status) {
             this.status = status;
             onStatusChanged.run();

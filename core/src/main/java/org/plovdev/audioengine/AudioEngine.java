@@ -1,7 +1,6 @@
 package org.plovdev.audioengine;
 
-import org.plovdev.audioengine.devices.InputAudioDevice;
-import org.plovdev.audioengine.devices.OutputAudioDevice;
+import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
 import org.plovdev.audioengine.exceptions.TrackLoadException;
 import org.plovdev.audioengine.loaders.TrackLoaderManager;
@@ -65,8 +64,8 @@ public interface AudioEngine extends AutoCloseable {
     List<TrackLoaderManager> getAvailableLoaders();
 
     // Getters for available audio device in yout PC.
-    List<InputAudioDevice> getAvailableInputAudioDevices();
-    List<OutputAudioDevice> getAvailableOutputAudioDevices();
+    List<AudioDeviceInfo> getAvailableInputAudioDevices();
+    List<AudioDeviceInfo> getAvailableOutputAudioDevices();
 
     /**
      * Finds suitable loader for given format.

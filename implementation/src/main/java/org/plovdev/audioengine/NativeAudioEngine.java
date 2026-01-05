@@ -1,9 +1,8 @@
 package org.plovdev.audioengine;
 
 import org.jetbrains.annotations.NotNull;
+import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.AudioDeviceManager;
-import org.plovdev.audioengine.devices.InputAudioDevice;
-import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
 import org.plovdev.audioengine.exceptions.TrackExportException;
 import org.plovdev.audioengine.exceptions.TrackLoadException;
@@ -146,7 +145,7 @@ public class NativeAudioEngine implements AudioEngine {
     @Override
     public TrackPlayer getTrackPlayer(@NotNull Track track) {
         checkIfInited();
-        return new NativeTrackPlayer(track, AudioDeviceManager.getInstance().getDefaultOutputDevice());
+        return new NativeTrackPlayer(track, AudioDeviceManager.getInstance().getDefaultOutputAudioDevice());
     }
 
     @Override
@@ -165,15 +164,15 @@ public class NativeAudioEngine implements AudioEngine {
     }
 
     @Override
-    public List<InputAudioDevice> getAvailableInputAudioDevices() {
+    public List<AudioDeviceInfo> getAvailableInputAudioDevices() {
         checkIfInited();
-        return AudioDeviceManager.getInstance().getInputDevices();
+        return AudioDeviceManager.getInstance().getInputAudioDevices();
     }
 
     @Override
-    public List<OutputAudioDevice> getAvailableOutputAudioDevices() {
+    public List<AudioDeviceInfo> getAvailableOutputAudioDevices() {
         checkIfInited();
-        return AudioDeviceManager.getInstance().getOutputDevices();
+        return AudioDeviceManager.getInstance().getOutputAudioDevices();
     }
 
     /**

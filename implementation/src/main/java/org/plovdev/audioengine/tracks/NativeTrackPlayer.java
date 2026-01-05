@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.tracks;
 
+import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
-import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.exceptions.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
@@ -35,9 +35,9 @@ public class NativeTrackPlayer implements TrackPlayer {
     private Runnable onStatusChanged = () -> {
     };
 
-    public NativeTrackPlayer(Track track, OutputAudioDevice device) {
+    public NativeTrackPlayer(Track track, AudioDeviceInfo info) {
         this.track = track;
-        audioDevice = new NativeOutputAudioDevice(device.getDeviceInfo());
+        audioDevice = new NativeOutputAudioDevice(info);
         data = track.getTrackData();
 
         initPlayer();

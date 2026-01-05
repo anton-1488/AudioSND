@@ -1,7 +1,8 @@
 package org.plovdev.audioengine.tracks.format;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.ByteOrder;
-import java.util.Objects;
 
 /**
  * Track format description.
@@ -12,12 +13,16 @@ import java.util.Objects;
  * @param sampleRate auio sample rate.
  * @param signed is signed audio.
  * @param byteOrder audio byte order.
+ * @param audioCodec audio data codec.
  *
  * @author Anton
  * @version 1.0
  */
 
-public record TrackFormat(String extension, int channels, int bitsPerSample, int sampleRate, boolean signed, ByteOrder byteOrder, AudioCodec audioCodec) {
+public record TrackFormat(@NotNull @Deprecated String extension, int channels, int bitsPerSample, int sampleRate, boolean signed, @NotNull ByteOrder byteOrder, @NotNull AudioCodec audioCodec) {
+    /**
+     * Audio codec before converted to pcm
+     */
     public enum AudioCodec {
         PCM8,       // 8-bit PCM
         PCM16,      // 16-bit PCM
@@ -38,24 +43,24 @@ public record TrackFormat(String extension, int channels, int bitsPerSample, int
         OTHER
     }
 
+    public TrackFormat {
+        validateField(channels);
+        validateField(bitsPerSample);
+        validateField(sampleRate);
+    }
+
+    private void validateField(int field) {
+        if (field <= 0) {
+            throw new IllegalArgumentException("Parameter must be greather than 0!");
+        }
+    }
+
     /**
      * Calculate bitrate of givven format data.
      * @return audio bitrate.
      */
     public int bitRate() {
         return sampleRate * bitsPerSample * channels;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        TrackFormat that = (TrackFormat) o;
-        return channels == that.channels && sampleRate == that.sampleRate && signed == that.signed && bitsPerSample == that.bitsPerSample && Objects.equals(extension, that.extension) && Objects.equals(byteOrder, that.byteOrder) && Objects.equals(audioCodec, that.audioCodec);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(extension, channels, bitsPerSample, sampleRate, signed, byteOrder);
     }
 
     @Override
