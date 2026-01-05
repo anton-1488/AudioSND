@@ -11,7 +11,7 @@ public class PlayerExample {
 
     public static void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine()) {
-            Track track = engine.loadTrack("testdata/48000/melody1.wav");
+            Track track = engine.loadTrack("testdata/44100/block-story.wav");
             engine.getTrackPlayer(track).play();
             Thread.sleep(track.getDuration().toMillis());
         } catch (Exception e) {

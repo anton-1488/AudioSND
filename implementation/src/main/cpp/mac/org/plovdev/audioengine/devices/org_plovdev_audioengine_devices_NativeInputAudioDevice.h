@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+ * Method:    _setGain
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1setGain
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
  * Method:    _open
  * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V
  */

@@ -149,10 +149,19 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         return onStatusChanged;
     }
 
+    public void setApparatGain(int gain) {
+        _setGain(gain, 0);
+    }
+    public void setApplicationGain(int gain) {
+        _setGain(gain, 1);
+    }
+
     @Override
     public String toString() {
         return info.toString();
     }
+
+    private native void _setGain(int gain, int type);
 
     private native void _open(TrackFormat format, AudioDeviceInfo info);
 

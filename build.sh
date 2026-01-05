@@ -29,11 +29,11 @@ javac -d out/midi -cp out/core:$(cat ./builds/cp.txt) @./builds/midi.txt
 javac -d out/tools -cp out/core:$(cat ./builds/cp.txt) @./builds/tools.txt
 
 # Компиляция implementation
-javac -h ./implementation/src/main/cpp/org/plovdev/audioengine -d out/implementation -cp out/core:$(cat ./builds/cp.txt) @./builds/implementation.txt
+javac -h ./implementation/src/main/cpp/mac/org/plovdev/audioengine -d out/implementation -cp out/core:$(cat ./builds/cp.txt) @./builds/implementation.txt
 
 # Компиляция examples
 javac -d out/examples -cp out/implementation:out/loaders:out/core:/out/effects:/out/profiler:/out/midi:$(cat ./builds/cp.txt) @./builds/examples.txt
 
 
 # Компиляция нативной библиотеки
-#g++ -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include" -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin" -dynamiclib -o implementation/libaudio-snd.dylib $(cat ./builds/nativies.txt) -framework AudioToolbox -framework CoreAudio -framework CoreFoundation -std=c++17
+g++ -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include" -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin" -dynamiclib -o implementation/libaudio-snd.dylib $(cat ./builds/nativies.txt) -framework AudioToolbox -framework CoreAudio -framework CoreFoundation -std=c++17

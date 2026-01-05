@@ -11,7 +11,7 @@ public class TrackFormatTest {
 
     @Test
     public void testRecordCreation() {
-        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
+        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
 
         assertEquals("wav", format.extension());
         assertEquals(2, format.channels());
@@ -23,19 +23,19 @@ public class TrackFormatTest {
 
     @Test
     public void testBitRateCalculation() {
-        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
+        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
         // 44100 * 16 * 2 = 1,411,200 bps
         assertEquals(1411200, format.bitRate());
 
-        TrackFormat monoFormat = new TrackFormat("wav", 1, 8, 8000, true, ByteOrder.LITTLE_ENDIAN);
+        TrackFormat monoFormat = new TrackFormat("wav", 1, 8, 8000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM8);
         assertEquals(64000, monoFormat.bitRate()); // 8000 * 8 * 1
     }
 
     @Test
     public void testEquality() {
-        TrackFormat format1 = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
-        TrackFormat format2 = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
-        TrackFormat format3 = new TrackFormat("mp3", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
+        TrackFormat format1 = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat format2 = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat format3 = new TrackFormat("mp3", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
 
         assertEquals(format1, format2);
         assertEquals(format1.hashCode(), format2.hashCode());
@@ -44,7 +44,7 @@ public class TrackFormatTest {
 
     @Test
     public void testToString() {
-        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN);
+        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
         String result = format.toString();
 
         assertTrue(result.contains("wav"));

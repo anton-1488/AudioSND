@@ -71,10 +71,9 @@ public class Microphone implements AutoCloseable {
     public Track getTrack() {
         stop();
 
-        ByteBuffer totalBytes = ByteBuffer.allocateDirect(readedLength.get());
+        ByteBuffer totalBytes = ByteBuffer.allocateDirect(readedLength.get() + chunkSize.get());
 
         for (ByteBuffer buffer : readedData) {
-            buffer.rewind();
             totalBytes.put(buffer);
         }
 
@@ -136,6 +135,14 @@ public class Microphone implements AutoCloseable {
         if (!isInited) {
             throw new IllegalStateException("Audio device not opened");
         }
+    }
+
+    public void setApparatGain(int gain) {
+        audioDevice.setApparatGain(gain);
+    }
+
+    public void setApplicationGain(int gain) {
+        audioDevice.setApplicationGain(gain);
     }
 
     @Override

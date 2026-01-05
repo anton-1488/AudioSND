@@ -67,6 +67,9 @@ public class NativeTrackMixer implements TrackMixer {
         if (isEmpty()) {
             throw new MixingException("No tracks for mixing.");
         }
+        if (mixingTracks.size() == 1) {
+            return mixingTracks.getFirst();
+        }
         return _doMixing(mixingTracks, outputFormat);
     }
 

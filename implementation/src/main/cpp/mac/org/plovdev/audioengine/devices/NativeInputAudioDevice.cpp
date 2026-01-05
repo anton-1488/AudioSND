@@ -50,6 +50,9 @@ struct AudioDeviceContext {
     }
 };
 
+Float32 apparatGain = 1;
+int applicaionGaine = 1;
+
 // Глобальный контекст для текущего устройства
 static std::unique_ptr<AudioDeviceContext> deviceContext = nullptr;
 static std::mutex globalContextMutex;
@@ -170,6 +173,24 @@ static OSStatus recordingCallback(void* inRefCon,
     return status;
 }
 
+
+/*
+ * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+ * Method:    _setGain
+ * Signature: (II)V
+ */
+extern "C"
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1setGain(JNIEnv* env, jobject obj, jint gain, jint gainType) {
+    switch(gainType) {
+        case 0:
+            apparatGain = static_cast<Float32>(gain);
+            break;
+        case 1:
+            applicaionGaine = static_cast<int>(gain);
+            break;
+    }
+}
+
 extern "C"
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open(
     JNIEnv* env, jobject obj, jobject trackFormat, jobject deviceInfo) {
@@ -177,7 +198,6 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevi
     std::lock_guard<std::mutex> lock(globalContextMutex);
 
     if (deviceContext) {
-        // Уже открыт
         return;
     }
 
@@ -296,12 +316,11 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevi
             throw std::runtime_error("Failed to initialize audio unit");
         }
 
-        Float32 gain = 150.0;
         status = AudioUnitSetParameter(deviceContext->audioUnit,
                                       kHALOutputParam_Volume,
                                       kAudioUnitScope_Input, // Важно: Scope Input для микрофона!
                                       1, // Input bus
-                                      gain,
+                                      apparatGain,
                                       0);
 
         deviceContext->isInitialized = true;

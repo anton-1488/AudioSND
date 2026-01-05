@@ -23,128 +23,156 @@ std::string CFStringToStdString(CFStringRef cfStr) {
 // =====================
 jclass clsAudioDeviceInfo = nullptr;
 jmethodID ctorAudioDeviceInfo = nullptr;
-
-jclass clsInputDevice = nullptr;
-jmethodID ctorInputDevice = nullptr;
-
-jclass clsOutputDevice = nullptr;  // Добавлено для выходных устройств
-jmethodID ctorOutputDevice = nullptr;
-
+jclass clsAudioDeviceType = nullptr;
+jfieldID fidInputType = nullptr;
+jfieldID fidOutputType = nullptr;
+jfieldID fidDuplexType = nullptr;
 jclass clsArrayList = nullptr;
 jmethodID ctorArrayList = nullptr;
 jmethodID arrayListAdd = nullptr;
-
 jclass clsTrackFormat = nullptr;
 jmethodID ctorTrackFormat = nullptr;
-
-// скелеты функций
-jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels, bool isInput);
 
 // =====================
 // Init JNI cache
 // =====================
-bool initCommonJNI(JNIEnv* env) {
+bool initJNICommon(JNIEnv* env) {
     if (clsAudioDeviceInfo) return true;
 
-    clsAudioDeviceInfo = (jclass) env->NewGlobalRef(
+    // 1. AudioDeviceInfo class
+    clsAudioDeviceInfo = (jclass)env->NewGlobalRef(
         env->FindClass("org/plovdev/audioengine/devices/AudioDeviceInfo")
     );
     if (!clsAudioDeviceInfo) return false;
 
+    // Конструктор изменился: теперь 5 параметров с AudioDeviceType enum
     ctorAudioDeviceInfo = env->GetMethodID(
         clsAudioDeviceInfo,
         "<init>",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/Set;)V"
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/plovdev/audioengine/devices/AudioDeviceInfo$AudioDeviceType;Ljava/util/List;)V"
     );
     if (!ctorAudioDeviceInfo) return false;
 
-    clsArrayList = (jclass) env->NewGlobalRef(
+    // 2. AudioDeviceType enum
+    clsAudioDeviceType = (jclass)env->NewGlobalRef(
+        env->FindClass("org/plovdev/audioengine/devices/AudioDeviceInfo$AudioDeviceType")
+    );
+    if (!clsAudioDeviceType) return false;
+
+    fidInputType = env->GetStaticFieldID(clsAudioDeviceType, "INPUT",
+        "Lorg/plovdev/audioengine/devices/AudioDeviceInfo$AudioDeviceType;");
+    fidOutputType = env->GetStaticFieldID(clsAudioDeviceType, "OUTPUT",
+        "Lorg/plovdev/audioengine/devices/AudioDeviceInfo$AudioDeviceType;");
+    fidDuplexType = env->GetStaticFieldID(clsAudioDeviceType, "DUPLEX",
+        "Lorg/plovdev/audioengine/devices/AudioDeviceInfo$AudioDeviceType;");
+
+    if (!fidInputType || !fidOutputType || !fidDuplexType) return false;
+
+    // 3. ArrayList for List<TrackFormat>
+    clsArrayList = (jclass)env->NewGlobalRef(
         env->FindClass("java/util/ArrayList")
     );
+    if (!clsArrayList) return false;
+
     ctorArrayList = env->GetMethodID(clsArrayList, "<init>", "()V");
     arrayListAdd = env->GetMethodID(clsArrayList, "add", "(Ljava/lang/Object;)Z");
 
-    return ctorArrayList && arrayListAdd;
+    if (!ctorArrayList || !arrayListAdd) return false;
+
+    return true;
 }
 
-bool initJNIForInput(JNIEnv* env) {
-    if (clsInputDevice) return true;
-
-    clsInputDevice = (jclass) env->NewGlobalRef(
-        env->FindClass("org/plovdev/audioengine/devices/NativeInputAudioDevice")
-    );
-    if (!clsInputDevice) return false;
-
-    ctorInputDevice = env->GetMethodID(
-        clsInputDevice,
-        "<init>",
-        "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V"
-    );
-    return ctorInputDevice != nullptr;
-}
-
-bool initJNIForOutput(JNIEnv* env) {
-    if (clsOutputDevice) return true;
-
-    clsOutputDevice = (jclass) env->NewGlobalRef(
-        env->FindClass("org/plovdev/audioengine/devices/NativeOutputAudioDevice")
-    );
-    if (!clsOutputDevice) return false;
-
-    ctorOutputDevice = env->GetMethodID(
-        clsOutputDevice,
-        "<init>",
-        "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V"
-    );
-    return ctorOutputDevice != nullptr;
-}
 
 // =====================
-// Create AudioDeviceInfo
+// Get device channels
 // =====================
-jobject createAudioDeviceInfo(
-        JNIEnv* env,
-        AudioDeviceID devId,
-        const std::string& name,
-        int channels,
-        bool isInput
-) {
-    jclass hashSetCls = env->FindClass("java/util/HashSet");
-    jmethodID hashSetCtor = env->GetMethodID(hashSetCls, "<init>", "()V");
-    jobject emptySet = env->NewObject(hashSetCls, hashSetCtor);
+int getDeviceChannels(AudioDeviceID devId, bool isInput) {
+    AudioObjectPropertyScope scope = isInput ?
+        kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput;
 
-    jclass clsInteger = env->FindClass("java/lang/Integer");
-    jmethodID ctorInteger = env->GetMethodID(clsInteger, "<init>", "(I)V");
-    jobject jintObj = env->NewObject(clsInteger, ctorInteger, channels);
-
-    const char* vendorStr = "Apple";
-    UInt32 vendor = 0;
-    UInt32 sizeVendor = sizeof(vendor);
-    AudioObjectPropertyAddress propAddrVendor{
-        kAudioDevicePropertyDeviceManufacturer,
-        kAudioObjectPropertyScopeGlobal,
+    AudioObjectPropertyAddress streamAddr{
+        kAudioDevicePropertyStreamConfiguration,
+        scope,
         kAudioObjectPropertyElementMaster
     };
 
-    if (AudioObjectGetPropertyData(devId, &propAddrVendor, 0, nullptr, &sizeVendor, &vendor) == noErr) {
-        char buf[5];
-        buf[0] = (vendor >> 24) & 0xFF;
-        buf[1] = (vendor >> 16) & 0xFF;
-        buf[2] = (vendor >> 8) & 0xFF;
-        buf[3] = (vendor) & 0xFF;
-        buf[4] = '\0';
-        vendorStr = buf;
+    UInt32 streamSize = 0;
+    if (AudioObjectGetPropertyDataSize(devId, &streamAddr, 0, nullptr, &streamSize) != noErr || streamSize == 0) {
+        return 0;
     }
 
-    return env->NewObject(
-        clsAudioDeviceInfo,
-        ctorAudioDeviceInfo,
-        env->NewStringUTF(std::to_string(devId).c_str()),
-        env->NewStringUTF(name.c_str()),
-        env->NewStringUTF(vendorStr),
-        jintObj,
-        getDeviceSupportedFormats(env, devId, channels, isInput)
+    AudioBufferList* bufferList = (AudioBufferList*)malloc(streamSize);
+    if (!bufferList) return 0;
+
+    if (AudioObjectGetPropertyData(devId, &streamAddr, 0, nullptr, &streamSize, bufferList) != noErr) {
+        free(bufferList);
+        return 0;
+    }
+
+    int channels = 0;
+    for (UInt32 i = 0; i < bufferList->mNumberBuffers; i++) {
+        channels += bufferList->mBuffers[i].mNumberChannels;
+    }
+
+    free(bufferList);
+    return channels;
+}
+
+// =====================
+// Determine device type
+// =====================
+jobject getDeviceType(JNIEnv* env, AudioDeviceID devId) {
+    int inputChannels = getDeviceChannels(devId, true);
+    int outputChannels = getDeviceChannels(devId, false);
+
+    if (inputChannels > 0 && outputChannels > 0) {
+        // Duplex device
+        return env->GetStaticObjectField(clsAudioDeviceType, fidDuplexType);
+    } else if (inputChannels > 0) {
+        // Input only
+        return env->GetStaticObjectField(clsAudioDeviceType, fidInputType);
+    } else {
+        // Output only
+        return env->GetStaticObjectField(clsAudioDeviceType, fidOutputType);
+    }
+}
+
+// =====================
+// Get device name
+// =====================
+std::string getDeviceName(AudioDeviceID devId, bool isInput) {
+    CFStringRef nameRef = nullptr;
+    UInt32 propSize = sizeof(nameRef);
+
+    AudioObjectPropertyAddress nameAddr{
+        kAudioObjectPropertyName,
+        isInput ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput,
+        kAudioObjectPropertyElementMaster
+    };
+
+    if (AudioObjectGetPropertyData(devId, &nameAddr, 0, nullptr, &propSize, &nameRef) != noErr || !nameRef) {
+        return "";
+    }
+
+    std::string name = CFStringToStdString(nameRef);
+    CFRelease(nameRef);
+    return name;
+}
+
+void initTrackFormatClass(JNIEnv* env) {
+    if (clsTrackFormat) return;
+
+    clsTrackFormat = (jclass)env->NewGlobalRef(
+        env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat")
     );
+
+    if (clsTrackFormat) {
+        ctorTrackFormat = env->GetMethodID(
+            clsTrackFormat,
+            "<init>",
+            "(Ljava/lang/String;IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
+        );
+    }
 }
 
 jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asbd) {
@@ -158,19 +186,28 @@ jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asb
 
     if (isFloat) {
         if (asbd.mBitsPerChannel == 32) {
-            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT32", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT32",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
         } else if (asbd.mBitsPerChannel == 64) {
-            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT64", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+            fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT64",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
         }
     } else if (isSigned) {
         switch(asbd.mBitsPerChannel) {
-            case 8:  fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM8",  "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
-            case 16: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
-            case 24: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
-            case 32: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM32", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 8:  fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM8",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 16: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 24: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+            case 32: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM32",
+                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
         }
-    } else {
-        fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16", "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+    }
+
+    if (!fidCodec) {
+        fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16",
+            "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
     }
 
     if (!fidCodec) return nullptr;
@@ -178,32 +215,24 @@ jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asb
     return env->GetStaticObjectField(clsAudioCodec, fidCodec);
 }
 
-jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels, bool isInput) {
-    jclass hashSetCls = env->FindClass("java/util/HashSet");
-    jmethodID hashSetCtor = env->GetMethodID(hashSetCls, "<init>", "()V");
-    jmethodID hashSetAdd = env->GetMethodID(hashSetCls, "add", "(Ljava/lang/Object;)Z");
-    jobject set = env->NewObject(hashSetCls, hashSetCtor);
+// =====================
+// Get supported formats as List (not Set!)
+// =====================
+jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, bool isInput) {
+    initTrackFormatClass(env);
+    if (!clsTrackFormat || !ctorTrackFormat) {
+        return env->NewObject(clsArrayList, ctorArrayList); // Return empty list
+    }
+
+    jobject formatList = env->NewObject(clsArrayList, ctorArrayList);
+    if (!formatList) return nullptr;
 
     jclass clsByteOrder = env->FindClass("java/nio/ByteOrder");
     jfieldID fidLE = env->GetStaticFieldID(clsByteOrder, "LITTLE_ENDIAN", "Ljava/nio/ByteOrder;");
-    jobject byteOrderLE = env->GetStaticObjectField(clsByteOrder, fidLE);
+    jobject byteOrderLE = fidLE ? env->GetStaticObjectField(clsByteOrder, fidLE) : nullptr;
 
-    // Инициализируем clsTrackFormat если еще не инициализирован
-    if (!clsTrackFormat) {
-        clsTrackFormat = (jclass) env->NewGlobalRef(env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat"));
-        ctorTrackFormat = env->GetMethodID(
-            clsTrackFormat,
-            "<init>",
-            "(Ljava/lang/String;IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
-        );
-    }
-
-    if (!clsTrackFormat || !ctorTrackFormat) {
-        return set;
-    }
-
-    // Используем правильный scope в зависимости от типа устройства
-    AudioObjectPropertyScope scope = isInput ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput;
+    AudioObjectPropertyScope scope = isInput ?
+        kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput;
 
     AudioObjectPropertyAddress addrStreams{
         kAudioDevicePropertyStreams,
@@ -213,13 +242,14 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
 
     UInt32 size = 0;
     if (AudioObjectGetPropertyDataSize(devId, &addrStreams, 0, nullptr, &size) != noErr) {
-        return set;
+        return formatList;
     }
 
     UInt32 streamCount = size / sizeof(AudioStreamID);
     std::vector<AudioStreamID> streams(streamCount);
+
     if (AudioObjectGetPropertyData(devId, &addrStreams, 0, nullptr, &size, streams.data()) != noErr) {
-        return set;
+        return formatList;
     }
 
     for (UInt32 i = 0; i < streamCount; i++) {
@@ -239,13 +269,13 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
         UInt32 formatCount = availableFormatsSize / sizeof(AudioStreamBasicDescription);
         std::vector<AudioStreamBasicDescription> availableFormats(formatCount);
 
-        if (AudioObjectGetPropertyData(streamID, &addrFormats, 0, nullptr, &availableFormatsSize, availableFormats.data()) != noErr) {
+        if (AudioObjectGetPropertyData(streamID, &addrFormats, 0, nullptr,
+                                        &availableFormatsSize, availableFormats.data()) != noErr) {
             continue;
         }
 
         for (const auto& asbd : availableFormats) {
-            if ((int)asbd.mChannelsPerFrame != channels) continue;
-
+            // Для каждого канального конфига
             bool isSigned = (asbd.mFormatFlags & kAudioFormatFlagIsSignedInteger) != 0;
             bool isFloat  = (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0;
             jboolean signedFlag = isSigned || isFloat;
@@ -263,256 +293,203 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, int channels
                 codecEnum
             );
 
-            if (tf) env->CallBooleanMethod(set, hashSetAdd, tf);
+            if (tf) {
+                env->CallBooleanMethod(formatList, arrayListAdd, tf);
+                env->DeleteLocalRef(tf);
+            }
         }
     }
 
-    return set;
+    return formatList;
 }
 
 // =====================
-// JNI entry
+// Create AudioDeviceInfo
+// =====================
+jobject createAudioDeviceInfo(
+        JNIEnv* env,
+        AudioDeviceID devId,
+        const std::string& name
+) {
+    if (!initJNICommon(env)) {
+        return nullptr;
+    }
+
+    // Определяем тип устройства
+    jobject deviceType = getDeviceType(env, devId);
+    if (!deviceType) return nullptr;
+
+    // Определяем scope для форматов (для INPUT/OUTPUT берем соответствующий)
+    bool isInputDevice = false;
+    if (env->IsSameObject(deviceType, env->GetStaticObjectField(clsAudioDeviceType, fidInputType))) {
+        isInputDevice = true;
+    } else if (env->IsSameObject(deviceType, env->GetStaticObjectField(clsAudioDeviceType, fidDuplexType))) {
+        // Для duplex берем input scope для форматов (можно выбрать любой)
+        isInputDevice = true;
+    }
+
+    // Получаем поддерживаемые форматы
+    jobject formatsList = getDeviceSupportedFormats(env, devId, isInputDevice);
+    if (!formatsList) {
+        formatsList = env->NewObject(clsArrayList, ctorArrayList); // Пустой список
+    }
+
+    // Получаем вендора
+    const char* vendorStr = "Apple";
+    UInt32 vendor = 0;
+    UInt32 sizeVendor = sizeof(vendor);
+    AudioObjectPropertyAddress propAddrVendor{
+        kAudioDevicePropertyDeviceManufacturer,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+
+    if (AudioObjectGetPropertyData(devId, &propAddrVendor, 0, nullptr, &sizeVendor, &vendor) == noErr) {
+        char buf[5];
+        buf[0] = (vendor >> 24) & 0xFF;
+        buf[1] = (vendor >> 16) & 0xFF;
+        buf[2] = (vendor >> 8) & 0xFF;
+        buf[3] = (vendor) & 0xFF;
+        buf[4] = '\0';
+        vendorStr = buf;
+    }
+
+    // Создаем AudioDeviceInfo
+    return env->NewObject(
+        clsAudioDeviceInfo,
+        ctorAudioDeviceInfo,
+        env->NewStringUTF(std::to_string(devId).c_str()), // id
+        env->NewStringUTF(name.c_str()),                  // name
+        env->NewStringUTF(vendorStr),                     // vendor
+        deviceType,                                       // AudioDeviceType enum
+        formatsList                                       // List<TrackFormat>
+    );
+}
+
+// =====================
+// Get all devices
+// =====================
+jobject getDevicesByScope(JNIEnv* env, bool wantInputDevices) {
+    if (!initJNICommon(env)) {
+        return nullptr;
+    }
+
+    // Get all devices
+    AudioObjectPropertyAddress addrAllDevices{
+        kAudioHardwarePropertyDevices,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+
+    UInt32 size = 0;
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &addrAllDevices, 0, nullptr, &size) != noErr) {
+        return env->NewObject(clsArrayList, ctorArrayList);
+    }
+
+    int count = size / sizeof(AudioDeviceID);
+    if (count == 0) {
+        return env->NewObject(clsArrayList, ctorArrayList);
+    }
+
+    std::vector<AudioDeviceID> allDevices(count);
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &addrAllDevices, 0, nullptr,
+                                   &size, allDevices.data()) != noErr) {
+        return env->NewObject(clsArrayList, ctorArrayList);
+    }
+
+    // Filter devices and create list
+    jobject deviceList = env->NewObject(clsArrayList, ctorArrayList);
+
+    for (AudioDeviceID devId : allDevices) {
+        // Определяем тип устройства
+        int inputChannels = getDeviceChannels(devId, true);
+        int outputChannels = getDeviceChannels(devId, false);
+
+        // Фильтруем по запрошенному типу
+        if (wantInputDevices && inputChannels == 0) continue;
+        if (!wantInputDevices && outputChannels == 0) continue;
+
+        // Получаем имя устройства
+        // Для устройств ввода берем input scope, для вывода - output
+        std::string name = getDeviceName(devId, wantInputDevices);
+        if (name.empty()) {
+            // Если не получили имя в нужном scope, пробуем другой
+            name = getDeviceName(devId, !wantInputDevices);
+            if (name.empty()) continue;
+        }
+
+        jobject deviceInfo = createAudioDeviceInfo(env, devId, name);
+        if (!deviceInfo) continue;
+
+        env->CallBooleanMethod(deviceList, arrayListAdd, deviceInfo);
+        env->DeleteLocalRef(deviceInfo);
+    }
+
+    return deviceList;
+}
+
+// =====================
+// Get default device by scope
+// =====================
+jobject getDefaultDeviceByScope(JNIEnv* env, bool isInput) {
+    if (!initJNICommon(env)) {
+        return nullptr;
+    }
+
+    AudioDeviceID deviceId;
+    UInt32 size = sizeof(AudioDeviceID);
+
+    AudioObjectPropertyAddress addrDefault;
+
+    if (isInput) {
+        addrDefault = {
+            kAudioHardwarePropertyDefaultInputDevice,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMaster
+        };
+    } else {
+        addrDefault = {
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMaster
+        };
+    }
+
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &addrDefault, 0, nullptr,
+                                   &size, &deviceId) != noErr) {
+        return nullptr;
+    }
+
+    // Получаем имя устройства
+    std::string name = getDeviceName(deviceId, isInput);
+    if (name.empty()) return nullptr;
+
+    return createAudioDeviceInfo(env, deviceId, name);
+}
+
+// =====================
+// JNI Methods
 // =====================
 extern "C" {
-    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager_getInputDevices(JNIEnv* env, jobject jobj) {
-        if (!initCommonJNI(env) || !initJNIForInput(env)) {
-            return nullptr;
-        }
 
-        jobject list = env->NewObject(clsArrayList, ctorArrayList);
+JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getInputAudioDevices
+  (JNIEnv *env, jobject obj) {
+    return getDevicesByScope(env, true); // true = want input devices
+}
 
-        UInt32 size = 0;
-        AudioObjectPropertyAddress addr{
-            kAudioHardwarePropertyDevices,
-            kAudioObjectPropertyScopeInput,
-            kAudioObjectPropertyElementMaster
-        };
+JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getOutputAudioDevices
+  (JNIEnv *env, jobject obj) {
+    return getDevicesByScope(env, false); // false = want output devices
+}
 
-        if (AudioObjectGetPropertyDataSize(
-                kAudioObjectSystemObject,
-                &addr,
-                0,
-                nullptr,
-                &size
-        ) != noErr) {
-            return list;
-        }
+JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultInputAudioDevice
+  (JNIEnv *env, jobject obj) {
+    return getDefaultDeviceByScope(env, true);
+}
 
-        int count = size / sizeof(AudioDeviceID);
-        std::vector<AudioDeviceID> devices(count);
+JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultOutputAudioDevice
+  (JNIEnv *env, jobject obj) {
+    return getDefaultDeviceByScope(env, false);
+}
 
-        if (AudioObjectGetPropertyData(
-                kAudioObjectSystemObject,
-                &addr,
-                0,
-                nullptr,
-                &size,
-                devices.data()
-        ) != noErr) {
-            return list;
-        }
-
-        for (AudioDeviceID devId : devices) {
-            // Проверяем что это входное устройство (микрофон)
-            AudioObjectPropertyAddress streamAddr{
-                kAudioDevicePropertyStreamConfiguration,
-                kAudioObjectPropertyScopeInput,
-                kAudioObjectPropertyElementMaster
-            };
-
-            UInt32 streamSize = 0;
-            if (AudioObjectGetPropertyDataSize(devId, &streamAddr, 0, nullptr, &streamSize) != noErr || streamSize == 0) {
-                continue;
-            }
-
-            AudioBufferList* bufferList = (AudioBufferList*)malloc(streamSize);
-            if (!bufferList) continue;
-
-            if (AudioObjectGetPropertyData(devId, &streamAddr, 0, nullptr, &streamSize, bufferList) != noErr) {
-                free(bufferList);
-                continue;
-            }
-
-            int inputChannels = 0;
-            for (UInt32 i = 0; i < bufferList->mNumberBuffers; i++) {
-                inputChannels += bufferList->mBuffers[i].mNumberChannels;
-            }
-            free(bufferList);
-
-            if (inputChannels == 0) continue;
-
-            // Получаем имя устройства
-            CFStringRef nameRef = nullptr;
-            UInt32 propSize = sizeof(nameRef);
-
-            AudioObjectPropertyAddress nameAddr{
-                kAudioObjectPropertyName,
-                kAudioObjectPropertyScopeInput,
-                kAudioObjectPropertyElementMaster
-            };
-
-            if (AudioObjectGetPropertyData(
-                    devId,
-                    &nameAddr,
-                    0,
-                    nullptr,
-                    &propSize,
-                    &nameRef
-            ) != noErr || !nameRef) {
-                continue;
-            }
-
-            std::string name = CFStringToStdString(nameRef);
-            CFRelease(nameRef);
-
-            jobject info = createAudioDeviceInfo(env, devId, name, inputChannels, true);
-            if (!info) continue;
-
-            jobject device = env->NewObject(clsInputDevice, ctorInputDevice, info);
-            if (!device) continue;
-
-            env->CallBooleanMethod(list, arrayListAdd, device);
-        }
-
-        return list;
-    }
-
-    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager_getOutputDevices(JNIEnv* env, jobject jobj) {
-        if (!initCommonJNI(env) || !initJNIForOutput(env)) {
-            return nullptr;
-        }
-
-        jobject list = env->NewObject(clsArrayList, ctorArrayList);
-
-        UInt32 size = 0;
-        AudioObjectPropertyAddress addr{
-            kAudioHardwarePropertyDevices,
-            kAudioObjectPropertyScopeOutput,  // Исправлено: Scope Output
-            kAudioObjectPropertyElementMaster
-        };
-
-        if (AudioObjectGetPropertyDataSize(
-                kAudioObjectSystemObject,
-                &addr,
-                0,
-                nullptr,
-                &size
-        ) != noErr) {
-            return list;
-        }
-
-        int count = size / sizeof(AudioDeviceID);
-        std::vector<AudioDeviceID> devices(count);
-
-        if (AudioObjectGetPropertyData(
-                kAudioObjectSystemObject,
-                &addr,
-                0,
-                nullptr,
-                &size,
-                devices.data()
-        ) != noErr) {
-            return list;
-        }
-
-        for (AudioDeviceID devId : devices) {
-            // Проверяем что это выходное устройство (динамики)
-            AudioObjectPropertyAddress streamAddr{
-                kAudioDevicePropertyStreamConfiguration,
-                kAudioObjectPropertyScopeOutput,
-                kAudioObjectPropertyElementMaster
-            };
-
-            UInt32 streamSize = 0;
-            if (AudioObjectGetPropertyDataSize(devId, &streamAddr, 0, nullptr, &streamSize) != noErr || streamSize == 0) {
-                continue;
-            }
-
-            AudioBufferList* bufferList = (AudioBufferList*)malloc(streamSize);
-            if (!bufferList) continue;
-
-            if (AudioObjectGetPropertyData(devId, &streamAddr, 0, nullptr, &streamSize, bufferList) != noErr) {
-                free(bufferList);
-                continue;
-            }
-
-            int outputChannels = 0;
-            for (UInt32 i = 0; i < bufferList->mNumberBuffers; i++) {
-                outputChannels += bufferList->mBuffers[i].mNumberChannels;
-            }
-            free(bufferList);
-
-            if (outputChannels == 0) continue;
-
-            // Получаем имя устройства
-            CFStringRef nameRef = nullptr;
-            UInt32 propSize = sizeof(nameRef);
-
-            AudioObjectPropertyAddress nameAddr{
-                kAudioObjectPropertyName,
-                kAudioObjectPropertyScopeOutput,  // Исправлено: Scope Output
-                kAudioObjectPropertyElementMaster
-            };
-
-            if (AudioObjectGetPropertyData(
-                    devId,
-                    &nameAddr,
-                    0,
-                    nullptr,
-                    &propSize,
-                    &nameRef
-            ) != noErr || !nameRef) {
-                continue;
-            }
-
-            std::string name = CFStringToStdString(nameRef);
-            CFRelease(nameRef);
-
-            jobject info = createAudioDeviceInfo(env, devId, name, outputChannels, false);
-            if (!info) continue;
-
-            // Исправлено: создаем NativeOutputAudioDevice вместо NativeInputAudioDevice
-            jobject device = env->NewObject(clsOutputDevice, ctorOutputDevice, info);
-            if (!device) continue;
-
-            env->CallBooleanMethod(list, arrayListAdd, device);
-        }
-
-        return list;
-    }
-
-
-    /*
-     * Class:     org_plovdev_audioengine_devices_AudioDeviceManager
-     * Method:    getDefaultInputDevice
-     * Signature: ()Lorg/plovdev/audioengine/devices/NativeInputAudioDevice;
-     */
-    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager_getDefaultInputDevice(JNIEnv* env, jobject jbj); {
-        if (!initCommonJNI(env) || !initJNIForOutput(env)) {
-            return nullptr;
-        }
-
-        AudioDeviceID device;
-
-        if (AudioObjectGetPropertyData(
-                kAudioObjectSystemObject,
-                &addr,
-                0,
-                nullptr,
-                device
-        ) != noErr) {
-            return list;
-        }
-
-        AudioObjectPropertyAddress streamAddr{
-            kAudioDevicePropertyStreamConfiguration,
-            kAudioObjectPropertyScopeOutput,
-            kAudioObjectPropertyElementMaster
-        };
-
-        UInt32 streamSize = 0;
-        if (AudioObjectGetPropertyDataSize(devId, &streamAddr, 0, nullptr, &streamSize) != noErr || streamSize == 0) {
-            return nullptr;
-        }
-    }
 }

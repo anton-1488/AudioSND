@@ -8,6 +8,8 @@ import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
+
 public class MicrophoneExample {
     private static final Logger log = LoggerFactory.getLogger(MicrophoneExample.class);
 
@@ -18,6 +20,8 @@ public class MicrophoneExample {
             microphone.start(); // начинаем запись
             Thread.sleep(10000); // условно, ждем сколько надо.
             Track track = microphone.getTrack(); // получаем результат, и делаем что надо.
+
+            engine.exportTrack(track, new FileOutputStream("recorded.wav"));
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
         }
