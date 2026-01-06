@@ -5,30 +5,36 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Менеджер для получения аудио устройств.
  * Дает доступ к устройствам ввода и вывода звука на устройстве.
  *
+ * @author Anton
+ * @version 1.0
  * @see AudioDeviceInfo
  * @see AudioDevice
- *
- * @version 1.0
- * @author Anton
  */
 public class AudioDeviceManager {
     private static final Logger log = LoggerFactory.getLogger(AudioDeviceManager.class);
     private volatile static AudioDeviceManager INSTANCE = null;
+    private final List<AudioDeviceListener> deviceListeners = new CopyOnWriteArrayList<>();
+    private final ExecutorService callbackExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
      * Singleton constructor
      */
     private AudioDeviceManager() {
         log.debug("Creating singleton instance for AudioDeviceManager");
+        _initCallback();
     }
 
     /**
      * Метод для получения инстанса AudioDeviceManager.
+     *
      * @return AudioDeviceManager singleton instance
      */
     public static AudioDeviceManager getInstance() {
@@ -45,6 +51,7 @@ public class AudioDeviceManager {
 
     /**
      * Ищет устройство ввода звука по его id.
+     *
      * @param id id устройства ввода
      * @return устройство ввода
      */
@@ -55,6 +62,7 @@ public class AudioDeviceManager {
 
     /**
      * Ищет устройство вывода звука по его id.
+     *
      * @param id id устройства вывода
      * @return устройство вывода
      */
@@ -72,6 +80,7 @@ public class AudioDeviceManager {
 
     /**
      * Возвращает список доступных устройств ввода.
+     *
      * @return доступные устройства ввода
      */
     public List<AudioDeviceInfo> getInputAudioDevices() {
@@ -80,6 +89,7 @@ public class AudioDeviceManager {
 
     /**
      * Возвращает список доступных устройств вывода.
+     *
      * @return доступные устройства вывода
      */
     public List<AudioDeviceInfo> getOutputAudioDevices() {
@@ -88,6 +98,7 @@ public class AudioDeviceManager {
 
     /**
      * Возвращает стандартное системное устройство ввода.
+     *
      * @return стандартное устройство ввода
      */
     public AudioDeviceInfo getDefaultInputAudioDevice() {
@@ -96,14 +107,48 @@ public class AudioDeviceManager {
 
     /**
      * Возвращает стандартное системное устройство вывода.
+     *
      * @return стандартное устройство вывода
      */
     public AudioDeviceInfo getDefaultOutputAudioDevice() {
         return _getDefaultOutputAudioDevice();
     }
 
+
+    //==========LISTENERS==========\\
+
+    public void addAudioDeviceListener(AudioDeviceListener listener) {
+        if (listener != null) {
+            deviceListeners.add(listener);
+        }
+    }
+
+    public void removeDeviceListener(AudioDeviceListener listener) {
+        if (listener != null) {
+            deviceListeners.remove(listener);
+        }
+    }
+
+    public List<AudioDeviceListener> getDeviceListeners() {
+        return deviceListeners;
+    }
+
+    private void notifyConnected(AudioDeviceInfo info) {
+        for (AudioDeviceListener listener : deviceListeners) {
+            callbackExecutor.execute(() -> listener.onDeviceConnected(info));
+        }
+    }
+
+    private void notifyDisconnected(AudioDeviceInfo info) {
+        for (AudioDeviceListener listener : deviceListeners) {
+            callbackExecutor.execute(() -> listener.onDeviceDisconnected(info));
+        }
+    }
+
+
     //==========NATIVIES==========\\
 
+    private native void _initCallback();
 
     private native AudioDeviceInfo _getDefaultInputAudioDevice();
 
