@@ -77,6 +77,7 @@ public class NativeAudioEngine implements AudioEngine {
             this.config = config;
             System.loadLibrary(config.getNativeLib().toString());
             TrackLoaderSearcher.getSearchedLoaders().forEach(this::addLoaderManager);
+            AudioDeviceManager.getInstance();
             _init();
             isInited = true;
         } else throw new AudioEngineException("Engine is already inited!");

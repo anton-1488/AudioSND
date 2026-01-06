@@ -533,7 +533,7 @@ OSStatus audioDeviceChangedCallback(AudioObjectID inObjectID, UInt32 inNumberAdd
             std::string name = getDeviceName(dev);
             jobject deviceInfo = createAudioDeviceInfo(env, dev, name);
 
-            env->CallVoidMethod(audioDeviceManagerObject, notifyConnectedMethod, deviceInfo);
+            env->CallVoidMethod(audioDeviceManagerObject, notifyDisconnectedMethod, deviceInfo);
             env->DeleteLocalRef(deviceInfo);
         }
     }
@@ -566,6 +566,9 @@ extern "C" {
      */
     JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1initManager(JNIEnv* env, jobject obj) {
         initJNICommon(env);
+        getDevicesByScope(env, true);
+        getDevicesByScope(env, false);
+
         jclass local = env->GetObjectClass(obj);
         clsAudioDeviceManager = (jclass) env->NewGlobalRef(local);
 

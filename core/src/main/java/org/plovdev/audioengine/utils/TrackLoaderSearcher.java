@@ -17,7 +17,6 @@ public class TrackLoaderSearcher {
         try {
             ServiceLoader<TrackLoaderManager> serviceLoader = ServiceLoader.load(TrackLoaderManager.class);
             for (TrackLoaderManager loader : serviceLoader) {
-                System.out.println("Found loader");
                 loaders.add(loader);
             }
         } catch (Exception e) {
