@@ -168,6 +168,28 @@ std::string getDeviceName(AudioDeviceID devId, bool isInput) {
     return name;
 }
 
+// =====================
+// Get device name global
+// =====================
+std::string getDeviceName(AudioDeviceID devId) {
+    CFStringRef nameRef = nullptr;
+    UInt32 propSize = sizeof(nameRef);
+
+    AudioObjectPropertyAddress nameAddr{
+        kAudioObjectPropertyName,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+
+    if (AudioObjectGetPropertyData(devId, &nameAddr, 0, nullptr, &propSize, &nameRef) != noErr || !nameRef) {
+        return "";
+    }
+
+    std::string name = CFStringToStdString(nameRef);
+    CFRelease(nameRef);
+    return name;
+}
+
 void initTrackFormatClass(JNIEnv* env) {
     if (clsTrackFormat) return;
 
@@ -464,6 +486,28 @@ jobject getDefaultDeviceByScope(JNIEnv* env, bool isInput) {
     return createAudioDeviceInfo(env, deviceId, name);
 }
 
+
+std::vector<AudioObjectID> getCurrentAudioDeviceList() {
+    AudioObjectPropertyAddress addr{
+        kAudioHardwarePropertyDevices,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+
+    UInt32 size = 0;
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &addr, 0, nullptr, &size) != noErr) {
+        return {};
+    }
+
+    int count = size / sizeof(AudioDeviceID);
+    std::vector<AudioDeviceID> devices(count);
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr, 0, nullptr, &size, devices.data()) != noErr) {
+        return {};
+    }
+
+    return devices;
+}
+
 OSStatus audioDeviceChangedCallback(AudioObjectID inObjectID, UInt32 inNumberAddresses, const AudioObjectPropertyAddress inAddresses[], void* inClientData) {
     JNIEnv* env;
     bool attached = false;
@@ -476,7 +520,9 @@ OSStatus audioDeviceChangedCallback(AudioObjectID inObjectID, UInt32 inNumberAdd
 
     for (AudioObjectID dev : currentDevices) {
         if (std::find(lastDeviceList.begin(), lastDeviceList.end(), dev) == lastDeviceList.end()) {
-            jobject deviceInfo = createAudioDeviceInfo(env, dev);
+            std::string name = getDeviceName(dev);
+            jobject deviceInfo = createAudioDeviceInfo(env, dev, name);
+
             env->CallVoidMethod(audioDeviceManagerObject, notifyConnectedMethod, deviceInfo);
             env->DeleteLocalRef(deviceInfo);
         }
@@ -484,8 +530,10 @@ OSStatus audioDeviceChangedCallback(AudioObjectID inObjectID, UInt32 inNumberAdd
 
     for (AudioObjectID dev : lastDeviceList) {
         if (std::find(currentDevices.begin(), currentDevices.end(), dev) == currentDevices.end()) {
-            jobject deviceInfo = createAudioDeviceInfo(env, dev);
-            env->CallVoidMethod(audioDeviceManagerObject, notifyDisconnectedMethod, deviceInfo);
+            std::string name = getDeviceName(dev);
+            jobject deviceInfo = createAudioDeviceInfo(env, dev, name);
+
+            env->CallVoidMethod(audioDeviceManagerObject, notifyConnectedMethod, deviceInfo);
             env->DeleteLocalRef(deviceInfo);
         }
     }
@@ -519,7 +567,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1initManager(JNIEnv* env, jobject obj) {
         initJNICommon(env);
         jclass local = env->GetObjectClass(obj);
-        clsAudioDeviceManager = (jclass) = env->NewGlobalRef(local);
+        clsAudioDeviceManager = (jclass) env->NewGlobalRef(local);
 
         audioDeviceManagerObject = env->NewGlobalRef(obj);
 
