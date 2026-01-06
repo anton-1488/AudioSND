@@ -29,7 +29,7 @@ public class AudioDeviceManager {
      */
     private AudioDeviceManager() {
         log.debug("Creating singleton instance for AudioDeviceManager");
-        _initCallback();
+        _initManager();
     }
 
     /**
@@ -148,7 +148,7 @@ public class AudioDeviceManager {
 
     //==========NATIVIES==========\\
 
-    private native void _initCallback();
+    private native void _initManager();
 
     private native AudioDeviceInfo _getDefaultInputAudioDevice();
 

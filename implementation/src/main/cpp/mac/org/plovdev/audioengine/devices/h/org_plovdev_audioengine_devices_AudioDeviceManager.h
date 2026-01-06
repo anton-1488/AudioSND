@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     org_plovdev_audioengine_devices_AudioDeviceManager
+ * Method:    _initCallback
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1initManager
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_plovdev_audioengine_devices_AudioDeviceManager
  * Method:    _getDefaultInputAudioDevice
  * Signature: ()Lorg/plovdev/audioengine/devices/AudioDeviceInfo;
  */

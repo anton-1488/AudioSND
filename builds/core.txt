@@ -30,7 +30,6 @@ core/src/main/java/org/plovdev/audioengine/exceptions/TrackLoadException.java
 core/src/main/java/org/plovdev/audioengine/exceptions/UnsupportedTrackFormat.java
 core/src/main/java/org/plovdev/audioengine/exceptions/AudioDeviceException.java
 core/src/main/java/org/plovdev/audioengine/exceptions/TrackExportException.java
-core/src/main/java/org/plovdev/audioengine/exceptions/package-info.java
 core/src/main/java/org/plovdev/audioengine/mixer/TrackMixer.java
 core/src/main/java/org/plovdev/audioengine/loaders/TrackEncoder.java
 core/src/main/java/org/plovdev/audioengine/loaders/TrackExporter.java

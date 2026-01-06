@@ -3,6 +3,6 @@ implementation/src/main/java/org/plovdev/audioengine/NativeAudioEngine.java
 implementation/src/main/java/org/plovdev/audioengine/mixer/NativeTrackMixer.java
 implementation/src/main/java/org/plovdev/audioengine/devices/NativeInputAudioDevice.java
 implementation/src/main/java/org/plovdev/audioengine/devices/Microphone.java
-implementation/src/main/java/org/plovdev/audioengine/devices/ChunkProvider.java
+implementation/src/main/java/org/plovdev/audioengine/devices/AudioDeviceListener.java
 implementation/src/main/java/org/plovdev/audioengine/devices/AudioDeviceManager.java
 implementation/src/main/java/org/plovdev/audioengine/devices/NativeOutputAudioDevice.java

@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "org_plovdev_audioengine_devices_NativeOutputAudioDevice.h"
+#include "h/org_plovdev_audioengine_devices_NativeOutputAudioDevice.h"
 
 // ======================================================
 // RingBuffer (lock-free, frames-based, float32)

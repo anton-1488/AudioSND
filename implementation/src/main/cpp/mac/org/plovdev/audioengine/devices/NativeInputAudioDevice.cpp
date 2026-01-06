@@ -9,7 +9,7 @@
 #include <condition_variable>
 #include <memory>
 
-#include "org_plovdev_audioengine_devices_NativeInputAudioDevice.h"
+#include "h/org_plovdev_audioengine_devices_NativeInputAudioDevice.h"
 
 // Структура данных для конкретного устройства
 struct AudioDeviceContext {

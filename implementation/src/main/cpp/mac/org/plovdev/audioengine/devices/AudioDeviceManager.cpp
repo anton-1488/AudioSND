@@ -3,8 +3,9 @@
 #include <CoreAudio/CoreAudio.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 
-#include "org_plovdev_audioengine_devices_AudioDeviceManager.h"
+#include "h/org_plovdev_audioengine_devices_AudioDeviceManager.h"
 
 // =====================
 // Utils
@@ -21,6 +22,7 @@ std::string CFStringToStdString(CFStringRef cfStr) {
 // =====================
 // JNI cache
 // =====================
+JavaVM* gJvm = nullptr;
 jclass clsAudioDeviceInfo = nullptr;
 jmethodID ctorAudioDeviceInfo = nullptr;
 jclass clsAudioDeviceType = nullptr;
@@ -33,19 +35,26 @@ jmethodID arrayListAdd = nullptr;
 jclass clsTrackFormat = nullptr;
 jmethodID ctorTrackFormat = nullptr;
 
+jclass clsAudioDeviceManager = nullptr;
+jobject audioDeviceManagerObject = nullptr;
+jmethodID notifyConnectedMethod = nullptr;
+jmethodID notifyDisconnectedMethod = nullptr;
+
+std::vector<AudioObjectID> lastDeviceList;
+
 // =====================
 // Init JNI cache
 // =====================
 bool initJNICommon(JNIEnv* env) {
     if (clsAudioDeviceInfo) return true;
 
+    env->GetJavaVM(&gJvm);
     // 1. AudioDeviceInfo class
     clsAudioDeviceInfo = (jclass)env->NewGlobalRef(
         env->FindClass("org/plovdev/audioengine/devices/AudioDeviceInfo")
     );
     if (!clsAudioDeviceInfo) return false;
 
-    // Конструктор изменился: теперь 5 параметров с AudioDeviceType enum
     ctorAudioDeviceInfo = env->GetMethodID(
         clsAudioDeviceInfo,
         "<init>",
@@ -311,10 +320,6 @@ jobject createAudioDeviceInfo(
         AudioDeviceID devId,
         const std::string& name
 ) {
-    if (!initJNICommon(env)) {
-        return nullptr;
-    }
-
     // Определяем тип устройства
     jobject deviceType = getDeviceType(env, devId);
     if (!deviceType) return nullptr;
@@ -370,10 +375,6 @@ jobject createAudioDeviceInfo(
 // Get all devices
 // =====================
 jobject getDevicesByScope(JNIEnv* env, bool wantInputDevices) {
-    if (!initJNICommon(env)) {
-        return nullptr;
-    }
-
     // Get all devices
     AudioObjectPropertyAddress addrAllDevices{
         kAudioHardwarePropertyDevices,
@@ -432,10 +433,6 @@ jobject getDevicesByScope(JNIEnv* env, bool wantInputDevices) {
 // Get default device by scope
 // =====================
 jobject getDefaultDeviceByScope(JNIEnv* env, bool isInput) {
-    if (!initJNICommon(env)) {
-        return nullptr;
-    }
-
     AudioDeviceID deviceId;
     UInt32 size = sizeof(AudioDeviceID);
 
@@ -467,29 +464,85 @@ jobject getDefaultDeviceByScope(JNIEnv* env, bool isInput) {
     return createAudioDeviceInfo(env, deviceId, name);
 }
 
+OSStatus audioDeviceChangedCallback(AudioObjectID inObjectID, UInt32 inNumberAddresses, const AudioObjectPropertyAddress inAddresses[], void* inClientData) {
+    JNIEnv* env;
+    bool attached = false;
+    if (gJvm->GetEnv((void**)&env, JNI_VERSION_1_8) != JNI_OK) {
+        gJvm->AttachCurrentThread((void**)&env, nullptr);
+        attached = true;
+    }
+
+    std::vector<AudioObjectID> currentDevices = getCurrentAudioDeviceList();
+
+    for (AudioObjectID dev : currentDevices) {
+        if (std::find(lastDeviceList.begin(), lastDeviceList.end(), dev) == lastDeviceList.end()) {
+            jobject deviceInfo = createAudioDeviceInfo(env, dev);
+            env->CallVoidMethod(audioDeviceManagerObject, notifyConnectedMethod, deviceInfo);
+            env->DeleteLocalRef(deviceInfo);
+        }
+    }
+
+    for (AudioObjectID dev : lastDeviceList) {
+        if (std::find(currentDevices.begin(), currentDevices.end(), dev) == currentDevices.end()) {
+            jobject deviceInfo = createAudioDeviceInfo(env, dev);
+            env->CallVoidMethod(audioDeviceManagerObject, notifyDisconnectedMethod, deviceInfo);
+            env->DeleteLocalRef(deviceInfo);
+        }
+    }
+
+    lastDeviceList = currentDevices;
+
+    if (attached) {
+        gJvm->DetachCurrentThread();
+    }
+    return noErr;
+}
+
+void subscribeToNativeDeviceEvents() {
+    AudioObjectPropertyAddress addr = {
+        kAudioHardwarePropertyDevices,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+    AudioObjectAddPropertyListener(kAudioObjectSystemObject, &addr, &audioDeviceChangedCallback, nullptr);
+}
+
 // =====================
 // JNI Methods
 // =====================
 extern "C" {
+    /*
+     * Class:     org_plovdev_audioengine_devices_AudioDeviceManager
+     * Method:    _initCallback
+     * Signature: ()V
+     */
+    JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1initManager(JNIEnv* env, jobject obj) {
+        initJNICommon(env);
+        jclass local = env->GetObjectClass(obj);
+        clsAudioDeviceManager = (jclass) = env->NewGlobalRef(local);
 
-JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getInputAudioDevices
-  (JNIEnv *env, jobject obj) {
-    return getDevicesByScope(env, true); // true = want input devices
-}
+        audioDeviceManagerObject = env->NewGlobalRef(obj);
 
-JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getOutputAudioDevices
-  (JNIEnv *env, jobject obj) {
-    return getDevicesByScope(env, false); // false = want output devices
-}
+        notifyConnectedMethod = env->GetMethodID(clsAudioDeviceManager, "notifyConnected", "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V");
+        notifyDisconnectedMethod = env->GetMethodID(clsAudioDeviceManager, "notifyDisconnected", "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V");
 
-JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultInputAudioDevice
-  (JNIEnv *env, jobject obj) {
-    return getDefaultDeviceByScope(env, true);
-}
+        subscribeToNativeDeviceEvents();
+    }
 
-JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultOutputAudioDevice
-  (JNIEnv *env, jobject obj) {
-    return getDefaultDeviceByScope(env, false);
-}
 
+    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getInputAudioDevices(JNIEnv *env, jobject obj) {
+        return getDevicesByScope(env, true);
+    }
+
+    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getOutputAudioDevices(JNIEnv *env, jobject obj) {
+        return getDevicesByScope(env, false);
+    }
+
+    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultInputAudioDevice(JNIEnv *env, jobject obj) {
+        return getDefaultDeviceByScope(env, true);
+    }
+
+    JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_devices_AudioDeviceManager__1getDefaultOutputAudioDevice(JNIEnv *env, jobject obj) {
+        return getDefaultDeviceByScope(env, false);
+    }
 }
