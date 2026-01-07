@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
 
 public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
@@ -25,7 +24,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     private TrackStatus status = TrackStatus.UNAVAILABLE;
     private final int chunkSize;
     private int currentCycle = 0;
-    private final int ms = 1;
+    private final int ms = 10;
 
     private float speed = 1.0f;
     private float volume = 0.5f;
@@ -265,9 +264,7 @@ public class NativeTrackPlayer implements TrackPlayer {
 
             ByteBuffer chunk = data.slice(start, Math.min(chunkSize, rem));
             audioDevice.write(chunk);
-
             position.set(Math.min(start + chunkSize, limit));
-            LockSupport.parkNanos(700000);
         }
 
         currentCycle++;

@@ -17,6 +17,8 @@ bin/
 
 core/target/**
 
+*.wav
+
 /testdata/
 /testdata/44100/
 /testdata/48000/

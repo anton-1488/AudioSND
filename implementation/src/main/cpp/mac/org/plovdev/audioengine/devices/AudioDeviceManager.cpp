@@ -247,12 +247,12 @@ jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asb
 }
 
 // =====================
-// Get supported formats as List (not Set!)
+// Get supported formats
 // =====================
 jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, bool isInput) {
     initTrackFormatClass(env);
     if (!clsTrackFormat || !ctorTrackFormat) {
-        return env->NewObject(clsArrayList, ctorArrayList); // Return empty list
+        return env->NewObject(clsArrayList, ctorArrayList);
     }
 
     jobject formatList = env->NewObject(clsArrayList, ctorArrayList);
@@ -306,7 +306,6 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, bool isInput
         }
 
         for (const auto& asbd : availableFormats) {
-            // Для каждого канального конфига
             bool isSigned = (asbd.mFormatFlags & kAudioFormatFlagIsSignedInteger) != 0;
             bool isFloat  = (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0;
             jboolean signedFlag = isSigned || isFloat;
@@ -342,26 +341,21 @@ jobject createAudioDeviceInfo(
         AudioDeviceID devId,
         const std::string& name
 ) {
-    // Определяем тип устройства
     jobject deviceType = getDeviceType(env, devId);
     if (!deviceType) return nullptr;
 
-    // Определяем scope для форматов (для INPUT/OUTPUT берем соответствующий)
     bool isInputDevice = false;
     if (env->IsSameObject(deviceType, env->GetStaticObjectField(clsAudioDeviceType, fidInputType))) {
         isInputDevice = true;
     } else if (env->IsSameObject(deviceType, env->GetStaticObjectField(clsAudioDeviceType, fidDuplexType))) {
-        // Для duplex берем input scope для форматов (можно выбрать любой)
         isInputDevice = true;
     }
 
-    // Получаем поддерживаемые форматы
     jobject formatsList = getDeviceSupportedFormats(env, devId, isInputDevice);
     if (!formatsList) {
-        formatsList = env->NewObject(clsArrayList, ctorArrayList); // Пустой список
+        formatsList = env->NewObject(clsArrayList, ctorArrayList);
     }
 
-    // Получаем вендора
     const char* vendorStr = "Apple";
     UInt32 vendor = 0;
     UInt32 sizeVendor = sizeof(vendor);
@@ -420,23 +414,17 @@ jobject getDevicesByScope(JNIEnv* env, bool wantInputDevices) {
         return env->NewObject(clsArrayList, ctorArrayList);
     }
 
-    // Filter devices and create list
     jobject deviceList = env->NewObject(clsArrayList, ctorArrayList);
 
     for (AudioDeviceID devId : allDevices) {
-        // Определяем тип устройства
         int inputChannels = getDeviceChannels(devId, true);
         int outputChannels = getDeviceChannels(devId, false);
 
-        // Фильтруем по запрошенному типу
         if (wantInputDevices && inputChannels == 0) continue;
         if (!wantInputDevices && outputChannels == 0) continue;
 
-        // Получаем имя устройства
-        // Для устройств ввода берем input scope, для вывода - output
         std::string name = getDeviceName(devId, wantInputDevices);
         if (name.empty()) {
-            // Если не получили имя в нужном scope, пробуем другой
             name = getDeviceName(devId, !wantInputDevices);
             if (name.empty()) continue;
         }
@@ -479,7 +467,6 @@ jobject getDefaultDeviceByScope(JNIEnv* env, bool isInput) {
         return nullptr;
     }
 
-    // Получаем имя устройства
     std::string name = getDeviceName(deviceId, isInput);
     if (name.empty()) return nullptr;
 

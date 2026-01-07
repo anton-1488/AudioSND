@@ -87,7 +87,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         try {
             setStatus(OPENING);
             trackFormat = format;
-            _open(info.id(), format);
+            _open(format, info);
             setStatus(OPENED);
             isInited.set(true);
             log.debug("Audio output device {} opened", info.id());
@@ -124,7 +124,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         if (isInited.get()) {
             try {
                 setStatus(CLOSING);
-                _close(info.id());
+                _close();
                 isInited.set(false);
                 setStatus(CLOSED);
             } catch (Exception e) {
@@ -191,11 +191,11 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
 
     //============NATIVIES============\\
 
-    private native void _open(String id, TrackFormat format);
+    private native void _open(TrackFormat format, AudioDeviceInfo info);
 
     private native int _write(ByteBuffer buffer);
 
     private native void _flush();
 
-    private native void _close(String id);
+    private native void _close();
 }

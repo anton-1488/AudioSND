@@ -107,6 +107,6 @@ plovdev AudioEngine - Free To Use License
 Форки, модификации, коммерческое использование - всё разрешено.
 Указывать авторство - по желанию.
 
-*(c) PlovDev 2025*
+*(c) PlovDev 2026*
 
 [Telegram](https://t.me/plovdev_official)
