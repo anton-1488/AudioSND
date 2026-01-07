@@ -131,7 +131,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
     AudioComponentInstanceNew(comp, &ctx->unit);
 
-AudioUnitSetProperty(ctx->unit,
+    AudioUnitSetProperty(ctx->unit,
         kAudioOutputUnitProperty_CurrentDevice,
         kAudioUnitScope_Global, 0,
         &devId, sizeof(devId));
