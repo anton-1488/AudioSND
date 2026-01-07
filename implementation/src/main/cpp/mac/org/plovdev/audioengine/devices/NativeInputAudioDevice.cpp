@@ -197,153 +197,101 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevi
 
     std::lock_guard<std::mutex> lock(globalContextMutex);
 
-    if (deviceContext) {
-        return;
-    }
+    if (deviceContext) return;
 
     try {
         deviceContext = std::make_unique<AudioDeviceContext>();
 
-        // Получаем deviceId
+        // Получаем deviceId из deviceInfo
         deviceContext->deviceId = getDeviceIdFromInfo(env, deviceInfo);
 
         // Конвертируем формат
         deviceContext->format = javaToASBD(env, trackFormat);
 
-        // Настраиваем аудио компонент
-        AudioComponentDescription desc;
+        // Настраиваем AudioComponent
+        AudioComponentDescription desc{};
         desc.componentType = kAudioUnitType_Output;
         desc.componentSubType = kAudioUnitSubType_HALOutput;
         desc.componentManufacturer = kAudioUnitManufacturer_Apple;
-        desc.componentFlags = 0;
-        desc.componentFlagsMask = 0;
 
-        AudioComponent inputComponent = AudioComponentFindNext(nullptr, &desc);
-        if (!inputComponent) {
-            throw std::runtime_error("No audio input device found");
-        }
+        AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
+        if (!comp) throw std::runtime_error("No audio input device found");
 
-        // Создаем аудио юнит
-        OSStatus status = AudioComponentInstanceNew(inputComponent, &deviceContext->audioUnit);
-        if (status != noErr) {
-            throw std::runtime_error("Failed to create audio unit");
-        }
+        OSStatus status = AudioComponentInstanceNew(comp, &deviceContext->audioUnit);
+        if (status != noErr) throw std::runtime_error("Failed to create AudioUnit");
 
-        // Включаем вход на bus 1
+        // Включаем Input, выключаем Output
         UInt32 enableInput = 1;
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                     kAudioOutputUnitProperty_EnableIO,
-                                     kAudioUnitScope_Input,
-                                     1, // Input bus
-                                     &enableInput,
-                                     sizeof(enableInput));
-        if (status != noErr) {
-            throw std::runtime_error("Failed to enable input");
-        }
-
-        // Отключаем выход на bus 0
         UInt32 disableOutput = 0;
         status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                     kAudioOutputUnitProperty_EnableIO,
-                                     kAudioUnitScope_Output,
-                                     0, // Output bus
-                                     &disableOutput,
-                                     sizeof(disableOutput));
-        if (status != noErr) {
-            throw std::runtime_error("Failed to disable output");
-        }
+                                      kAudioOutputUnitProperty_EnableIO,
+                                      kAudioUnitScope_Input, 1, &enableInput, sizeof(enableInput));
+        if (status != noErr) throw std::runtime_error("Failed to enable input");
 
-        // Получаем устройство ввода по умолчанию
+        status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                      kAudioOutputUnitProperty_EnableIO,
+                                      kAudioUnitScope_Output, 0, &disableOutput, sizeof(disableOutput));
+        if (status != noErr) throw std::runtime_error("Failed to disable output");
+
+        // Преобразуем deviceId строки в AudioDeviceID
         AudioDeviceID inputDevice = kAudioDeviceUnknown;
-        UInt32 propertySize = sizeof(inputDevice);
-        AudioObjectPropertyAddress propertyAddress = {
-            kAudioHardwarePropertyDefaultInputDevice,
-            kAudioObjectPropertyScopeGlobal,
-            kAudioObjectPropertyElementMaster
-        };
-
-        status = AudioObjectGetPropertyData(kAudioObjectSystemObject,
-                                           &propertyAddress,
-                                           0,
-                                           nullptr,
-                                           &propertySize,
-                                           &inputDevice);
-
-        if (status != noErr || inputDevice == kAudioDeviceUnknown) {
-            throw std::runtime_error("Failed to get default input device");
+        if (!deviceContext->deviceId.empty()) {
+            inputDevice = static_cast<AudioDeviceID>(strtoul(deviceContext->deviceId.c_str(), nullptr, 10));
         }
 
-        // Устанавливаем устройство ввода
+        if (inputDevice == kAudioDeviceUnknown) {
+            throw std::runtime_error("Invalid deviceId");
+        }
+
+        // Устанавливаем выбранное устройство
         status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                     kAudioOutputUnitProperty_CurrentDevice,
-                                     kAudioUnitScope_Global,
-                                     0,
-                                     &inputDevice,
-                                     sizeof(inputDevice));
-        if (status != noErr) {
-            throw std::runtime_error("Failed to set input device");
-        }
+                                      kAudioOutputUnitProperty_CurrentDevice,
+                                      kAudioUnitScope_Global,
+                                      0,
+                                      &inputDevice,
+                                      sizeof(inputDevice));
+        if (status != noErr) throw std::runtime_error("Failed to set input device");
 
-        // Устанавливаем формат - ВАЖНО: на выходном scope!
+        // Формат для Input bus
         status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                     kAudioUnitProperty_StreamFormat,
-                                     kAudioUnitScope_Output,  // Исправлено: Output scope
-                                     1, // Input bus, но Output scope
-                                     &deviceContext->format,
-                                     sizeof(deviceContext->format));
-        if (status != noErr) {
-            throw std::runtime_error("Failed to set audio format");
-        }
+                                      kAudioUnitProperty_StreamFormat,
+                                      kAudioUnitScope_Output,
+                                      1,
+                                      &deviceContext->format,
+                                      sizeof(deviceContext->format));
+        if (status != noErr) throw std::runtime_error("Failed to set stream format");
 
-        // Настраиваем callback
-        AURenderCallbackStruct callbackStruct;
+        // Callback
+        AURenderCallbackStruct callbackStruct{};
         callbackStruct.inputProc = recordingCallback;
         callbackStruct.inputProcRefCon = deviceContext.get();
 
         status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                     kAudioOutputUnitProperty_SetInputCallback,
-                                     kAudioUnitScope_Global,
-                                     1, // Input bus для callback
-                                     &callbackStruct,
-                                     sizeof(callbackStruct));
-        if (status != noErr) {
-            throw std::runtime_error("Failed to set callback");
-        }
+                                      kAudioOutputUnitProperty_SetInputCallback,
+                                      kAudioUnitScope_Global,
+                                      1,
+                                      &callbackStruct,
+                                      sizeof(callbackStruct));
+        if (status != noErr) throw std::runtime_error("Failed to set callback");
 
-        // Инициализируем
+        // Инициализация
         status = AudioUnitInitialize(deviceContext->audioUnit);
-        if (status != noErr) {
-            throw std::runtime_error("Failed to initialize audio unit");
-        }
-
-        status = AudioUnitSetParameter(deviceContext->audioUnit,
-                                      kHALOutputParam_Volume,
-                                      kAudioUnitScope_Input, // Важно: Scope Input для микрофона!
-                                      1, // Input bus
-                                      apparatGain,
-                                      0);
+        if (status != noErr) throw std::runtime_error("Failed to initialize AudioUnit");
 
         deviceContext->isInitialized = true;
 
-        // Инициализируем буфер
+        // Буфер на 2 секунды
         size_t bufferSize = deviceContext->format.mSampleRate *
-                           deviceContext->format.mBytesPerFrame * 2; // 2 секунды
+                            deviceContext->format.mBytesPerFrame * 2;
         deviceContext->buffer.reserve(bufferSize);
         deviceContext->bytesAvailable = 0;
         deviceContext->isRunning = false;
-
-        // Для отладки - логируем формат
-        printf("Audio format set: %d Hz, %d channels, %d bits\n",
-               (int)deviceContext->format.mSampleRate,
-               (int)deviceContext->format.mChannelsPerFrame,
-               (int)deviceContext->format.mBitsPerChannel);
 
     } catch (const std::exception& e) {
         if (deviceContext) {
             deviceContext->close();
             deviceContext.reset();
         }
-
         jclass exClass = env->FindClass("org/plovdev/audioengine/exceptions/OpenAudioDeviceException");
         env->ThrowNew(exClass, e.what());
     }
