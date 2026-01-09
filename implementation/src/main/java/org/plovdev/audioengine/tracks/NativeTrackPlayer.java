@@ -255,15 +255,14 @@ public class NativeTrackPlayer implements TrackPlayer {
         while (isPlaying.get()) {
             int start = position.get();
             int rem = limit - start;
-
             if (start >= limit || rem <= 0) {
                 stop();
                 break;
             }
 
-
             ByteBuffer chunk = data.slice(start, Math.min(chunkSize, rem));
             audioDevice.write(chunk);
+
             position.set(Math.min(start + chunkSize, limit));
         }
 

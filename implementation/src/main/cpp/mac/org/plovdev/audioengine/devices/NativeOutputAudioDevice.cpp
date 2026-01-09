@@ -7,7 +7,10 @@
 #include <cstring>
 #include <cstdlib>
 
-static JavaVM* g_vm = nullptr;
+#include <iostream>
+#include <chrono>
+
+JavaVM* g_vm = nullptr;
 
 struct NativeOutputContext {
     AudioUnit unit = nullptr;
@@ -28,13 +31,14 @@ struct NativeOutputContext {
     bool running = false;
 };
 
-static NativeOutputContext* ctx = nullptr;
+NativeOutputContext* ctx = nullptr;
 
 #pragma mark ======================
 #pragma mark CoreAudio callback
 #pragma mark ======================
 
-static OSStatus renderCallback(
+
+OSStatus renderCallback(
         void* refCon,
         AudioUnitRenderActionFlags*,
         const AudioTimeStamp*,
@@ -120,7 +124,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     AudioDeviceID devId = (AudioDeviceID) strtoul(devStr, nullptr, 10);
     env->ReleaseStringUTFChars(jDevId, devStr);
 
-    ctx->ringFrames = sr * 2;
+    ctx->ringFrames = sr * 0.03;
     ctx->ring.resize(ctx->ringFrames * ch);
 
     AudioComponentDescription desc{};

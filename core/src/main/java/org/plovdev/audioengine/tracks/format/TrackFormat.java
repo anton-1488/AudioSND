@@ -26,6 +26,7 @@ public record TrackFormat(@NotNull @Deprecated String extension, int channels, i
     public enum AudioCodec {
         PCM8,       // 8-bit PCM
         PCM16,      // 16-bit PCM
+        PCM20,      // 20-bit PCM
         PCM24,      // 24-bit PCM
         PCM32,      // 32-bit PCM (integer)
         FLOAT32,    // 32-bit float

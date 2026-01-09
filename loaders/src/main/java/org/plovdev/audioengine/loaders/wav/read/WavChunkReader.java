@@ -88,6 +88,7 @@ public class WavChunkReader implements AutoCloseable {
             case 8 -> TrackFormat.AudioCodec.PCM8;
             case 16 -> TrackFormat.AudioCodec.PCM16;
             case 24 -> TrackFormat.AudioCodec.PCM24;
+            case 20 -> TrackFormat.AudioCodec.PCM20;
             case 32 -> TrackFormat.AudioCodec.PCM32;
             default -> throw new IOException("Неподдерживаемый битрейт: " + bitsPerSample);
         };
