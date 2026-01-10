@@ -54,8 +54,8 @@ Float32 apparatGain = 1;
 int applicaionGaine = 1;
 
 // Глобальный контекст для текущего устройства
-static std::unique_ptr<AudioDeviceContext> deviceContext = nullptr;
-static std::mutex globalContextMutex;
+std::unique_ptr<AudioDeviceContext> deviceContext = nullptr;
+std::mutex globalContextMutex;
 
 // Конвертация Java TrackFormat в AudioStreamBasicDescription
 AudioStreamBasicDescription javaToASBD(JNIEnv* env, jobject trackFormat) {
@@ -126,7 +126,7 @@ std::string getDeviceIdFromInfo(JNIEnv* env, jobject deviceInfo) {
 }
 
 // Callback для захвата аудио
-static OSStatus recordingCallback(void* inRefCon,
+OSStatus recordingCallback(void* inRefCon,
                                  AudioUnitRenderActionFlags* ioActionFlags,
                                  const AudioTimeStamp* inTimeStamp,
                                  UInt32 inBusNumber,

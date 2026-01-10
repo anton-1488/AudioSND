@@ -21,6 +21,8 @@ import static org.plovdev.audioengine.devices.AudioDeviceStatus.*;
  * @author Anton
  */
 public final class NativeOutputAudioDevice implements OutputAudioDevice {
+    private long nativeHandle = 0;
+
     private static final Logger log = LoggerFactory.getLogger(NativeOutputAudioDevice.class);
     private final AudioDeviceInfo info;
     private TrackFormat trackFormat;
@@ -52,7 +54,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
 
         try {
             status = RUNNING;
-            return _write(byteBuffer);
+            return _write(byteBuffer, nativeHandle);
         } finally {
             status = OPENED;
         }
@@ -64,7 +66,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     @Override
     public void flush() {
         checkForInited();
-        _flush();
+        _flush(nativeHandle);
     }
 
     /**
@@ -87,7 +89,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         try {
             setStatus(OPENING);
             trackFormat = format;
-            _open(format, info);
+            nativeHandle = _open(format, info);
             setStatus(OPENED);
             isInited.set(true);
             log.debug("Audio output device {} opened", info.id());
@@ -124,7 +126,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
         if (isInited.get()) {
             try {
                 setStatus(CLOSING);
-                _close();
+                _close(nativeHandle);
                 isInited.set(false);
                 setStatus(CLOSED);
             } catch (Exception e) {
@@ -191,11 +193,11 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
 
     //============NATIVIES============\\
 
-    private native void _open(TrackFormat format, AudioDeviceInfo info);
+    private native long _open(TrackFormat format, AudioDeviceInfo info);
 
-    private native int _write(ByteBuffer buffer);
+    private native int _write(ByteBuffer buffer, long handle);
 
-    private native void _flush();
+    private native void _flush(long handle);
 
-    private native void _close();
+    private native void _close(long handle);
 }

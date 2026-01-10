@@ -10,34 +10,34 @@ extern "C" {
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _open
- * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V
+ * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)J
  */
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
+JNIEXPORT jlong JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
   (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _write
- * Signature: (Ljava/nio/ByteBuffer;)I
+ * Signature: (Ljava/nio/ByteBuffer;J)I
  */
 JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jlong);
 
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _flush
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _close
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }

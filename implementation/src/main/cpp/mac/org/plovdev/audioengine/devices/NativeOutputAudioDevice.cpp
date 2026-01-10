@@ -6,9 +6,9 @@
 #include <condition_variable>
 #include <cstring>
 #include <cstdlib>
-
+#include <unordered_map>
+#include <memory>
 #include <iostream>
-#include <chrono>
 
 JavaVM* g_vm = nullptr;
 
@@ -31,7 +31,15 @@ struct NativeOutputContext {
     bool running = false;
 };
 
-NativeOutputContext* ctx = nullptr;
+std::unordered_map<long, std::unique_ptr<NativeOutputContext>> contexts;
+std::mutex contexts_mutex;
+long nextContextId = 1;
+
+NativeOutputContext* getContext(long handle) {
+    std::lock_guard<std::mutex> lock(contexts_mutex);
+    auto it = contexts.find(handle);
+    return (it != contexts.end()) ? it->second.get() : nullptr;
+}
 
 #pragma mark ======================
 #pragma mark CoreAudio callback
@@ -49,6 +57,7 @@ OSStatus renderCallback(
     auto* c = static_cast<NativeOutputContext*>(refCon);
     float* out = (float*) ioData->mBuffers[0].mData;
     size_t ch = c->dst.mChannelsPerFrame;
+
 
     size_t available =
             c->writeFrame.load(std::memory_order_acquire) -
@@ -78,14 +87,14 @@ OSStatus renderCallback(
 
 extern "C" {
 
-JNIEXPORT void JNICALL
+JNIEXPORT jlong JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
 (JNIEnv* env, jobject, jobject fmt, jobject deviceInfo)
 {
     env->GetJavaVM(&g_vm);
-    if (ctx) return;
 
-    ctx = new NativeOutputContext();
+    auto ctx = std::make_unique<NativeOutputContext>();
+    NativeOutputContext* ctxPtr = ctx.get();
 
     jclass infoCls = env->GetObjectClass(deviceInfo);
     jstring jDevId = (jstring) env->CallObjectMethod(deviceInfo, env->GetMethodID(infoCls, "id", "()Ljava/lang/String;"));;
@@ -118,13 +127,14 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     ctx->dst.mBytesPerFrame = ch * sizeof(float);
     ctx->dst.mBytesPerPacket = ctx->dst.mBytesPerFrame;
 
-    AudioConverterNew(&ctx->src, &ctx->dst, &ctx->converter);
+    OSStatus status = AudioConverterNew(&ctx->src, &ctx->dst, &ctx->converter);
+    if (status != noErr) return 0;
 
     const char* devStr = env->GetStringUTFChars(jDevId, nullptr);
     AudioDeviceID devId = (AudioDeviceID) strtoul(devStr, nullptr, 10);
     env->ReleaseStringUTFChars(jDevId, devStr);
 
-    ctx->ringFrames = sr * 0.03;
+    ctx->ringFrames = sr * 0.05;
     ctx->ring.resize(ctx->ringFrames * ch);
 
     AudioComponentDescription desc{};
@@ -147,7 +157,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
 
     AURenderCallbackStruct cb{};
     cb.inputProc = renderCallback;
-    cb.inputProcRefCon = ctx;
+    cb.inputProcRefCon = ctxPtr;
 
     AudioUnitSetProperty(ctx->unit,
         kAudioUnitProperty_SetRenderCallback,
@@ -157,13 +167,21 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     AudioUnitInitialize(ctx->unit);
     AudioOutputUnitStart(ctx->unit);
     ctx->running = true;
+
+    std::lock_guard<std::mutex> lock(contexts_mutex);
+    long handle = nextContextId++;
+    contexts[handle] = std::move(ctx);
+    return handle;
 }
 
 JNIEXPORT jint JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
-(JNIEnv* env, jobject, jobject buffer)
-{
-    if (!ctx || !ctx->running) return 0;
+(JNIEnv* env, jobject, jobject buffer, jlong handle) {
+    auto* ctx = getContext(handle);
+
+    if (!ctx || !ctx->running) {
+        return 0;
+    }
 
     auto* src = (uint8_t*) env->GetDirectBufferAddress(buffer);
     jlong cap = env->GetDirectBufferCapacity(buffer);
@@ -217,20 +235,21 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
         frames -= toWrite;
     }
 
-    return 1;
+    return cap;
 }
 
 JNIEXPORT void JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-(JNIEnv*, jobject)
+(JNIEnv*, jobject, jlong handle)
 {
     // no-op
 }
 
 JNIEXPORT void JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
-(JNIEnv*, jobject)
+(JNIEnv*, jobject, jlong handle)
 {
+    auto* ctx = getContext(handle);
     if (!ctx) return;
 
     ctx->running = false;
@@ -239,7 +258,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1close
     AudioComponentInstanceDispose(ctx->unit);
     AudioConverterDispose(ctx->converter);
 
-    delete ctx;
-    ctx = nullptr;
+    std::lock_guard<std::mutex> lock(contexts_mutex);
+    contexts.erase(handle);
 }
 } // extern "C"
