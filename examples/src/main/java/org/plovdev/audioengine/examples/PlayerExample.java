@@ -20,9 +20,6 @@ public class PlayerExample {
             Track track1 = engine.loadTrack("block-story-stereo.wav");
             engine.getTrackPlayer(track1).play();
 
-            Track track2 = engine.loadTrack("melody1-stereo.wav");
-            engine.getTrackPlayer(track2).play();
-
             Thread.sleep(track1.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
