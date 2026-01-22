@@ -57,9 +57,9 @@ int applicaionGaine = 1;
 
 std::unordered_map<long, std::unique_ptr<AudioDeviceContext>> inputContexts;
 std::mutex inputContextsMutex;
-long nextContextId = 1;
+long nextInputContextId = 1;
 
-AudioDeviceContext* getContext(long handle) {
+AudioDeviceContext* getInputContext(long handle) {
     std::lock_guard<std::mutex> lock(inputContextsMutex);
     auto it = inputContexts.find(handle);
     return (it != inputContexts.end()) ? it->second.get() : nullptr;
@@ -305,7 +305,7 @@ extern "C" {
         }
 
         std::lock_guard<std::mutex> lock(inputContextsMutex);
-        long handle = nextContextId++;
+        long handle = nextInputContextId++;
         inputContexts[handle] = std::move(deviceContext);
         return handle;
     }
@@ -317,7 +317,7 @@ extern "C" {
      * Signature: (Ljava/nio/ByteBuffer;J)I
      */
     JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1read(JNIEnv* env, jobject obj, jobject byteBuffer, jlong handle) {
-        auto* deviceContext = getContext(handle);
+        auto* deviceContext = getInputContext(handle);
 
         if (!deviceContext) {
             return 0;
@@ -339,7 +339,6 @@ extern "C" {
             deviceContext->isRunning = true;
         }
 
-        lock.unlock(); // Отпускаем глобальную блокировку перед ожиданием данных
 
         uint8_t* dest = static_cast<uint8_t*>(bufferPtr);
         size_t bytesCopied = 0;
@@ -401,7 +400,7 @@ extern "C" {
      * Signature: (J)V
      */
     JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1close(JNIEnv* env, jobject obj, jlong handle) {
-        auto* ctx = getContext(handle);
+        auto* ctx = getInputContext(handle);
         if (!ctx) return;
 
         ctx->close();
