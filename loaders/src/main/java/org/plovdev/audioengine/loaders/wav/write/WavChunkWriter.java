@@ -27,7 +27,7 @@ public class WavChunkWriter {
             int blockAlign = channels * (bitDepth / 8);
             int byteRate = sampleRate * blockAlign;
 
-            outputStream.write(FORMAT.getChunk().getBytes());
+            outputStream.write(FMT.getChunk().getBytes());
             outputStream.write(intToLittleEndian(16));
 
             outputStream.write(shortToLittleEndian((short) (floatFormat ? 3 : 1))); // PCM=1, float=3

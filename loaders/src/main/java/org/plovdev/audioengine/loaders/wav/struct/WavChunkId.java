@@ -1,8 +1,20 @@
 package org.plovdev.audioengine.loaders.wav.struct;
 
 public enum WavChunkId {
-    RIFF("RIFF"), WAVE("WAVE"), NULL("NULL"),
-    DATA("data"), FORMAT("fmt "), INFO("info");
+    RIFF("RIFF"), WAVE("WAVE"),
+    FMT("fmt "), DATA("data"),
+    FACT("fact"), LIST("LIST"),
+    CUE("cue "), PLST("plst"),
+    LABL("labl"), NOTE("note"),
+    LTXT("ltxt"), SMPL("smpl"),
+    INST("inst"), BEXT("bext"), // Broadcast Audio Extension
+    DISP("DISP"), // Display chunk
+    JUNK("JUNK"), // Padding chunk
+    INFO("INFO"),
+    ICRD("ICRD"),
+    INAME("INAM"),
+    ISFT("ISFT"),
+    UNKNOWN("");
 
 
     private final String chunk;
@@ -20,7 +32,7 @@ public enum WavChunkId {
                 return chunkId;
             }
         }
-        return null;
+        return UNKNOWN;
     }
 
     @Override

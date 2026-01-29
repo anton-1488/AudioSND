@@ -15,7 +15,7 @@ public class FormatChunk extends Chunk {
     private TrackFormat format;
 
     public FormatChunk(TrackFormat format, int size, byte[] bytes) {
-        super(WavChunkId.FORMAT, size, bytes);
+        super(WavChunkId.FMT, size, bytes);
 
         this.audioCodec = format.audioCodec();
         this.channels = format.channels();

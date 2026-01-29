@@ -6,7 +6,10 @@ import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.TrackLoader;
 import org.plovdev.audioengine.loaders.wav.chunks.DataChunk;
 import org.plovdev.audioengine.loaders.wav.chunks.FormatChunk;
+import org.plovdev.audioengine.loaders.wav.chunks.ListChunk;
+import org.plovdev.audioengine.loaders.wav.chunks.TagEntry;
 import org.plovdev.audioengine.loaders.wav.read.WavParser;
+import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
@@ -17,6 +20,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -50,7 +55,29 @@ public class WavTrackLoader implements TrackLoader {
             FormatChunk formatChunk = parser.getFormatChunk();
             TrackFormat format = formatChunk.getFormat();
 
-            return new Track(chunk.getData(), Duration.ofMillis(TrackFormatUtils.calculateDurationMs(format, chunk.getSize())), format, new TrackMetadata());
+            ListChunk listChunk = parser.getListChunk();
+
+            Duration duration = Duration.ofMillis(TrackFormatUtils.calculateDurationMs(format, chunk.getSize()));
+
+            TrackMetadata metadata = new TrackMetadata();
+            metadata.setDuration(duration);
+            metadata.setChannels(format.channels());
+            metadata.setBitrate(format.bitRate());
+            metadata.setBitDepth(format.bitsPerSample());
+            metadata.setSampleRate(format.sampleRate());
+
+            if (listChunk != null) {
+                for (Chunk tag : listChunk.getEntries()) {
+                    TagEntry entry = (TagEntry) tag;
+                    switch (tag.getChunk()) {
+                        case INAME -> metadata.setTitle(entry.getContent());
+                        case ISFT -> metadata.setPublisher(entry.getContent());
+                        case ICRD -> metadata.setCreationDate(parsePartialDate(entry.getContent()).getTime());
+                    }
+                }
+            }
+
+            return new Track(chunk.getData(), duration, format, metadata);
         } catch (Exception e) {
             throw new TrackLoadException("Failed to load WAV from stream: " + e);
         }
@@ -117,6 +144,20 @@ public class WavTrackLoader implements TrackLoader {
     @Override
     public boolean isSupported(URI uri) {
         return isSupported(uri.getPath());
+    }
+
+    private Calendar parsePartialDate(String input) {
+        String[] parts = input.split("-");
+        int year = Integer.parseInt(parts[0]);
+        int month = (parts.length > 1) ? Integer.parseInt(parts[1]) - 1 : 0; // Месяц 0–11
+        int day = (parts.length > 2) ? Integer.parseInt(parts[2]) : 1;
+
+
+        Calendar calendar = new GregorianCalendar();
+        calendar.set(year, month, day, 0, 0, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar;
     }
 
     @Override

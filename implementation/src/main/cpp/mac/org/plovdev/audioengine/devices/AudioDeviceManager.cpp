@@ -229,7 +229,7 @@ jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asb
                 "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
             case 16: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16",
                 "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
-            case 20: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM20",
+            case 20: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24",
                 "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
             case 24: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24",
                 "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;

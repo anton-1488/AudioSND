@@ -2,6 +2,7 @@ package org.plovdev.audioengine.loaders.wav.read;
 
 import org.plovdev.audioengine.loaders.wav.chunks.DataChunk;
 import org.plovdev.audioengine.loaders.wav.chunks.FormatChunk;
+import org.plovdev.audioengine.loaders.wav.chunks.ListChunk;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 
 import java.io.IOException;
@@ -43,6 +44,15 @@ public class WavParser {
         for (Chunk chunk : getChunks()) {
             if (chunk instanceof FormatChunk) {
                 return (FormatChunk) chunk;
+            }
+        }
+        return null;
+    }
+
+    public ListChunk getListChunk() {
+        for (Chunk chunk : getChunks()) {
+            if (chunk instanceof ListChunk) {
+                return (ListChunk) chunk;
             }
         }
         return null;

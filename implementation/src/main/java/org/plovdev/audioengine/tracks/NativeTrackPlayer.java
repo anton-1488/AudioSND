@@ -79,6 +79,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         setStatus(TrackStatus.PLAYING);
 
         executor.execute(this::audioLoop);
+        executor.shutdown();
     }
 
     /**

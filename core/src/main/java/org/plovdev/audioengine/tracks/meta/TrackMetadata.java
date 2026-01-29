@@ -347,8 +347,6 @@ public class TrackMetadata {
 
     @Override
     public String toString() {
-        return "TrackMetadata{" +
-                "metadata=" + metadata +
-                '}';
+        return metadata.toString();
     }
 }

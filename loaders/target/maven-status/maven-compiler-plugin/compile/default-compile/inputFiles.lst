@@ -1,0 +1,13 @@
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/ExportUtils.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackDecoder.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackEncoder.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackLoader.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/WavTrackLoaderManager.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/chunks/DataChunk.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/chunks/FormatChunk.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/read/WavChunkReader.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/read/WavParser.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/struct/Chunk.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/struct/WavChunkId.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/write/WavChunkWriter.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/wav/write/WavTrackExporter.java

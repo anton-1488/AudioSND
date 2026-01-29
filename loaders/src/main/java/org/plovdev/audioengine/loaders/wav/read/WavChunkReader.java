@@ -1,18 +1,17 @@
 package org.plovdev.audioengine.loaders.wav.read;
 
 import org.plovdev.audioengine.loaders.ExportUtils;
-import org.plovdev.audioengine.loaders.wav.chunks.DataChunk;
-import org.plovdev.audioengine.loaders.wav.chunks.FormatChunk;
+import org.plovdev.audioengine.loaders.wav.ChunkParsersMap;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+
+import static org.plovdev.audioengine.loaders.wav.read.ParseUtils.readInt;
+import static org.plovdev.audioengine.loaders.wav.read.ParseUtils.readString;
 
 public class WavChunkReader implements AutoCloseable {
     private final BufferedInputStream inputStream;
@@ -48,89 +47,30 @@ public class WavChunkReader implements AutoCloseable {
             totalRead += r;
         }
 
+        skipPaddingByte(size);
+
         WavChunkId chunkId = WavChunkId.fromString(chunkIdStr);
+        WavChunkParser parser = ChunkParsersMap.getParser(chunkId);
 
-        switch (chunkId) {
-            case FORMAT -> {
-                return readFormatChunk(body);
-            }
-            case DATA -> {
-                return readDataChunk(body);
-            }
-            case null -> {
-                return new Chunk(WavChunkId.NULL, size, body);
-            }
-            default -> {
-                return new Chunk(chunkId, size, body);
-            }
+        if (parser != null) {
+            return parser.parse(body);
+        } else {
+            return new Chunk(WavChunkId.UNKNOWN, size, body);
         }
-    }
-
-    private FormatChunk readFormatChunk(byte[] body) throws IOException {
-        if (body.length < 16) {
-            throw new IOException("Некорректный формат fmt chunk");
-        }
-
-        int compressionCode = ExportUtils.bytesToInt(body, 0, 2);
-        int channels = ExportUtils.bytesToInt(body, 2, 2);
-        int sampleRate = ExportUtils.bytesToInt(body, 4, 4);
-        int byteRate = ExportUtils.bytesToInt(body, 8, 4);
-        int blockAlign = ExportUtils.bytesToInt(body, 12, 2);
-        int bitsPerSample = ExportUtils.bytesToInt(body, 14, 2);
-
-        TrackFormat format = getFormat(bitsPerSample, channels, sampleRate);
-
-        return new FormatChunk(format, body.length, body);
-    }
-
-    private TrackFormat getFormat(int bitsPerSample, int channels, int sampleRate) throws IOException {
-        TrackFormat.AudioCodec codec = switch (bitsPerSample) {
-            case 8 -> TrackFormat.AudioCodec.PCM8;
-            case 16 -> TrackFormat.AudioCodec.PCM16;
-            case 24 -> TrackFormat.AudioCodec.PCM24;
-            case 20 -> TrackFormat.AudioCodec.PCM20;
-            case 32 -> TrackFormat.AudioCodec.PCM32;
-            default -> throw new IOException("Неподдерживаемый битрейт: " + bitsPerSample);
-        };
-
-        return new TrackFormat(
-                "wav",
-                channels,
-                bitsPerSample,
-                sampleRate,
-                true,
-                ByteOrder.LITTLE_ENDIAN,
-                codec
-        );
-    }
-
-    private DataChunk readDataChunk(byte[] body) {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(body.length);
-        buffer.put(body);
-        buffer.flip();
-        return new DataChunk(buffer);
     }
 
     public void validateRiffHeader() throws IOException {
-        String riff = readString(4);
+        String riff = readString(inputStream, 4);
         if (!"RIFF".equals(riff)) throw new IOException("Файл не WAV");
-        int size = readInt(4);
-        String wave = readString(4);
+        int size = readInt(inputStream,4);
+        String wave = readString(inputStream,4);
         if (!"WAVE".equals(wave)) throw new IOException("Не поддерживается тип файла");
     }
 
-    private int readInt(int size) throws IOException {
-        byte[] bytes = new byte[size];
-        int r = inputStream.read(bytes);
-        if (r != size) throw new IOException("Недостаточно данных для чтения int");
-        return ExportUtils.bytesToInt(bytes, 0, size);
-    }
-
-    private String readString(int size) throws IOException {
-        byte[] bytes = new byte[size];
-        int r = inputStream.read(bytes);
-        if (r != size) throw new IOException("Недостаточно данных для чтения строки");
-        return new String(bytes, StandardCharsets.ISO_8859_1);
+    private void skipPaddingByte(int chunkSize) throws IOException {
+        if ((chunkSize & 1) != 0) {
+            int padding = inputStream.read();
+        }
     }
 
     @Override
