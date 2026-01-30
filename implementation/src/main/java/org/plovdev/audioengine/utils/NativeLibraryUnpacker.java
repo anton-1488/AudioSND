@@ -3,6 +3,7 @@ package org.plovdev.audioengine.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +32,7 @@ public class NativeLibraryUnpacker {
     }
 
     public String unpackLib() {
-        String unpackPath = "/Users/mac/IdeaProjects/AudioSND/";
+        String unpackPath = System.getProperty("user.dir") + File.pathSeparator;
 
         String libName = getLibName();
         log.debug("Unpacking native lib: {}", libName);
