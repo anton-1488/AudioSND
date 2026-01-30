@@ -24,6 +24,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     private final AudioDeviceInfo info;
     private volatile AudioDeviceStatus status = AudioDeviceStatus.UNAVAILABLE;
     private volatile boolean isInited = false;
+    private long nativeHandle = 0;
 
     private Runnable onStatusChanged = () -> {
     };
@@ -49,7 +50,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         checkForInited();
         try {
             status = RUNNING;
-            return _read(byteBuffer);
+            return _read(byteBuffer, nativeHandle);
         } finally {
             status = OPENED;
         }
@@ -75,7 +76,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
 
         setStatus(OPENING);
         try {
-            _open(format, info);
+            nativeHandle = _open(format, info);
             isInited = true;
             setStatus(OPENED);
             log.debug("Audio device {} opened", info.id());
@@ -114,7 +115,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
 
         setStatus(CLOSING);
         try {
-            _close();
+            _close(nativeHandle);
             isInited = false;
             setStatus(CLOSED);
             log.debug("Audio device {} closed", info.id());
@@ -150,10 +151,10 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     }
 
     public void setApparatGain(int gain) {
-        _setGain(gain, 0);
+        _setGain(gain, 0, nativeHandle);
     }
     public void setApplicationGain(int gain) {
-        _setGain(gain, 1);
+        _setGain(gain, 1, nativeHandle);
     }
 
     @Override
@@ -161,11 +162,11 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         return info.toString();
     }
 
-    private native void _setGain(int gain, int type);
+    private native void _setGain(int gain, int type, long handle);
 
-    private native void _open(TrackFormat format, AudioDeviceInfo info);
+    private native long _open(TrackFormat format, AudioDeviceInfo info);
 
-    private native int _read(ByteBuffer buffer);
+    private native int _read(ByteBuffer buffer, long handle);
 
-    private native void _close();
+    private native void _close(long handle);
 }

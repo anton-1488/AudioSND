@@ -21,9 +21,12 @@ public class PlayerExample {
             System.out.println(track1.getMetaData());
             System.out.println(track1.getFormat());
 
+<<<<<<< HEAD
             System.out.println(track1.getDuration());
 
             engine.getTrackPlayer(track1).play();
+=======
+>>>>>>> fix/niad
             Thread.sleep(track1.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);

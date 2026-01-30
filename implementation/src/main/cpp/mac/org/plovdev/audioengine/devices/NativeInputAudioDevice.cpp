@@ -7,7 +7,9 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
+#include <unordered_map>
 #include <memory>
+#include <iostream>
 
 #include "h/org_plovdev_audioengine_devices_NativeInputAudioDevice.h"
 
@@ -53,9 +55,15 @@ struct AudioDeviceContext {
 Float32 apparatGain = 1;
 int applicaionGaine = 1;
 
-// Глобальный контекст для текущего устройства
-std::unique_ptr<AudioDeviceContext> deviceContext = nullptr;
-std::mutex globalContextMutex;
+std::unordered_map<long, std::unique_ptr<AudioDeviceContext>> inputContexts;
+std::mutex inputContextsMutex;
+long nextInputContextId = 1;
+
+AudioDeviceContext* getInputContext(long handle) {
+    std::lock_guard<std::mutex> lock(inputContextsMutex);
+    auto it = inputContexts.find(handle);
+    return (it != inputContexts.end()) ? it->second.get() : nullptr;
+}
 
 // Конвертация Java TrackFormat в AudioStreamBasicDescription
 AudioStreamBasicDescription javaToASBD(JNIEnv* env, jobject trackFormat) {
@@ -174,223 +182,230 @@ OSStatus recordingCallback(void* inRefCon,
 }
 
 
-/*
- * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
- * Method:    _setGain
- * Signature: (II)V
- */
-extern "C"
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1setGain(JNIEnv* env, jobject obj, jint gain, jint gainType) {
-    switch(gainType) {
-        case 0:
-            apparatGain = static_cast<Float32>(gain);
-            break;
-        case 1:
-            applicaionGaine = static_cast<int>(gain);
-            break;
-    }
-}
+extern "C" {
 
-extern "C"
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open(
-    JNIEnv* env, jobject obj, jobject trackFormat, jobject deviceInfo) {
-
-    std::lock_guard<std::mutex> lock(globalContextMutex);
-
-    if (deviceContext) return;
-
-    try {
-        deviceContext = std::make_unique<AudioDeviceContext>();
-
-        // Получаем deviceId из deviceInfo
-        deviceContext->deviceId = getDeviceIdFromInfo(env, deviceInfo);
-
-        // Конвертируем формат
-        deviceContext->format = javaToASBD(env, trackFormat);
-
-        // Настраиваем AudioComponent
-        AudioComponentDescription desc{};
-        desc.componentType = kAudioUnitType_Output;
-        desc.componentSubType = kAudioUnitSubType_HALOutput;
-        desc.componentManufacturer = kAudioUnitManufacturer_Apple;
-
-        AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
-        if (!comp) throw std::runtime_error("No audio input device found");
-
-        OSStatus status = AudioComponentInstanceNew(comp, &deviceContext->audioUnit);
-        if (status != noErr) throw std::runtime_error("Failed to create AudioUnit");
-
-        // Включаем Input, выключаем Output
-        UInt32 enableInput = 1;
-        UInt32 disableOutput = 0;
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                      kAudioOutputUnitProperty_EnableIO,
-                                      kAudioUnitScope_Input, 1, &enableInput, sizeof(enableInput));
-        if (status != noErr) throw std::runtime_error("Failed to enable input");
-
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                      kAudioOutputUnitProperty_EnableIO,
-                                      kAudioUnitScope_Output, 0, &disableOutput, sizeof(disableOutput));
-        if (status != noErr) throw std::runtime_error("Failed to disable output");
-
-        // Преобразуем deviceId строки в AudioDeviceID
-        AudioDeviceID inputDevice = kAudioDeviceUnknown;
-        if (!deviceContext->deviceId.empty()) {
-            inputDevice = static_cast<AudioDeviceID>(strtoul(deviceContext->deviceId.c_str(), nullptr, 10));
+    /*
+     * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+     * Method:    _setGain
+     * Signature: (II)V
+     */
+    JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1setGain(JNIEnv* env, jobject obj, jint gain, jint gainType, jlong handle) {
+        switch(gainType) {
+            case 0:
+                apparatGain = static_cast<Float32>(gain);
+                break;
+            case 1:
+                applicaionGaine = static_cast<int>(gain);
+                break;
         }
-
-        if (inputDevice == kAudioDeviceUnknown) {
-            throw std::runtime_error("Invalid deviceId");
-        }
-
-        // Устанавливаем выбранное устройство
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                      kAudioOutputUnitProperty_CurrentDevice,
-                                      kAudioUnitScope_Global,
-                                      0,
-                                      &inputDevice,
-                                      sizeof(inputDevice));
-        if (status != noErr) throw std::runtime_error("Failed to set input device");
-
-        // Формат для Input bus
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                      kAudioUnitProperty_StreamFormat,
-                                      kAudioUnitScope_Output,
-                                      1,
-                                      &deviceContext->format,
-                                      sizeof(deviceContext->format));
-        if (status != noErr) throw std::runtime_error("Failed to set stream format");
-
-        // Callback
-        AURenderCallbackStruct callbackStruct{};
-        callbackStruct.inputProc = recordingCallback;
-        callbackStruct.inputProcRefCon = deviceContext.get();
-
-        status = AudioUnitSetProperty(deviceContext->audioUnit,
-                                      kAudioOutputUnitProperty_SetInputCallback,
-                                      kAudioUnitScope_Global,
-                                      1,
-                                      &callbackStruct,
-                                      sizeof(callbackStruct));
-        if (status != noErr) throw std::runtime_error("Failed to set callback");
-
-        // Инициализация
-        status = AudioUnitInitialize(deviceContext->audioUnit);
-        if (status != noErr) throw std::runtime_error("Failed to initialize AudioUnit");
-
-        deviceContext->isInitialized = true;
-
-        // Буфер на 2 секунды
-        size_t bufferSize = deviceContext->format.mSampleRate *
-                            deviceContext->format.mBytesPerFrame * 2;
-        deviceContext->buffer.reserve(bufferSize);
-        deviceContext->bytesAvailable = 0;
-        deviceContext->isRunning = false;
-
-    } catch (const std::exception& e) {
-        if (deviceContext) {
-            deviceContext->close();
-            deviceContext.reset();
-        }
-        jclass exClass = env->FindClass("org/plovdev/audioengine/exceptions/OpenAudioDeviceException");
-        env->ThrowNew(exClass, e.what());
-    }
-}
-
-// JNI: _read (БЛОКИРУЮЩИЙ!)
-extern "C"
-JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1read(
-    JNIEnv* env, jobject obj, jobject byteBuffer) {
-
-    std::unique_lock<std::mutex> lock(globalContextMutex);
-
-    if (!deviceContext) {
-        return -1; // Ошибка
     }
 
-    void* bufferPtr = env->GetDirectBufferAddress(byteBuffer);
-    jlong capacity = env->GetDirectBufferCapacity(byteBuffer);
+    /*
+     * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+     * Method:    _open
+     * Signature: (Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)J
+     */
+    JNIEXPORT jlong JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open(JNIEnv* env, jobject obj, jobject trackFormat, jobject deviceInfo) {
+        auto deviceContext = std::make_unique<AudioDeviceContext>();
+        AudioDeviceContext* deviceContextPtr = deviceContext.get();
 
-    if (!bufferPtr || capacity <= 0) {
-        return -1;
-    }
+        try {
+            // Получаем deviceId из deviceInfo
+            deviceContext->deviceId = getDeviceIdFromInfo(env, deviceInfo);
 
-    // Запускаем запись если еще не запущена
-    if (!deviceContext->isRunning) {
-        OSStatus status = AudioOutputUnitStart(deviceContext->audioUnit);
-        if (status != noErr) {
-            return -1;
-        }
-        deviceContext->isRunning = true;
-    }
+            // Конвертируем формат
+            deviceContext->format = javaToASBD(env, trackFormat);
 
-    lock.unlock(); // Отпускаем глобальную блокировку перед ожиданием данных
+            // Настраиваем AudioComponent
+            AudioComponentDescription desc{};
+            desc.componentType = kAudioUnitType_Output;
+            desc.componentSubType = kAudioUnitSubType_HALOutput;
+            desc.componentManufacturer = kAudioUnitManufacturer_Apple;
 
-    uint8_t* dest = static_cast<uint8_t*>(bufferPtr);
-    size_t bytesCopied = 0;
-    size_t targetBytes = static_cast<size_t>(capacity);
+            AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
+            if (!comp) throw std::runtime_error("No audio input device found");
 
-    // Ждем и копируем пока не заполним весь буфер
-    while (bytesCopied < targetBytes) {
-        std::unique_lock<std::mutex> bufferLock(deviceContext->bufferMutex);
+            OSStatus status = AudioComponentInstanceNew(comp, &deviceContext->audioUnit);
+            if (status != noErr) throw std::runtime_error("Failed to create AudioUnit");
 
-        // Ждем данных, пока не наберется достаточно или не будет сигнала остановки
-        deviceContext->dataCondition.wait(bufferLock, [&]() {
-            return deviceContext->bytesAvailable > 0 || !deviceContext->isRunning;
-        });
+            // Включаем Input, выключаем Output
+            UInt32 enableInput = 1;
+            UInt32 disableOutput = 0;
+            status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                          kAudioOutputUnitProperty_EnableIO,
+                                          kAudioUnitScope_Input, 1, &enableInput, sizeof(enableInput));
+            if (status != noErr) throw std::runtime_error("Failed to enable input");
 
-        if (!deviceContext->isRunning) {
-            // Запись остановлена
-            break;
-        }
+            status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                          kAudioOutputUnitProperty_EnableIO,
+                                          kAudioUnitScope_Output, 0, &disableOutput, sizeof(disableOutput));
+            if (status != noErr) throw std::runtime_error("Failed to disable output");
 
-        // Копируем сколько можем
-        size_t bytesToCopy = std::min(
-            deviceContext->bytesAvailable,
-            targetBytes - bytesCopied
-        );
-
-        if (bytesToCopy > 0) {
-            std::memcpy(dest + bytesCopied,
-                       deviceContext->buffer.data(),
-                       bytesToCopy);
-            bytesCopied += bytesToCopy;
-
-            // Удаляем скопированные данные
-            if (bytesToCopy < deviceContext->buffer.size()) {
-                std::memmove(deviceContext->buffer.data(),
-                            deviceContext->buffer.data() + bytesToCopy,
-                            deviceContext->buffer.size() - bytesToCopy);
-                deviceContext->buffer.resize(deviceContext->buffer.size() - bytesToCopy);
-            } else {
-                deviceContext->buffer.clear();
+            // Преобразуем deviceId строки в AudioDeviceID
+            AudioDeviceID inputDevice = kAudioDeviceUnknown;
+            if (!deviceContext->deviceId.empty()) {
+                inputDevice = static_cast<AudioDeviceID>(strtoul(deviceContext->deviceId.c_str(), nullptr, 10));
             }
 
-            deviceContext->bytesAvailable = deviceContext->buffer.size();
+            if (inputDevice == kAudioDeviceUnknown) {
+                throw std::runtime_error("Invalid deviceId");
+            }
+
+            // Устанавливаем выбранное устройство
+            status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                          kAudioOutputUnitProperty_CurrentDevice,
+                                          kAudioUnitScope_Global,
+                                          0,
+                                          &inputDevice,
+                                          sizeof(inputDevice));
+            if (status != noErr) throw std::runtime_error("Failed to set input device");
+
+            // Формат для Input bus
+            status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                          kAudioUnitProperty_StreamFormat,
+                                          kAudioUnitScope_Output,
+                                          1,
+                                          &deviceContext->format,
+                                          sizeof(deviceContext->format));
+            if (status != noErr) throw std::runtime_error("Failed to set stream format");
+
+            // Callback
+            AURenderCallbackStruct callbackStruct{};
+            callbackStruct.inputProc = recordingCallback;
+            callbackStruct.inputProcRefCon = deviceContext.get();
+
+            status = AudioUnitSetProperty(deviceContext->audioUnit,
+                                          kAudioOutputUnitProperty_SetInputCallback,
+                                          kAudioUnitScope_Global,
+                                          1,
+                                          &callbackStruct,
+                                          sizeof(callbackStruct));
+            if (status != noErr) throw std::runtime_error("Failed to set callback");
+
+            // Инициализация
+            status = AudioUnitInitialize(deviceContext->audioUnit);
+            if (status != noErr) throw std::runtime_error("Failed to initialize AudioUnit");
+
+            deviceContext->isInitialized = true;
+
+            // Буфер на 2 секунды
+            size_t bufferSize = deviceContext->format.mSampleRate *
+                                deviceContext->format.mBytesPerFrame * 2;
+            deviceContext->buffer.reserve(bufferSize);
+            deviceContext->bytesAvailable = 0;
+            deviceContext->isRunning = false;
+
+        } catch (const std::exception& e) {
+            if (deviceContext) {
+                deviceContext->close();
+                deviceContext.reset();
+            }
+            jclass exClass = env->FindClass("org/plovdev/audioengine/exceptions/OpenAudioDeviceException");
+            env->ThrowNew(exClass, e.what());
         }
 
-        bufferLock.unlock();
+        std::lock_guard<std::mutex> lock(inputContextsMutex);
+        long handle = nextInputContextId++;
+        inputContexts[handle] = std::move(deviceContext);
+        return handle;
+    }
 
-        // Если скопировали все, выходим
-        if (bytesCopied >= targetBytes) {
-            break;
+
+    /*
+     * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+     * Method:    _read
+     * Signature: (Ljava/nio/ByteBuffer;J)I
+     */
+    JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1read(JNIEnv* env, jobject obj, jobject byteBuffer, jlong handle) {
+        auto* deviceContext = getInputContext(handle);
+
+        if (!deviceContext) {
+            return 0;
         }
+
+        void* bufferPtr = env->GetDirectBufferAddress(byteBuffer);
+        jlong capacity = env->GetDirectBufferCapacity(byteBuffer);
+
+        if (!bufferPtr || capacity <= 0) {
+            return -1;
+        }
+
+        // Запускаем запись если еще не запущена
+        if (!deviceContext->isRunning) {
+            OSStatus status = AudioOutputUnitStart(deviceContext->audioUnit);
+            if (status != noErr) {
+                return -1;
+            }
+            deviceContext->isRunning = true;
+        }
+
+
+        uint8_t* dest = static_cast<uint8_t*>(bufferPtr);
+        size_t bytesCopied = 0;
+        size_t targetBytes = static_cast<size_t>(capacity);
+
+        // Ждем и копируем пока не заполним весь буфер
+        while (bytesCopied < targetBytes) {
+            std::unique_lock<std::mutex> bufferLock(deviceContext->bufferMutex);
+
+            // Ждем данных, пока не наберется достаточно или не будет сигнала остановки
+            deviceContext->dataCondition.wait(bufferLock, [&]() {
+                return deviceContext->bytesAvailable > 0 || !deviceContext->isRunning;
+            });
+
+            if (!deviceContext->isRunning) {
+                // Запись остановлена
+                break;
+            }
+
+            // Копируем сколько можем
+            size_t bytesToCopy = std::min(
+                deviceContext->bytesAvailable,
+                targetBytes - bytesCopied
+            );
+
+            if (bytesToCopy > 0) {
+                std::memcpy(dest + bytesCopied,
+                           deviceContext->buffer.data(),
+                           bytesToCopy);
+                bytesCopied += bytesToCopy;
+
+                // Удаляем скопированные данные
+                if (bytesToCopy < deviceContext->buffer.size()) {
+                    std::memmove(deviceContext->buffer.data(),
+                                deviceContext->buffer.data() + bytesToCopy,
+                                deviceContext->buffer.size() - bytesToCopy);
+                    deviceContext->buffer.resize(deviceContext->buffer.size() - bytesToCopy);
+                } else {
+                    deviceContext->buffer.clear();
+                }
+
+                deviceContext->bytesAvailable = deviceContext->buffer.size();
+            }
+
+            bufferLock.unlock();
+
+            // Если скопировали все, выходим
+            if (bytesCopied >= targetBytes) {
+                break;
+            }
+        }
+
+        return static_cast<jint>(bytesCopied);
     }
 
-    return static_cast<jint>(bytesCopied);
-}
+    /*
+     * Class:     org_plovdev_audioengine_devices_NativeInputAudioDevice
+     * Method:    _close
+     * Signature: (J)V
+     */
+    JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1close(JNIEnv* env, jobject obj, jlong handle) {
+        auto* ctx = getInputContext(handle);
+        if (!ctx) return;
 
-// JNI: _close
-extern "C"
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1close(
-    JNIEnv* env, jobject obj) {
+        ctx->close();
 
-    std::lock_guard<std::mutex> lock(globalContextMutex);
-
-    if (!deviceContext) {
-        return;
+        std::lock_guard<std::mutex> lock(inputContextsMutex);
+        inputContexts.erase(handle);
     }
-
-    deviceContext->close();
-    deviceContext.reset();
 }

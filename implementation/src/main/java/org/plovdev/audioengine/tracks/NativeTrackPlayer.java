@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,7 +21,6 @@ public class NativeTrackPlayer implements TrackPlayer {
     private final AtomicInteger position = new AtomicInteger(0);
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isInited = new AtomicBoolean(false);
-    private final ExecutorService executor = Executors.newCachedThreadPool();
     private TrackStatus status = TrackStatus.UNAVAILABLE;
     private final int chunkSize;
     private int currentCycle = 0;
@@ -78,8 +75,16 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(true);
         setStatus(TrackStatus.PLAYING);
 
+<<<<<<< HEAD
         executor.execute(this::audioLoop);
         executor.shutdown();
+=======
+        Thread audioThred = new Thread(this::audioLoop, "audio-loop");
+        audioThred.setPriority(Thread.MAX_PRIORITY);
+        audioThred.setDaemon(true);
+
+        audioThred.start();
+>>>>>>> fix/niad
     }
 
     /**
@@ -225,7 +230,6 @@ public class NativeTrackPlayer implements TrackPlayer {
         if (isInited.get()) {
             stop();
             audioDevice.close();
-            executor.shutdownNow();
         }
     }
 
