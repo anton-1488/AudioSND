@@ -1,4 +1,5 @@
 implementation/src/main/java/org/plovdev/audioengine/tracks/NativeTrackPlayer.java
+implementation/src/main/java/org/plovdev/audioengine/utils/NativeLibraryUnpacker.java
 implementation/src/main/java/org/plovdev/audioengine/NativeAudioEngine.java
 implementation/src/main/java/org/plovdev/audioengine/mixer/NativeTrackMixer.java
 implementation/src/main/java/org/plovdev/audioengine/devices/NativeInputAudioDevice.java
