@@ -4,6 +4,8 @@ import org.plovdev.audioengine.loaders.ExportUtils;
 import org.plovdev.audioengine.loaders.wav.ChunkParsersMap;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import static org.plovdev.audioengine.loaders.wav.read.ParseUtils.readInt;
 import static org.plovdev.audioengine.loaders.wav.read.ParseUtils.readString;
 
 public class WavChunkReader implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(WavChunkReader.class);
     private final BufferedInputStream inputStream;
 
     public WavChunkReader(InputStream stream) {

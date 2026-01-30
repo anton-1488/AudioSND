@@ -130,7 +130,7 @@ public class AudioDeviceManager {
     }
 
     public List<AudioDeviceListener> getDeviceListeners() {
-        return deviceListeners;
+        return List.copyOf(deviceListeners);
     }
 
     private void notifyConnected(AudioDeviceInfo info) {

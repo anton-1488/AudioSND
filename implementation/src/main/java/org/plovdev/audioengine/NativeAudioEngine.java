@@ -122,7 +122,7 @@ public class NativeAudioEngine implements AudioEngine {
                 return loader.loadTrack(stream);
             }
         }
-        throw new TrackLoadException("Loader not found fot this track source.");
+        throw new TrackLoadException("Loader not found fot this track source(input stream).");
     }
 
     @Override

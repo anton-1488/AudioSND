@@ -19,6 +19,8 @@ core/target/**
 
 *.wav
 
+recorded.wav
+
 /testdata/
 /testdata/44100/
 /testdata/48000/

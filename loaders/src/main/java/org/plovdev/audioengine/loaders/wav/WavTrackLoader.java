@@ -14,11 +14,15 @@ import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
 import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -28,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.plovdev.audioengine.loaders.ExportUtils.getFile;
 
 public class WavTrackLoader implements TrackLoader {
+    private static final Logger log = LoggerFactory.getLogger(WavTrackLoader.class);
     private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
     private LoadListener loadListener = null;
 
@@ -138,7 +143,48 @@ public class WavTrackLoader implements TrackLoader {
 
     @Override
     public boolean isSupported(InputStream stream) {
-        return false;
+        // Копируем первые 12 байт для проверки
+        byte[] header = new byte[12];
+
+        try {
+            if (stream.markSupported()) {
+                stream.mark(12);
+            }
+
+            int totalRead = 0;
+            while (totalRead < 12) {
+                int read = stream.read(header, totalRead, 12 - totalRead);
+                if (read == -1) {
+                    return false;
+                }
+                totalRead += read;
+            }
+
+            String riff = new String(header, 0, 4, StandardCharsets.US_ASCII);
+            if (!riff.equals("RIFF")) {
+                log.info("File is not RIFF based! {}", riff);
+                return false;
+            }
+
+            String wave = new String(header, 8, 4, StandardCharsets.US_ASCII);
+            if (!wave.equals("WAVE")) {
+                log.info("Not WAVE file type! {}", wave);
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            // Возвращаем позицию
+            try {
+                if (stream.markSupported()) {
+                    stream.reset();
+                }
+            } catch (IOException e) {
+                log.warn("Не удалось сбросить поток", e);
+            }
+        }
     }
 
     @Override
