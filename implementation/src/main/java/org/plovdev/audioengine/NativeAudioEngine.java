@@ -16,6 +16,7 @@ import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.TrackPlayer;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.utils.AudioEngineConfig;
+import org.plovdev.audioengine.utils.NativeLibraryUnpacker;
 import org.plovdev.audioengine.utils.TrackLoaderSearcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,10 @@ public class NativeAudioEngine implements AudioEngine {
     public synchronized void init(@NotNull AudioEngineConfig config) throws AudioEngineException {
         if (!isInited) {
             this.config = config;
-            System.loadLibrary(config.getNativeLib().toString());
+
+            NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
+            System.load(unpacker.unpackLib());
+
             TrackLoaderSearcher.getSearchedLoaders().forEach(this::addLoaderManager);
             AudioDeviceManager.getInstance();
             _init();

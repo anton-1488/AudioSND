@@ -36,4 +36,4 @@ javac -d out/examples -cp out/implementation:out/loaders:out/core:/out/effects:/
 
 
 # Компиляция нативной библиотеки
-g++ -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include" -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin" -dynamiclib -o libaudio-snd.dylib $(cat ./builds/nativies.txt) -framework AudioToolbox -framework CoreAudio -framework CoreFoundation -std=c++17
+g++ -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include" -I"/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin" -dynamiclib -o implementation/src/main/resources/nativies/libs/audio-snd.dylib $(cat ./builds/nativies.txt) -framework AudioToolbox -framework CoreAudio -framework CoreFoundation -std=c++17
