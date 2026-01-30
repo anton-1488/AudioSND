@@ -75,16 +75,11 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(true);
         setStatus(TrackStatus.PLAYING);
 
-<<<<<<< HEAD
-        executor.execute(this::audioLoop);
-        executor.shutdown();
-=======
         Thread audioThred = new Thread(this::audioLoop, "audio-loop");
         audioThred.setPriority(Thread.MAX_PRIORITY);
         audioThred.setDaemon(true);
 
         audioThred.start();
->>>>>>> fix/niad
     }
 
     /**

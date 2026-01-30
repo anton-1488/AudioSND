@@ -16,7 +16,6 @@ public class OggTrackFormatFactory {
 
     public static TrackFormat oggVorbisStereo44kHz() {
         return new TrackFormat(
-                "ogg",
                 2,
                 0,
                 44100,
@@ -28,7 +27,6 @@ public class OggTrackFormatFactory {
 
     public static TrackFormat oggOpusStereo48kHz() {
         return new TrackFormat(
-                "opus",
                 2,
                 0,
                 48000,

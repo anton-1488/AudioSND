@@ -201,7 +201,7 @@ void initTrackFormatClass(JNIEnv* env) {
         ctorTrackFormat = env->GetMethodID(
             clsTrackFormat,
             "<init>",
-            "(Ljava/lang/String;IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
+            "(IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
         );
     }
 }
@@ -316,7 +316,6 @@ jobject getDeviceSupportedFormats(JNIEnv* env, AudioDeviceID devId, bool isInput
 
             jobject tf = env->NewObject(
                 clsTrackFormat, ctorTrackFormat,
-                env->NewStringUTF("wav"),
                 (jint)asbd.mChannelsPerFrame,
                 (jint)asbd.mBitsPerChannel,
                 (jint)asbd.mSampleRate,

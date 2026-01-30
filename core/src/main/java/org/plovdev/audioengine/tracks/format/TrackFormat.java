@@ -7,7 +7,6 @@ import java.nio.ByteOrder;
 /**
  * Track format description.
  *
- * @param extension extension of format name.
  * @param channels channels count in audio.
  * @param bitsPerSample auio format width.
  * @param sampleRate auio sample rate.
@@ -19,7 +18,7 @@ import java.nio.ByteOrder;
  * @version 1.0
  */
 
-public record TrackFormat(@NotNull @Deprecated String extension, int channels, int bitsPerSample, int sampleRate, boolean signed, @NotNull ByteOrder byteOrder, @NotNull AudioCodec audioCodec) {
+public record TrackFormat(int channels, int bitsPerSample, int sampleRate, boolean signed, @NotNull ByteOrder byteOrder, @NotNull AudioCodec audioCodec) {
     /**
      * Audio codec before converted to pcm
      */
@@ -65,8 +64,8 @@ public record TrackFormat(@NotNull @Deprecated String extension, int channels, i
 
     @Override
     public String toString() {
-        return String.format("%s: %dHz, %dch, %dbit, %s, %s. AudioCodec: %s",
-                extension, sampleRate, channels, bitsPerSample,
+        return String.format("%dHz, %dch, %dbit, %s, %s. AudioCodec: %s",
+                sampleRate, channels, bitsPerSample,
                 signed ? "signed" : "unsigned",
                 byteOrder == ByteOrder.BIG_ENDIAN ? "BE" : "LE", audioCodec.name());
     }

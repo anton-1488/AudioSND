@@ -16,7 +16,6 @@ public class Mp3TrackFormatFactory {
 
     public static TrackFormat mp3Stereo64kbps() {
         return new TrackFormat(
-                "mp3",
                 2,
                 0,     // compressed
                 44100,
@@ -28,7 +27,6 @@ public class Mp3TrackFormatFactory {
 
     public static TrackFormat mp3Stereo128kbps() {
         return new TrackFormat(
-                "mp3",
                 2,
                 0,
                 44100,
@@ -40,7 +38,6 @@ public class Mp3TrackFormatFactory {
 
     public static TrackFormat mp3Stereo192kbps() {
         return new TrackFormat(
-                "mp3",
                 2,
                 0,
                 44100,
@@ -52,7 +49,6 @@ public class Mp3TrackFormatFactory {
 
     public static TrackFormat mp3Stereo320kbps() {
         return new TrackFormat(
-                "mp3",
                 2,
                 0,
                 44100,

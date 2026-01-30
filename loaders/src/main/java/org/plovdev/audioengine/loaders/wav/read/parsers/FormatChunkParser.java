@@ -43,7 +43,6 @@ public class FormatChunkParser implements WavChunkParser {
         };
 
         return new TrackFormat(
-                "wav",
                 channels,
                 bitsPerSample,
                 sampleRate,

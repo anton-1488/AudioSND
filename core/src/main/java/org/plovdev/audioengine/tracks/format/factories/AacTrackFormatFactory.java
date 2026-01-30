@@ -16,7 +16,6 @@ public class AacTrackFormatFactory {
 
     public static TrackFormat aacStereo128kbps() {
         return new TrackFormat(
-                "aac",
                 2,
                 0,
                 44100,
@@ -28,7 +27,6 @@ public class AacTrackFormatFactory {
 
     public static TrackFormat aacStereo256kbps() {
         return new TrackFormat(
-                "aac",
                 2,
                 0,
                 44100,

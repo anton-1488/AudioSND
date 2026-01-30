@@ -41,12 +41,12 @@ public class WavTrackLoader implements TrackLoader {
     }
 
     @Override
-    public Track loadTrack(String path) throws TrackLoadException {
-        File file = getFile(path, locators);
+    public Track loadTrack(File base) throws TrackLoadException {
+        File file = getFile(base, locators);
         try (InputStream stream = new FileInputStream(file)) {
             return loadTrack(stream);
         } catch (Exception e) {
-            throw new TrackLoadException("Failed to load WAV file: " + path + " - " + e);
+            throw new TrackLoadException("Failed to load WAV file: " + file.getName() + " - " + e);
         }
     }
 
@@ -91,7 +91,7 @@ public class WavTrackLoader implements TrackLoader {
     @Override
     public Track loadTrack(URI uri) throws TrackLoadException {
         return switch (uri.getScheme()) {
-            case "file" -> loadTrack(uri.getPath());
+            case "file" -> loadTrack(new File(uri.toString()));
             case "https", "http" -> {
                 try (InputStream stream = uri.toURL().openStream()) {
                     yield loadTrack(stream);
@@ -139,6 +139,11 @@ public class WavTrackLoader implements TrackLoader {
         String lower = filename.toLowerCase().trim();
         lower = lower.startsWith(".") ? lower : "." + lower;
         return lower.endsWith(".wav") || lower.endsWith(".wave");
+    }
+
+    @Override
+    public boolean isSupported(TrackFormat format) {
+        return false;
     }
 
     @Override

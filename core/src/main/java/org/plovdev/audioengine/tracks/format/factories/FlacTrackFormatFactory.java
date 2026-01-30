@@ -16,7 +16,6 @@ public class FlacTrackFormatFactory {
 
     public static TrackFormat flac16bitStereo44kHz() {
         return new TrackFormat(
-                "flac",
                 2,
                 16,
                 44100,
@@ -28,7 +27,6 @@ public class FlacTrackFormatFactory {
 
     public static TrackFormat flac24bitStereo96kHz() {
         return new TrackFormat(
-                "flac",
                 2,
                 24,
                 96000,

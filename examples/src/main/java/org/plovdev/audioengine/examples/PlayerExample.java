@@ -8,6 +8,7 @@ import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.nio.file.Path;
 
 public class PlayerExample {
@@ -17,16 +18,8 @@ public class PlayerExample {
         try (AudioEngine engine = new NativeAudioEngine()) {
             engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> m.registerPathLocator(new PathLocator(Path.of("testdata/wav/48000/24"))));
 
-            Track track1 = engine.loadTrack("cotton-doe.wav");
-            System.out.println(track1.getMetaData());
-            System.out.println(track1.getFormat());
-
-<<<<<<< HEAD
-            System.out.println(track1.getDuration());
-
+            Track track1 = engine.loadTrack(new File("cotton-doe.wav"));
             engine.getTrackPlayer(track1).play();
-=======
->>>>>>> fix/niad
             Thread.sleep(track1.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);

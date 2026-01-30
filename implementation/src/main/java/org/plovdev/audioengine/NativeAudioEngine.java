@@ -20,6 +20,7 @@ import org.plovdev.audioengine.utils.TrackLoaderSearcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -102,12 +103,12 @@ public class NativeAudioEngine implements AudioEngine {
 
 
     @Override
-    public Track loadTrack(@NotNull String path) throws TrackLoadException {
+    public Track loadTrack(@NotNull File file) throws TrackLoadException {
         checkIfInited();
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(path)) {
-                return loader.loadTrack(path);
+            if (loader.isSupported(file.getName())) {
+                return loader.loadTrack(file);
             }
         }
         throw new TrackLoadException("Loader not found fot this track source.");
@@ -186,7 +187,7 @@ public class NativeAudioEngine implements AudioEngine {
     public Optional<TrackLoaderManager> findLoaderFor(@NotNull TrackFormat format) {
         for (TrackLoaderManager manager : loaderManagers) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(format.extension())) {
+            if (loader.isSupported(format)) {
                 return Optional.of(manager);
             }
         }

@@ -10,6 +10,7 @@ import org.plovdev.audioengine.tracks.TrackPlayer;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.utils.AudioEngineConfig;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -51,7 +52,7 @@ public interface AudioEngine extends AutoCloseable {
     AudioEngineConfig getConfig();
 
     // Load track from different sources.
-    Track loadTrack(String path) throws TrackLoadException;
+    Track loadTrack(File file) throws TrackLoadException;
     Track loadTrack(InputStream stream) throws TrackLoadException;
     Track loadTrack(URI uri) throws TrackLoadException;
 
