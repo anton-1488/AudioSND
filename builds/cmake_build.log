@@ -1,1 +1,5 @@
-xcode-select: note: no developer tools were found at '/Applications/Xcode.app', requesting install. Choose an option in the dialog to download the command line developer tools.
+Consolidate compiler generated dependencies of target AudioSND
+[ 16%] Building CXX object CMakeFiles/AudioSND.dir/src/main/cpp/mac/org/plovdev/audioengine/AudioEngine.cpp.o
+[ 33%] Linking CXX shared library libaudio-snd.dylib
+Копирование библиотеки в resources/natives/libs
+[100%] Built target AudioSND

@@ -1,25 +1,6 @@
-CMake Warning at /Applications/CMake.app/Contents/share/cmake-3.24/Modules/Platform/Darwin-Initialize.cmake:303 (message):
-  Ignoring CMAKE_OSX_SYSROOT value:
-
-   /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
-
-  because the directory does not exist.
-Call Stack (most recent call first):
-  /Applications/CMake.app/Contents/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake:21 (include)
-  CMakeLists.txt:2 (project)
-
-
-CMake Error at CMakeLists.txt:2 (project):
-  The CMAKE_CXX_COMPILER:
-
-    /Library/Developer/CommandLineTools/usr/bin/c++
-
-  is not a full path to an existing compiler tool.
-
-  Tell CMake where to find the compiler by setting either the environment
-  variable "CXX" or the CMake cache entry CMAKE_CXX_COMPILER to the full path
-  to the compiler, or to the compiler name if it is in the PATH.
-
-
--- Configuring incomplete, errors occurred!
-See also "/Users/mac/IdeaProjects/AudioSND/build/CMakeFiles/CMakeOutput.log".
+-- Используем JNI_INCLUDE_PATH: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include
+-- Используем JNI_INCLUDE_DARWIN: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin
+-- JNI include directories: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include;/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/mac/IdeaProjects/AudioSND/build

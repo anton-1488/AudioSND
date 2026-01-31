@@ -6,5 +6,5 @@ CXX_DEFINES = -DAudioSND_EXPORTS
 
 CXX_INCLUDES = -I/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin -I/Users/mac/IdeaProjects/AudioSND/implementation/include
 
-CXX_FLAGS =  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk -mmacosx-version-min=10.15 -fPIC -std=gnu++17
+CXX_FLAGS =  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk -mmacosx-version-min=10.15 -fPIC -std=gnu++2a
 
