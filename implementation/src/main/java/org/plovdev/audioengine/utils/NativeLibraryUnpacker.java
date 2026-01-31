@@ -15,10 +15,6 @@ public class NativeLibraryUnpacker {
     private static final Logger log = LoggerFactory.getLogger(NativeLibraryUnpacker.class);
     private NativeLib toUnpack;
 
-    private static final String WIN_LIB_NAME = "audio-snd.dll";
-    private static final String MAC_LIB_NAME = "audio-snd.dylib";
-    private static final String UNIX_LIB_NAME = "audio-snd.so";
-
     public NativeLibraryUnpacker(NativeLib nativeLib) {
         toUnpack = nativeLib;
     }
@@ -40,7 +36,7 @@ public class NativeLibraryUnpacker {
         Path libPath = Path.of(fullName);
 
         if (!Files.exists(libPath)) {
-            try (InputStream libStream = Objects.requireNonNull(getClass().getResourceAsStream("/nativies/libs/" + libName))) {
+            try (InputStream libStream = Objects.requireNonNull(getClass().getResourceAsStream("/natives/libs/" + libName))) {
                 Files.createFile(libPath);
                 Files.write(libPath, libStream.readAllBytes());
                 log.debug("Native lib unpacked to {}", fullName);
@@ -55,11 +51,11 @@ public class NativeLibraryUnpacker {
         String osName = System.getProperty("os.name").trim().toLowerCase();
         log.debug("OS name: {}", osName);
         if (osName.contains("win")) {
-            return WIN_LIB_NAME;
+            return toUnpack + ".dll";
         } else if (osName.contains("mac")) {
-            return MAC_LIB_NAME;
+            return toUnpack + ".dylib";
         } else {
-            return UNIX_LIB_NAME;
+            return toUnpack + ".so";
         }
     }
 }

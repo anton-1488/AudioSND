@@ -4,6 +4,7 @@ import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
 import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.wav.WavTrackLoaderManager;
+import org.plovdev.audioengine.profiler.ExecutionBenchmarker;
 import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +19,10 @@ public class PlayerExample {
         try (AudioEngine engine = new NativeAudioEngine()) {
             engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> m.registerPathLocator(new PathLocator(Path.of("testdata/wav/48000/24"))));
 
-            Track track1 = engine.loadTrack(new File("cotton-doe.wav"));
-            engine.getTrackPlayer(track1).play();
-            Thread.sleep(track1.getDuration());
+            long delay = ExecutionBenchmarker.testExecutionDelay(() -> engine.loadTrack(new File("block-story-stereo.wav"))) / 1000000;
+            log.info("Loading delay: {}ms", delay);
+
+            Track track = engine.loadTrack(new File("cotton-doe.wav"));
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
         }

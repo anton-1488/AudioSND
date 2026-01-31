@@ -3,3 +3,4 @@
 ./implementation/src/main/cpp/mac/org/plovdev/audioengine/devices/AudioDeviceManager.cpp
 ./implementation/src/main/cpp/mac/org/plovdev/audioengine/devices/NativeInputAudioDevice.cpp
 ./implementation/src/main/cpp/mac/org/plovdev/audioengine/devices/NativeOutputAudioDevice.cpp
+./build/CMakeFiles/3.24.0/CompilerIdCXX/CMakeCXXCompilerId.cpp

@@ -60,7 +60,6 @@ public class ListChunkParser implements WavChunkParser {
         if (tagId == null) {
             tagId = WavChunkId.UNKNOWN;
         }
-        System.out.println(tagName);
 
         byte[] sizeBytes = new byte[4];
         if (inputStream.read(sizeBytes) != 4) {

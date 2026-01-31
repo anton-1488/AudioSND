@@ -102,6 +102,17 @@ public class WavTrackFormatFactory {
         );
     }
 
+    public static TrackFormat wav32bitFloatStereo96kHz() {
+        return new TrackFormat(
+                2,
+                32,
+                96000,
+                true,
+                ByteOrder.LITTLE_ENDIAN,
+                TrackFormat.AudioCodec.FLOAT32
+        );
+    }
+
     public static TrackFormat wav16bitStereo96kHz() {
         return new TrackFormat(
                 2,
