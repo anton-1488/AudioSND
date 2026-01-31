@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%cyan(%d{HH:mm:ss.SSS}) %green([%thread]) %highlight(%-5level) %red(%logger{20}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.plovdev.audioengine" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

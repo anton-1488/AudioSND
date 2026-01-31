@@ -25,6 +25,9 @@ audio-snd.dylib
 audio-snd.dll
 audio-snd.so
 
+build
+build/*
+
 /testdata/
 /testdata/44100/
 /testdata/48000/

@@ -11,9 +11,9 @@ import java.io.File;
 public class GenerationExample {
     private static final Logger log = LoggerFactory.getLogger(GenerationExample.class);
 
-    public static void main(String[] args) {
+    void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
-            Track track = engine.loadTrack(new File("testdata/wav/48000/16/pornhub-stereo.wav"));
+            Track track = engine.loadTrack(new File("testdata/wav/48000/24/block-story-stereo.wav"));
             System.out.println(track.getMetaData());
             engine.getTrackPlayer(track).play();
             Thread.sleep(track.getDuration());
