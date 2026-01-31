@@ -28,7 +28,7 @@ public class NativeLibraryUnpacker {
     }
 
     public String unpackLib() {
-        String unpackPath = System.getProperty("user.dir") + File.pathSeparator;
+        String unpackPath = System.getProperty("user.dir") + File.separator;
 
         String libName = getLibName();
         log.debug("Unpacking native lib: {}", libName);

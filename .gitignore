@@ -21,6 +21,10 @@ core/target/**
 
 recorded.wav
 
+audio-snd.dylib
+audio-snd.dll
+audio-snd.so
+
 /testdata/
 /testdata/44100/
 /testdata/48000/

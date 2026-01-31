@@ -15,7 +15,7 @@ import java.nio.file.Path;
 public class PlayerExample {
     private static final Logger log = LoggerFactory.getLogger(PlayerExample.class);
 
-    public static void main(String[] args) {
+    void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
             engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> m.registerPathLocator(new PathLocator(Path.of("testdata/wav/48000/24"))));
 
