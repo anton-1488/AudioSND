@@ -1,5 +1,5 @@
 git add .
-git commit -m "Pre update teask"
+git commit -m "Update brances"
 
 git checkout $1
 git merge main
