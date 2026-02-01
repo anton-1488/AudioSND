@@ -140,15 +140,15 @@ public class ID3ChunkWriter implements WavChunkWriter<Track> {
             DataOutputStream dos = new DataOutputStream(frameData);
 
             dos.writeByte(0x00);
-            dos.write(image.getMimeType().getBytes(StandardCharsets.ISO_8859_1));
+            dos.write(image.mimeType().getBytes(StandardCharsets.ISO_8859_1));
             dos.writeByte(0x00);
             dos.writeByte(0x03);
             dos.writeByte(0x00);
 
             dos.write(imageData);
 
-            String type = image.getMimeType().substring(image.getMimeType().lastIndexOf("/") + 1);
-            ImageIO.write(image.getImage(), type.toUpperCase(), frameData);
+            String type = image.mimeType().substring(image.mimeType().lastIndexOf("/") + 1);
+            ImageIO.write(image.image(), type.toUpperCase(), frameData);
 
             byte[] fullFrameData = frameData.toByteArray();
             int frameSize = fullFrameData.length;
