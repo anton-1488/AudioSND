@@ -57,7 +57,6 @@ public class ExportUtils {
         if (!file.exists()) {
             for (PathLocator locator : locators) {
                 String newPath = locator.getPath().toString() + "/" + file.toPath();
-                System.out.println(newPath);
                 File newFile = new File(newPath);
                 if (newFile.exists()) {
                     return newFile;

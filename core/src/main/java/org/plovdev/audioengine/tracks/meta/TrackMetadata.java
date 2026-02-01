@@ -2,8 +2,9 @@ package org.plovdev.audioengine.tracks.meta;
 
 import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.meta.image.TrackImage;
 
-import java.awt.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Date;
@@ -26,17 +27,19 @@ public class TrackMetadata {
     public TrackMetadata() {
     }
 
-    private <T> void putMetadata(@NotNull MetaKey key, @NotNull T value) {
+    private <T> void putMetadata(@NotNull MetaKey key, T value) {
         Class<?> type = key.getType();
-        if (!type.isInstance(value)) {
-            throw new ClassCastException("Value " + value + " is not of type " + type);
-        }
+        if (value != null) {
+            if (!type.isInstance(value)) {
+                throw new ClassCastException("Value " + value + " is not of type " + type);
+            }
+        } // Allow null
 
         metadata.put(key, new MetadataEntry(value, type));
     }
 
     @SuppressWarnings("unchecked")
-    private  <T> T getMetadata(MetaKey key) {
+    private <T> T getMetadata(MetaKey key) {
         if (key == null) {
             return null;
         }
@@ -68,7 +71,7 @@ public class TrackMetadata {
         return Optional.ofNullable(getMetadata(MetaKey.GENRE));
     }
 
-    public Optional<Integer> getYear() {
+    public Optional<Date> getYear() {
         return Optional.ofNullable(getMetadata(MetaKey.YEAR));
     }
 
@@ -176,16 +179,20 @@ public class TrackMetadata {
         return Optional.ofNullable(getMetadata(MetaKey.FILE_FORMAT));
     }
 
-    public Optional<String> getAudioCodec() {
+    public Optional<TrackFormat.AudioCodec> getAudioCodec() {
         return Optional.ofNullable(getMetadata(MetaKey.AUDIO_CODEC));
     }
 
-    public Optional<Image> getAlbumImage() {
+    public Optional<TrackImage> getAlbumImage() {
         return Optional.ofNullable(getMetadata(MetaKey.ALBUM_ART));
     }
 
-    public Optional<Image> getArtistImage() {
+    public Optional<TrackImage> getArtistImage() {
         return Optional.ofNullable(getMetadata(MetaKey.ARTIST_IMAGE));
+    }
+
+    public Optional<String> getAlbumArtist() {
+        return Optional.ofNullable(getMetadata(MetaKey.ALBUM_ARTIST));
     }
 
     // setters
@@ -207,7 +214,7 @@ public class TrackMetadata {
         putMetadata(MetaKey.GENRE, genre);
     }
 
-    public void setYear(Integer year) {
+    public void setYear(Date year) {
         putMetadata(MetaKey.YEAR, year);
     }
 
@@ -315,16 +322,20 @@ public class TrackMetadata {
         putMetadata(MetaKey.FILE_FORMAT, fileFormat);
     }
 
-    public void setAudioCodec(String audioCodec) {
+    public void setAudioCodec(TrackFormat.AudioCodec audioCodec) {
         putMetadata(MetaKey.AUDIO_CODEC, audioCodec);
     }
 
-    public void setAlbumImage(Image image) {
+    public void setAlbumImage(TrackImage image) {
         putMetadata(MetaKey.ALBUM_ART, image);
     }
 
-    public void setArtistImage(Image image) {
+    public void setArtistImage(TrackImage image) {
         putMetadata(MetaKey.ARTIST_IMAGE, image);
+    }
+
+    public void setAlbumArtist(String artist) {
+        putMetadata(MetaKey.ALBUM_ARTIST, artist);
     }
 
 
@@ -335,6 +346,10 @@ public class TrackMetadata {
 
     public Set<MetaKey> getKeys() {
         return metadata.keySet();
+    }
+
+    public Map<MetaKey, MetadataEntry> getAllTags() {
+        return Map.copyOf(metadata);
     }
 
     public boolean isEmpty() {

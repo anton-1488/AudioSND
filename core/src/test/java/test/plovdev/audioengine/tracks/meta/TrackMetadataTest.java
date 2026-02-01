@@ -16,19 +16,19 @@ public class TrackMetadataTest {
 
         metadata.setTitle("AudioSND");
         metadata.setCreationDate(new Date(time));
-        metadata.setYear(2025);
+
 
         Optional<String> title = metadata.getTitle();
         Optional<Date> creationDate = metadata.getCreationDate();
-        Optional<Integer> year = metadata.getYear();
+
 
         assertTrue(title.isPresent());
         assertTrue(creationDate.isPresent());
-        assertTrue(year.isPresent());
+
 
         assertEquals("AudioSND", title.get());
         assertEquals(new Date(time), creationDate.get());
-        assertEquals(2025, year.get());
+
     }
 
     @Test

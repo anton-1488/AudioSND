@@ -32,12 +32,12 @@
 
 1. Maven dependency:
     ```xml
-    <groupId>org.plovdev</groupId>
-    <artifactId>AudioSND</artifactId>
-    <version>x.x.x</version>
+    <groupId>org.plovde.audiosnd</groupId>
+    <artifactId>core</artifactId>
+    <version>1.0.0-BETA</version>
     ```
 2. Gradle
-   `implementation'org.plovdev:AudioSND:x.x.x'`
+   `implementation'org.plovdev.audiosnd:core:1.0.0-BETA'`
 3. Отдельный форк движка:
    `git clone "https://github.com/anton-1488/AudioSND.git"`
 4. Ваш оригинальный способ установки и сборки тут:)
@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
+    void main() {
         // инициализируем движок
         try (AudioEngine engine = new NativeAudioEngine();
             // загружаем трек/песню
@@ -86,7 +86,7 @@ public class Main {
 3. Подождать окончания результата. Сборка появиться в папке builds.
 
 ## Требования
-1. Java 21+(по идее можно и меньшую версию, но все писалось на 21).
+1. Java 25+(по идее можно и меньшую версию, но все писалось на 25).
 2. cmake/g++ 12 для сборки нативного кода.
 
 Движок не требует жестких ресурсов от железа, и работает даже на старых устройствах.

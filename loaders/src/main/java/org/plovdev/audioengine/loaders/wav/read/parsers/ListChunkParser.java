@@ -52,7 +52,7 @@ public class ListChunkParser implements WavChunkParser {
     private TagEntry parseEntry(BufferedInputStream inputStream) throws IOException {
         byte[] tag = new byte[4];
         if (inputStream.read(tag) != 4) {
-            log.warn("Readed tag size is non equal excepted size!");
+            log.warn("Readed 'tag' size is non equal excepted size!");
         }
 
         String tagName = new String(tag, StandardCharsets.US_ASCII);

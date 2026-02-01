@@ -13,8 +13,7 @@ public class GenerationExample {
 
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
-            Track track = engine.loadTrack(new File("testdata/wav/48000/24/block-story-stereo.wav"));
-            System.out.println(track.getMetaData());
+            Track track = engine.loadTrack(new File("testdata/wav/48000/24/pornhub-stereo.wav"));
             engine.getTrackPlayer(track).play();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {

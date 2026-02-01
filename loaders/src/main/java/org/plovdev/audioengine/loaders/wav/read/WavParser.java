@@ -4,9 +4,11 @@ import org.plovdev.audioengine.loaders.wav.chunks.DataChunk;
 import org.plovdev.audioengine.loaders.wav.chunks.FormatChunk;
 import org.plovdev.audioengine.loaders.wav.chunks.ListChunk;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
+import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -50,12 +52,13 @@ public class WavParser {
     }
 
     public ListChunk getListChunk() {
+        ListChunk totalChunk = new ListChunk(WavChunkId.LIST, new ArrayList<>());
         for (Chunk chunk : getChunks()) {
-            if (chunk instanceof ListChunk) {
-                return (ListChunk) chunk;
+            if (chunk instanceof ListChunk listChunk) {
+                totalChunk.getEntries().addAll(listChunk.getEntries());
             }
         }
-        return null;
+        return totalChunk;
     }
 
     public WavChunkReader getChunkReader() {

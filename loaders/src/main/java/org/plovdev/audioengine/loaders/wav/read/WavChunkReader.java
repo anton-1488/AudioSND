@@ -41,6 +41,10 @@ public class WavChunkReader implements AutoCloseable {
 
         int size = ExportUtils.bytesToInt(sizeBytes, 0, 4);
 
+        if (size % 2 != 0) {
+            size++;
+        }
+
         // Читаем тело чанка полностью
         byte[] body = new byte[size];
         int totalRead = 0;

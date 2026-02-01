@@ -40,9 +40,9 @@ public class NativeTrackPlayer implements TrackPlayer {
         data = track.getTrackData();
 
         initPlayer();
-        log.info("Inited");
-
         chunkSize = TrackFormatUtils.calculateChunkSizeInBytes(track.getFormat(), ms);
+
+        log.debug("Native track player inited success");
     }
 
     @Override
@@ -251,7 +251,7 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     private void audioLoop() {
         final int limit = data.limit();
-        log.info("Start playing");
+        log.debug("Start playing");
 
         while (isPlaying.get()) {
             int start = position.get();
@@ -268,7 +268,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         }
 
         currentCycle++;
-        log.info("Stop playing");
+        log.debug("Stop playing");
         setStatus(TrackStatus.STOPPED);
     }
 

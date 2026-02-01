@@ -45,6 +45,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class NativeAudioEngine implements AudioEngine {
     private static final Logger log = LoggerFactory.getLogger(NativeAudioEngine.class);
+    private static final Logger infoLogger = LoggerFactory.getLogger("InfoLogger");
+
     private final List<TrackLoaderManager> loaderManagers = new CopyOnWriteArrayList<>();
     private AudioEngineConfig config = AudioEngineConfig.load();
     private volatile boolean isInited = false;
@@ -78,6 +80,8 @@ public class NativeAudioEngine implements AudioEngine {
         if (!isInited) {
             this.config = config;
 
+            printEngineInfo(config);
+
             NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
             System.load(unpacker.unpackLib());
 
@@ -86,6 +90,20 @@ public class NativeAudioEngine implements AudioEngine {
             _init();
             isInited = true;
         } else throw new AudioEngineException("Engine is already inited!");
+    }
+
+    private void printEngineInfo(AudioEngineConfig config) {
+        Runtime runtime = Runtime.getRuntime();
+
+        String banner = String.format("\033[32;1m\n%s\033[0m", config.getBanner());
+        System.out.println(banner);
+
+        float bytesDev = 1024.0f * 1024.0f;
+        infoLogger.info("Using configuration: {}", config);
+        infoLogger.info("System statistics:");
+        infoLogger.info("    * Available processors: {}", runtime.availableProcessors());
+        infoLogger.info("    * Memory usage: {}/{}MB", (runtime.freeMemory() / bytesDev), runtime.maxMemory() / bytesDev);
+        infoLogger.info("Native library: {}", config.getNativeLib().toString());
     }
 
     /**

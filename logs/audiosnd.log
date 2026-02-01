@@ -1,6 +1,0 @@
-2026-01-31 15:00:37.702 [main] DEBUG o.p.a.utils.NativeLibraryUnpacker - OS name: mac os x
-2026-01-31 15:00:37.709 [main] DEBUG o.p.a.utils.NativeLibraryUnpacker - Unpacking native lib: audio-snd.dylib
-2026-01-31 15:00:37.729 [main] DEBUG o.p.a.devices.AudioDeviceManager - Creating singleton instance for AudioDeviceManager
-2026-01-31 15:00:38.278 [main] DEBUG o.p.a.d.NativeOutputAudioDevice - Audio output device 48 opened
-2026-01-31 15:00:38.279 [main] INFO  o.p.a.tracks.NativeTrackPlayer - Inited
-2026-01-31 15:00:38.284 [audio-loop] INFO  o.p.a.tracks.NativeTrackPlayer - Start playing

@@ -2,11 +2,13 @@ package org.plovdev.audioengine.loaders.wav.write;
 
 import org.plovdev.audioengine.exceptions.TrackExportException;
 import org.plovdev.audioengine.loaders.TrackExporter;
+import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -22,23 +24,35 @@ public class WavTrackExporter implements TrackExporter {
     public void save(Track track, OutputStream outputStream) {
         try {
             TrackFormat format = track.getFormat();
-            int channels = format.channels();
-            int sampleRate = format.sampleRate();
-            int bitDepth = format.bitsPerSample();
             ByteBuffer trackData = track.getTrackData().rewind();
 
-            int blockAlign = channels * (bitDepth / 8);
-            int byteRate = sampleRate * blockAlign;
-            int dataChunkSize = trackData.remaining();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            WavChunkWriterManager chunkWriter = new WavChunkWriterManager(buffer);
+
+            chunkWriter.writeChunk(WavChunkId.FMT, format);
+            int fmtSize = buffer.size();
+
+            int listSize = 0;
+            if (track.getMetaData() != null && !track.getMetaData().isEmpty()) {
+                chunkWriter.writeChunk(WavChunkId.ID3_HEAD, track);
+                listSize = buffer.size() - fmtSize;
+            }
+
+            chunkWriter.writeChunk(WavChunkId.DATA, track);
+            int dataSize = buffer.size() - fmtSize - listSize;
+
+            int totalChunkSize = 4 +
+                    8 + fmtSize +
+                    8 + dataSize +
+                    (listSize > 0 ? (8 + listSize) : 0);
 
             outputStream.write(RIFF.getBytes());
-            outputStream.write(intToLittleEndian(36 + dataChunkSize));
+            outputStream.write(intToLittleEndian(totalChunkSize));
             outputStream.write(WAVE.getBytes());
 
-            WavChunkWriter chunkWriter = new WavChunkWriter(outputStream);
+            buffer.writeTo(outputStream);
 
-            chunkWriter.writeFormat(format);
-            chunkWriter.writeDataChunk(trackData, format);
+            outputStream.close();
         } catch (Exception e) {
             throw new TrackExportException(e.getMessage());
         }

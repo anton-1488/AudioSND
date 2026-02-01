@@ -1,6 +1,8 @@
 package org.plovdev.audioengine.tracks.meta;
 
-import java.awt.*;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.meta.image.TrackImage;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Date;
@@ -13,12 +15,14 @@ import java.util.Date;
  * @author Anton
  * @version 1.0
  */
+
+// TODO Metadata SUB keys!
 public enum MetaKey {
     TITLE("TIT2", String.class),           // Название трека
     ARTIST("TPE1", String.class),          // Основной исполнитель
     ALBUM("TALB", String.class),           // Альбом
     ALBUM_ARTIST("TPE2", String.class),    // Исполнитель альбома
-    YEAR("TYER", Integer.class),           // Год
+    YEAR("TYER", Date.class),           // Год
     TRACK_NUMBER("TRCK", Integer.class),   // Номер трека в альбоме
     GENRE("TCON", String.class),           // Жанр
 
@@ -39,8 +43,8 @@ public enum MetaKey {
 
     // ==== Расширенные/пользовательские теги ====
     DISC_NUMBER("TPOS", Integer.class),    // Номер диска
-    DISC_TOTAL("TPOS", Integer.class),     // Всего дисков (часто вместе с номером)
-    TRACK_TOTAL("TRCK", Integer.class),    // Всего треков в альбоме
+    DISC_TOTAL("TTPS", Integer.class),     // Всего дисков (часто вместе с номером)
+    TRACK_TOTAL("TTLK", Integer.class),    // Всего треков в альбоме
 
     // ==== Аудио-технические метаданные (не ID3, но стандартные) ====
     DURATION("DURATION", Duration.class),  // Продолжительность
@@ -50,7 +54,7 @@ public enum MetaKey {
     BITRATE("BITRATE", Integer.class),     // Битрейт
     ENCODING("ENCODING", String.class),    // Тип кодирования
     FILE_FORMAT("FORMAT", String.class),   // Формат файла
-    AUDIO_CODEC("CODEC", String.class),    // Аудио-кодек
+    AUDIO_CODEC("CODEC", TrackFormat.AudioCodec.class),    // Аудио-кодек
 
     // ==== Информация о файле ====
     FILE_PATH("FILEPATH", Path.class),     // Путь к файлу
@@ -59,8 +63,8 @@ public enum MetaKey {
     MODIFICATION_DATE("MODIFIED", Date.class), // Дата изменения
 
     // ==== Изображения (ID3: APIC frame) ====
-    ALBUM_ART("APIC", Image.class),        // Обложка альбома
-    ARTIST_IMAGE("APIC", Image.class),     // Фото исполнителя
+    ALBUM_ART("APIC", TrackImage.class),        // Обложка альбома
+    ARTIST_IMAGE("APIC", TrackImage.class),     // Фото исполнителя
 
     // ==== Replay Gain (стандарт для нормализации громкости) ====
     REPLAYGAIN_TRACK_GAIN("REPLAYGAIN_TRACK_GAIN", Float.class),
