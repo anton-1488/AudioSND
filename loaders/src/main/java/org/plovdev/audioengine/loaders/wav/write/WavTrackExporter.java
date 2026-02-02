@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders.wav.write;
 
-import org.plovdev.audioengine.exceptions.TrackExportException;
+import org.plovdev.audioengine.exceptions.loaders.TrackExportException;
 import org.plovdev.audioengine.loaders.TrackExporter;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
 import org.plovdev.audioengine.tracks.Track;

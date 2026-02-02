@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders.wav;
 
-import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.loaders.LoadListener;
 import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.TrackLoader;
@@ -74,7 +74,7 @@ public class WavTrackLoader implements TrackLoader {
             metadata.setDuration(duration);
             metadata.setChannels(format.channels());
             metadata.setBitrate(format.bitRate());
-            metadata.setBitDepth(format.bitsPerSample());
+            metadata.setBitDepth(format.bitDepth());
             metadata.setSampleRate(format.sampleRate());
             metadata.setAudioCodec(format.audioCodec());
 
@@ -223,7 +223,7 @@ public class WavTrackLoader implements TrackLoader {
 
             String wave = new String(header, 8, 4, StandardCharsets.US_ASCII);
             if (!wave.equals("WAVE")) {
-                log.info("Not WAVE file type! {}", wave);
+                log.info("Not WAVE file pictureType! {}", wave);
                 return false;
             }
 

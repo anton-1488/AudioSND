@@ -1,3 +1,4 @@
-effects/src/main/java/org/plovdev/audioengine/effects/AudioEffect.java
-effects/src/main/java/org/plovdev/audioengine/effects/VolumeEffect.java
-effects/src/main/java/org/plovdev/audioengine/effects/ash/package-info.java
+effects/src/main/java/org/plovdev/audioengine/effects/parsers/AudioEffectParser.java
+effects/src/main/java/org/plovdev/audioengine/effects/PhaseInvertEffect.java
+effects/src/main/java/org/plovdev/audioengine/effects/EchoEffect.java
+effects/src/main/java/org/plovdev/audioengine/effects/ReverseEffect.java

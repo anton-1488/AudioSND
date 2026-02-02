@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders;
 
-import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 
 import java.io.*;
 import java.nio.ByteBuffer;

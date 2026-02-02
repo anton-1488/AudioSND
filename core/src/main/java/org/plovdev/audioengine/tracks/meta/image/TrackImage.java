@@ -1,25 +1,40 @@
 package org.plovdev.audioengine.tracks.meta.image;
 
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * Класс обертка над картинками в аудио файле. Используеться для хранения картинки и информации о ней.
- * @param mimeType mime type изображения.
- * @param type типа картинки(для чего это изображение).
- * @param image сама картинка, готовая к использованию.
+ * Обёртка для изображения в аудиофайле (например, обложка альбома).
+ * <p>
+ * Поля:
+ * <ul>
+ *   <li>{@code mimeType} — MIME‑тип изображения (например, "image/jpeg").</li>
+ *   <li>{@code pictureType} — назначение изображения (по умолчанию COVER).</li>
+ *   <li>{@code image} — байтовые данные изображения в виде {@link ByteBuffer}.</li>
+ * </ul>
+ *
+ * @see ImageType
+ * @see org.plovdev.audioengine.tracks.meta.TrackMetadata
+ *
+ * @version 1.0
+ * @author Anton
  */
-public record TrackImage(String mimeType, ImageType type, BufferedImage image) {
+public record TrackImage(ImageMimeType mimeType, ImageType pictureType, BufferedImage image) {
     public TrackImage {
         Objects.requireNonNull(mimeType);
         Objects.requireNonNull(image);
-        if (type == null) {
-            type = ImageType.COVER;
+
+        if (pictureType == null) {
+            pictureType = ImageType.OTHER;
         }
     }
 
     @Override
     public String toString() {
-        return image.toString();
+        return "TrackImage{" +
+                "mimeType='" + mimeType + "', " +
+                "pictureType=" + pictureType + ", " +
+                "}";
     }
 }

@@ -283,6 +283,10 @@ main() {
         ls -la implementation/src/main/resources/natives/libs/*.so 2>/dev/null || echo "  Не найдены"
     fi
     echo "================================================"
+
+    rm audio-snd.dylib;
+    rm audio-snd.so;
+    rm audio-snd.dll;
 }
 
 main "$@"

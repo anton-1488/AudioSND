@@ -2,6 +2,7 @@ package org.plovdev.audioengine.loaders.wav.read.parsers;
 
 import org.plovdev.audioengine.loaders.wav.chunks.APICStructure;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
+import org.plovdev.audioengine.tracks.meta.image.ImageMimeType;
 import org.plovdev.audioengine.tracks.meta.image.ImageType;
 import org.plovdev.audioengine.tracks.meta.image.TrackImage;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public class APICParser {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageData)) {
             BufferedImage img = ImageIO.read(bis);
             if (img != null) {
-                return new TrackImage(structure.getMimeType(), ImageType.getFrom(structure.getPicType()), img);
+                return new TrackImage(ImageMimeType.getFrom(structure.getMimeType()), ImageType.getFrom(structure.getPicType()), img);
             }
         } catch (IOException e) {
             log.error("Image reading error: ", e);

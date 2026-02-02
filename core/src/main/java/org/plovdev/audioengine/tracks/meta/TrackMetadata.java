@@ -31,7 +31,7 @@ public class TrackMetadata {
         Class<?> type = key.getType();
         if (value != null) {
             if (!type.isInstance(value)) {
-                throw new ClassCastException("Value " + value + " is not of type " + type);
+                throw new ClassCastException("Value " + value + " is not of pictureType " + type);
             }
         } // Allow null
 
@@ -49,7 +49,7 @@ public class TrackMetadata {
             return null;
         }
         if (!type.isAssignableFrom(entry.getType())) {
-            throw new ClassCastException(String.format("Metadata %s is of type %s, not %s", key, entry.getType().getSimpleName(), type.getSimpleName()));
+            throw new ClassCastException(String.format("Metadata %s is of pictureType %s, not %s", key, entry.getType().getSimpleName(), type.getSimpleName()));
         }
         return (T) entry.getValue();
     }

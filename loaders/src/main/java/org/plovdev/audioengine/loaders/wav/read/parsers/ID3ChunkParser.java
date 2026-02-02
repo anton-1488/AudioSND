@@ -108,7 +108,7 @@ public class ID3ChunkParser implements WavChunkParser {
         byte[] data = new byte[frameSize];
         input.readFully(data);
 
-        // Parse based on frame type
+        // Parse based on frame pictureType
         String content = parseFrameContent(frameId, data);
 
         WavChunkId tagId = WavChunkId.fromString(frameId);

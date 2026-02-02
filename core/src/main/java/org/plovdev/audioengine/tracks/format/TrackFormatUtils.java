@@ -80,17 +80,17 @@ public class TrackFormatUtils {
     public static boolean isCdCompatible(TrackFormat format) {
         return format.sampleRate() == 44100 &&
                 format.channels() == 2 &&
-                format.bitsPerSample() == 16;
+                format.bitDepth() == 16;
     }
 
     public static boolean isDvdCompatible(TrackFormat format) {
         return format.sampleRate() == 48000 &&
-                format.bitsPerSample() >= 16;
+                format.bitDepth() >= 16;
     }
 
     public static boolean isBroadcastCompatible(TrackFormat format) {
         return format.sampleRate() == 48000 &&
-                format.bitsPerSample() >= 16 &&
+                format.bitDepth() >= 16 &&
                 format.signed();
     }
 
@@ -114,13 +114,13 @@ public class TrackFormatUtils {
             return (format.bitRate() * durationSeconds) / 8;
         } else {
             // Для PCM форматов
-            return format.sampleRate() * format.bitsPerSample() * format.channels() * durationSeconds / 8;
+            return format.sampleRate() * format.bitDepth() * format.channels() * durationSeconds / 8;
         }
     }
 
     public static long calculateDurationMs(TrackFormat format, int sizeInBytes) {
         long sampleRate = format.sampleRate();        // Гц (например, 44100)
-        long bitsPerSample = format.bitsPerSample();  // бит (например, 16)
+        long bitsPerSample = format.bitDepth();  // бит (например, 16)
         long channels = format.channels();            // каналов (например, 2)
 
         // Байт в секунду = (сэмплов/сек) * (байт/сэмпл) * каналы
@@ -135,7 +135,7 @@ public class TrackFormatUtils {
     }
 
     public static int calculateChunkSizeInBytes(TrackFormat f, int ms) {
-        int bytesPerSample = f.bitsPerSample() / 8;
+        int bytesPerSample = f.bitDepth() / 8;
         int bytesPerFrame = bytesPerSample * f.channels();
         int framesPerMs = Math.max(1, f.sampleRate() / 1000);
 

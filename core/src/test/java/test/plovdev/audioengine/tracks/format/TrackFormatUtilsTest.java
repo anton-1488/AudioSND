@@ -24,12 +24,12 @@ public class TrackFormatUtilsTest {
         TrackFormat cdFormat = TrackFormatUtils.fromQualityPreset(QualityPreset.PODCAST);
         assertEquals(44100, cdFormat.sampleRate());
         assertEquals(2, cdFormat.channels());
-        assertEquals(16, cdFormat.bitsPerSample());
+        assertEquals(16, cdFormat.bitDepth());
 
         TrackFormat telephoneFormat = TrackFormatUtils.fromQualityPreset(QualityPreset.TELEPHONE);
         assertEquals(8000, telephoneFormat.sampleRate());
         assertEquals(1, telephoneFormat.channels());
-        assertEquals(16, telephoneFormat.bitsPerSample());
+        assertEquals(16, telephoneFormat.bitDepth());
     }
 
     // ==== Тесты для fromName ====
@@ -63,7 +63,7 @@ public class TrackFormatUtilsTest {
         // Должен вернуть CD качество как дефолт (wav16bitStereo44kHz)
         assertEquals(44100, unknown.sampleRate());
         assertEquals(2, unknown.channels());
-        assertEquals(16, unknown.bitsPerSample());
+        assertEquals(16, unknown.bitDepth());
     }
 
     // ==== Тесты совместимости ====

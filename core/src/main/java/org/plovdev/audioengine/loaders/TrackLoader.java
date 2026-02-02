@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders;
 
-import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.tracks.meta.TrackMetadata;

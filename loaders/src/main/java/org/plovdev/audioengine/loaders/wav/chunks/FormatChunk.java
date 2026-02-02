@@ -21,7 +21,7 @@ public class FormatChunk extends Chunk {
         this.channels = format.channels();
         this.sampleRate = format.sampleRate();
         this.byteRate = sampleRate * chunkSize;
-        this.bitPerSample = format.bitsPerSample();
+        this.bitPerSample = format.bitDepth();
         this.blockAlign = (bitPerSample / 8) * channels;
         this.format = format;
     }

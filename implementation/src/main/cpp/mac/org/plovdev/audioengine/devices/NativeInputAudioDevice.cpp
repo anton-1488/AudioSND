@@ -74,7 +74,7 @@ AudioStreamBasicDescription javaToASBD(JNIEnv* env, jobject trackFormat) {
     // Получаем поля
     jfieldID sampleRateField = env->GetFieldID(formatClass, "sampleRate", "I");
     jfieldID channelsField = env->GetFieldID(formatClass, "channels", "I");
-    jfieldID bitsPerSampleField = env->GetFieldID(formatClass, "bitsPerSample", "I");
+    jfieldID bitsPerSampleField = env->GetFieldID(formatClass, "bitDepth", "I");
     jfieldID signedField = env->GetFieldID(formatClass, "signed", "Z");
 
     // Получаем ByteOrder

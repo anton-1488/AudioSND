@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
  * Track format description.
  *
  * @param channels channels count in audio.
- * @param bitsPerSample auio format width.
+ * @param bitDepth auio format width.
  * @param sampleRate auio sample rate.
  * @param signed is signed audio.
  * @param byteOrder audio byte order.
@@ -18,7 +18,7 @@ import java.nio.ByteOrder;
  * @version 1.0
  */
 
-public record TrackFormat(int channels, int bitsPerSample, int sampleRate, boolean signed, @NotNull ByteOrder byteOrder, @NotNull AudioCodec audioCodec) {
+public record TrackFormat(int channels, int bitDepth, int sampleRate, boolean signed, @NotNull ByteOrder byteOrder, @NotNull AudioCodec audioCodec) {
     /**
      * Audio codec before converted to pcm
      */
@@ -44,7 +44,7 @@ public record TrackFormat(int channels, int bitsPerSample, int sampleRate, boole
 
     public TrackFormat {
         validateField(channels);
-        validateField(bitsPerSample);
+        validateField(bitDepth);
         validateField(sampleRate);
     }
 
@@ -59,13 +59,21 @@ public record TrackFormat(int channels, int bitsPerSample, int sampleRate, boole
      * @return audio bitrate.
      */
     public int bitRate() {
-        return sampleRate * bitsPerSample * channels;
+        return sampleRate * bitDepth * channels;
+    }
+
+    /**
+     * Calculate bytes per sample of givven format data.
+     * @return audio bytes per sample.
+     */
+    public int bytesPerSample() {
+        return (bitDepth / 8) * channels;
     }
 
     @Override
     public String toString() {
         return String.format("%dHz, %dch, %dbit, %s, %s. AudioCodec: %s",
-                sampleRate, channels, bitsPerSample,
+                sampleRate, channels, bitDepth,
                 signed ? "signed" : "unsigned",
                 byteOrder == ByteOrder.BIG_ENDIAN ? "BE" : "LE", audioCodec.name());
     }

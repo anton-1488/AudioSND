@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders.wav.write.writers;
 
-import org.plovdev.audioengine.exceptions.TrackExportException;
+import org.plovdev.audioengine.exceptions.loaders.TrackExportException;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class FormatChunkWriter implements WavChunkWriter<TrackFormat> {
         try {
             int channels = format.channels();
             int sampleRate = format.sampleRate();
-            int bitDepth = format.bitsPerSample();
+            int bitDepth = format.bitDepth();
 
             int blockAlign = channels * (bitDepth / 8);
             int byteRate = sampleRate * blockAlign;

@@ -22,7 +22,7 @@ public class TrackGeneratorHelper {
     public static Track generate(Duration duration, TrackFormat format, GeneratorConfig config) {
         int sampleRate = format.sampleRate();
         int channels = format.channels();
-        int bitsPerSample = format.bitsPerSample();
+        int bitsPerSample = format.bitDepth();
         boolean signed = false;
         ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
 

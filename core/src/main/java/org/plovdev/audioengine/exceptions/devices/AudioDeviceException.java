@@ -1,4 +1,4 @@
-package org.plovdev.audioengine.exceptions;
+package org.plovdev.audioengine.exceptions.devices;
 
 /**
  * Default audio dvice processing error.

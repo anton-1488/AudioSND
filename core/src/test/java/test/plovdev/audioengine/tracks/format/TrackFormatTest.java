@@ -15,7 +15,7 @@ public class TrackFormatTest {
 
         assertEquals("wav", format.extension());
         assertEquals(2, format.channels());
-        assertEquals(16, format.bitsPerSample());
+        assertEquals(16, format.bitDepth());
         assertEquals(44100, format.sampleRate());
         assertTrue(format.signed());
         assertEquals(ByteOrder.LITTLE_ENDIAN, format.byteOrder());

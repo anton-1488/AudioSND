@@ -2,14 +2,16 @@ package org.plovdev.audioengine.tracks;
 
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
-import org.plovdev.audioengine.exceptions.AudioDeviceException;
-import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
+import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
+import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,6 +28,8 @@ public class NativeTrackPlayer implements TrackPlayer {
     private int currentCycle = 0;
     private final int ms = 10;
 
+    private final ExecutorService eventExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
     private float speed = 1.0f;
     private float volume = 0.5f;
 
@@ -33,6 +37,9 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     private Runnable onStatusChanged = () -> {
     };
+    private Runnable onChunkPlayed = () -> {
+    };
+
 
     public NativeTrackPlayer(Track track, AudioDeviceInfo info) {
         this.track = track;
@@ -160,7 +167,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public Duration getCurrentTime() {
-        return Duration.ofMillis((position.get() / chunkSize) / ms);
+        return Duration.ofMillis(position.get() / (chunkSize / ms));
     }
 
     /**
@@ -225,6 +232,9 @@ public class NativeTrackPlayer implements TrackPlayer {
         if (isInited.get()) {
             stop();
             audioDevice.close();
+            eventExecutor.shutdown();
+            eventExecutor.shutdownNow();
+            eventExecutor.close();
         }
     }
 
@@ -263,13 +273,21 @@ public class NativeTrackPlayer implements TrackPlayer {
 
             ByteBuffer chunk = data.slice(start, Math.min(chunkSize, rem));
             audioDevice.write(chunk);
-
             position.set(Math.min(start + chunkSize, limit));
+            //onChunkPlayed.run();
         }
 
         currentCycle++;
         log.debug("Stop playing");
         setStatus(TrackStatus.STOPPED);
+    }
+
+    public Runnable getOnChunkPlayed() {
+        return onChunkPlayed;
+    }
+
+    public void setOnChunkPlayed(Runnable onChunkPlayed) {
+        this.onChunkPlayed = onChunkPlayed;
     }
 
     public boolean isInited() {

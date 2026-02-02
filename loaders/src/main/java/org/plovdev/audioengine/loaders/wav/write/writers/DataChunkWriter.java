@@ -1,6 +1,6 @@
 package org.plovdev.audioengine.loaders.wav.write.writers;
 
-import org.plovdev.audioengine.exceptions.TrackExportException;
+import org.plovdev.audioengine.exceptions.loaders.TrackExportException;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
@@ -22,7 +22,7 @@ public class DataChunkWriter implements WavChunkWriter<Track> {
             TrackFormat format = track.getFormat();
             ByteBuffer trackData = track.getTrackData();
 
-            int bitDepth = format.bitsPerSample();
+            int bitDepth = format.bitDepth();
             int dataChunkSize = trackData.remaining();
 
             outputStream.write(DATA.getChunk().getBytes());

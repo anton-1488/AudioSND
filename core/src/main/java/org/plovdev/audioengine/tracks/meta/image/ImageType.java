@@ -4,10 +4,14 @@ package org.plovdev.audioengine.tracks.meta.image;
  * Класс который предстовляет тип картинка(для чего она используеться)
  */
 public enum ImageType {
-    /**
-     * Альбомная картинка
-     */
-    COVER(0);
+    OTHER(0x00),
+    FILE_ICON_32X32(0x01),
+    OTHER_FILE_ICON(0x02),
+    COVER_FRONT(0x03),
+    COVER_BACK(0x04),
+    LEAFLET_PAGE(0x05),
+    MEDIA(0x06),
+    LEAD_ARTIST(0x07);
 
     private final int type;
     ImageType(int type) {
@@ -25,7 +29,7 @@ public enum ImageType {
                 return t;
             }
         }
-        return COVER; // fallback
+        return null;
     }
 
     /**

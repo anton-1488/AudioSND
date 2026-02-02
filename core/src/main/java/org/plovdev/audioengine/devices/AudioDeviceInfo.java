@@ -37,6 +37,6 @@ public record AudioDeviceInfo(@NotNull String id, String name, String vendor, @N
 
     @Override
     public String toString() {
-        return String.format("%s(%s) powered by %s. AudioDevice type: %s, Supports formats: %s", name(), id(), vendor(), type.name(), supportedFormats().size());
+        return String.format("%s(%s) powered by %s. AudioDevice pictureType: %s, Supports formats: %s", name(), id(), vendor(), type.name(), supportedFormats().size());
     }
 }

@@ -103,7 +103,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
 
     int sr = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "sampleRate", "()I"));
     int ch = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "channels", "()I"));
-    int bits = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "bitsPerSample", "()I"));
+    int bits = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "bitDepth", "()I"));
     jboolean signedPcm = env->CallBooleanMethod(fmt, env->GetMethodID(fmtCls, "signed", "()Z"));
 
     ctx->src.mSampleRate = sr;

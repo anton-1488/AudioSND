@@ -2,7 +2,7 @@ package org.plovdev.audioengine;
 
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
-import org.plovdev.audioengine.exceptions.TrackLoadException;
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.loaders.TrackLoaderManager;
 import org.plovdev.audioengine.mixer.TrackMixer;
 import org.plovdev.audioengine.tracks.Track;

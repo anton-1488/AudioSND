@@ -1,8 +1,8 @@
 package org.plovdev.audioengine.devices;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.exceptions.CloseAudioDeviceException;
-import org.plovdev.audioengine.exceptions.OpenAudioDeviceException;
+import org.plovdev.audioengine.exceptions.devices.CloseAudioDeviceException;
+import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 /**

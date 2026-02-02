@@ -182,7 +182,7 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
 
         jmethodID getChannels = env->GetMethodID(formatCls, "channels", "()I");
         jmethodID getSampleRate = env->GetMethodID(formatCls, "sampleRate", "()I");
-        jmethodID getBitsPerSample = env->GetMethodID(formatCls, "bitsPerSample", "()I");
+        jmethodID getBitsPerSample = env->GetMethodID(formatCls, "bitDepth", "()I");
 
         jclass listCls = env->GetObjectClass(trackList);
         jmethodID sizeID = env->GetMethodID(listCls, "size", "()I");
@@ -243,7 +243,7 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         jclass outputFormatCls = env->GetObjectClass(formatObj);
         jmethodID outputGetChannels = env->GetMethodID(outputFormatCls, "channels", "()I");
         jmethodID outputGetSampleRate = env->GetMethodID(outputFormatCls, "sampleRate", "()I");
-        jmethodID outputGetBitsPerSample = env->GetMethodID(outputFormatCls, "bitsPerSample", "()I");
+        jmethodID outputGetBitsPerSample = env->GetMethodID(outputFormatCls, "bitDepth", "()I");
 
         int outChannels = env->CallIntMethod(formatObj, outputGetChannels);
         int outSampleRate = env->CallIntMethod(formatObj, outputGetSampleRate);
