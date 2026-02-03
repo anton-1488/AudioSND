@@ -5,12 +5,27 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 import java.nio.ByteBuffer;
 
 public class ReverseEffect implements AudioEffect {
-    public ReverseEffect() {
+    private TrackFormat format;
+
+    /**
+     * Инициализирует эффект(дает базовую настройку)
+     *
+     * @param format формат трека
+     */
+    @Override
+    public void setup(TrackFormat format) {
+        this.format = format;
     }
 
+    /**
+     * Метод для обработки эффекта на буффер.
+     *
+     * @param source исходный буффер
+     * @return обработаный буффер
+     */
     @Override
-    public ByteBuffer process(TrackFormat format, ByteBuffer source) {
-        int frameSize = (format.bitDepth() / 8) * format.channels();
+    public ByteBuffer process(ByteBuffer source) {
+        int frameSize = format.bytesPerSample();
         int size = source.limit();
         ByteBuffer processed = ByteBuffer.allocateDirect(size);
         byte[] chunk = new byte[frameSize];
@@ -21,7 +36,6 @@ public class ReverseEffect implements AudioEffect {
             processed.put(chunk);
         }
 
-        processed.flip();
-        return processed;
+        return processed.flip();
     }
 }

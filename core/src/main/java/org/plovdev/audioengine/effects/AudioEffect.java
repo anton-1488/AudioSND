@@ -9,10 +9,14 @@ import java.nio.ByteBuffer;
  */
 public interface AudioEffect {
     /**
-     * Метод для обработки эффекта на буффер.
+     * Инициализирует эффект(дает базовую настройку)
      * @param format формат трека
-     * @param source исходный буффер
-     * @return обработаный буффер
      */
-    ByteBuffer process(TrackFormat format, ByteBuffer source);
+    void setup(TrackFormat format);
+    /**
+     * Метод для обработки эффекта на буффер.
+     * @param source исходный буфер
+     * @return обработанный буфер
+     */
+    ByteBuffer process(ByteBuffer source);
 }

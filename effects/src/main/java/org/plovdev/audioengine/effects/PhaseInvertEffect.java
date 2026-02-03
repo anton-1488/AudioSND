@@ -8,9 +8,20 @@ import java.nio.ByteBuffer;
  * Эффект инверсии фазы: умножает все выборки на -1.
  */
 public class PhaseInvertEffect implements AudioEffect {
+    private TrackFormat format;
+
+    /**
+     * Инициализирует эффект(дает базовую настройку)
+     *
+     * @param format формат трека
+     */
+    @Override
+    public void setup(TrackFormat format) {
+        this.format = format;
+    }
 
     @Override
-    public ByteBuffer process(TrackFormat format, ByteBuffer source) {
+    public ByteBuffer process(ByteBuffer source) {
         int frameSize = format.bytesPerSample();
 
         ByteBuffer result = ByteBuffer.allocateDirect(source.capacity());

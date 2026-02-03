@@ -3,7 +3,7 @@ package org.plovdev.audioengine.examples;
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
 import org.plovdev.audioengine.effects.EffectsChain;
-import org.plovdev.audioengine.effects.ReverseEffect;
+import org.plovdev.audioengine.effects.GainEffect;
 import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.wav.WavTrackLoaderManager;
 import org.plovdev.audioengine.tracks.Track;
@@ -22,7 +22,8 @@ public class PlayerExample {
             engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> m.registerPathLocator(new PathLocator(Path.of("testdata/wav/44100/16"))));
 
             Track track = engine.loadTrack(new File("Pornhub intro.wav"));
-            EffectsChain chain = new EffectsChain().addEffect(new ReverseEffect());
+            System.out.println(track.getFormat());
+            EffectsChain chain = new EffectsChain().addEffect(new GainEffect(100f));
             track = chain.apply(track);
 
             System.out.println(track.getMetaData());

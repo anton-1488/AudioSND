@@ -37,7 +37,8 @@ public class EffectsChain {
         TrackFormat format = source.getFormat();
 
         for (AudioEffect effect : effects) {
-            original = effect.process(format, original);
+            effect.setup(format);
+            original = effect.process(original);
         }
 
         return new Track(original, source.getDuration(), format, source.getMetaData());
