@@ -4,12 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 
-import static org.plovdev.audioengine.utils.AudioEngineConfig.NativeLib;
+import static org.plovdev.audioengine.engine.AudioEngineConfig.NativeLib;
 
 public class NativeLibraryUnpacker {
     private static final Logger log = LoggerFactory.getLogger(NativeLibraryUnpacker.class);
@@ -27,24 +29,39 @@ public class NativeLibraryUnpacker {
         this.toUnpack = toUnpack;
     }
 
-    public String unpackLib() {
-        String unpackPath = System.getProperty("user.dir") + File.separator;
-
+    /**
+     * Распаковывает нативную библиотеку во временный файл
+     * Thread-safe и безопасный
+     */
+    public synchronized String unpackLib() throws Exception {
         String libName = getLibName();
         log.debug("Unpacking native lib: {}", libName);
-        String fullName = unpackPath + libName;
-        Path libPath = Path.of(fullName);
 
-        if (!Files.exists(libPath)) {
-            try (InputStream libStream = Objects.requireNonNull(getClass().getResourceAsStream("/natives/libs/" + libName))) {
-                Files.createFile(libPath);
-                Files.write(libPath, libStream.readAllBytes());
-                log.debug("Native lib unpacked to {}", fullName);
-            } catch (Exception e) {
-                throw new RuntimeException("Cann't unpack native library: ", e);
-            }
+        Path tempLibPath = createTempLib(libName);
+        configurateLib(tempLibPath);
+        extractLib(tempLibPath, libName);
+
+        return tempLibPath.toString();
+    }
+
+    private Path createTempLib(String name) throws IOException {
+        String unpackPath = System.getProperty("java.io.tmpdir") + File.separator;
+        return Files.createTempFile(Path.of(unpackPath), "audiosnd_", name);
+    }
+
+    private void configurateLib(Path path) {
+        File file = path.toFile();
+        file.deleteOnExit();
+        log.debug("Can executable: {}", file.setExecutable(true, true));
+    }
+
+    private void extractLib(Path tempLibPath, String libName) {
+        try (InputStream libStream = Objects.requireNonNull(getClass().getResourceAsStream("/natives/libs/" + libName))) {
+            Files.copy(libStream, tempLibPath, StandardCopyOption.REPLACE_EXISTING);
+            log.debug("Native lib unpacked to {}", tempLibPath);
+        } catch (Exception e) {
+            throw new RuntimeException("Cann't unpack native library: ", e);
         }
-        return fullName;
     }
 
     private String getLibName() {

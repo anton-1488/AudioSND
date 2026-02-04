@@ -1,27 +1,41 @@
 package org.plovdev.audioengine.loaders;
 
-public interface LoadListener {
-
+public abstract class LoadListenerAdapter implements LoadListener {
     /**
      * Вызывается когда начинается загрузка
+     *
      * @param total общий размер в байтах (если известен)
      */
-    void onLoadStarted(long total);
+    @Override
+    public void onLoadStarted(long total) {
+
+    }
 
     /**
      * Вызывается во время загрузки
+     *
      * @param loaded уже загружено байт
      */
-    void onLoading(long loaded);
+    @Override
+    public void onLoading(long loaded) {
+
+    }
 
     /**
      * Вызывается когда загрузка завершена успешно
      */
-    void onLoadFinished();
+    @Override
+    public void onLoadFinished() {
+
+    }
 
     /**
      * Вызывается при ошибке загрузки
+     *
      * @param error исключение
      */
-    void onLoadFailed(Exception error);
+    @Override
+    public void onLoadFailed(Exception error) {
+
+    }
 }

@@ -5,122 +5,203 @@ import org.plovdev.audioengine.tracks.format.TrackFormat;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public final class GainEffect implements AudioEffect {
+public class GainEffect implements AudioEffect {
 
     private TrackFormat format;
-    private ByteOrder order;
-    private float gain;
+    private float gain = 0.5f;
 
     public GainEffect(float gain) {
+        if (gain < -10 || gain > 10) {
+            throw new IllegalArgumentException("Gain value is incorrect");
+        }
         this.gain = gain;
+    }
+
+    public GainEffect() {
     }
 
     @Override
     public void setup(TrackFormat format) {
         this.format = format;
-        this.order  = format.byteOrder();
-
-        switch (format.audioCodec()) {
-            case PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64 -> {}
-            default -> throw new IllegalArgumentException(
-                    "GainEffect не поддерживает формат: " + format.audioCodec()
-            );
-        }
     }
 
     @Override
-    public ByteBuffer process(ByteBuffer buffer) {
-        buffer.order(order);
-
-        switch (format.audioCodec()) {
-            case PCM8    -> processPCM8(buffer);
-            case PCM16   -> processPCM16(buffer);
-            case PCM24   -> processPCM24(buffer);
-            case PCM32   -> processPCM32(buffer);
-            case FLOAT32 -> processFloat32(buffer);
-            case FLOAT64 -> processFloat64(buffer);
+    public ByteBuffer process(ByteBuffer inputBuffer) {
+        if (format == null) {
+            throw new IllegalStateException("GainEffect не инициализирован");
         }
 
-        return buffer;
-    }
+        int originalPosition = inputBuffer.position();
+        int originalLimit = inputBuffer.limit();
 
-    /* ================= PCM ================= */
+        try {
+            inputBuffer.rewind();
 
-    private void processPCM8(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i++) {
-            int v = (int) (b.get(i) * gain);
-            if (v > 127) v = 127;
-            else if (v < -128) v = -128;
-            b.put(i, (byte) v);
-        }
-    }
+            ByteBuffer outputBuffer = ByteBuffer.allocateDirect(inputBuffer.capacity());
+            outputBuffer.order(format.byteOrder());
+            applyGain(inputBuffer, outputBuffer);
 
-    private void processPCM16(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i += 2) {
-            int v = (int) (b.getShort(i) * gain);
-            if (v > 32767) v = 32767;
-            else if (v < -32768) v = -32768;
-            b.putShort(i, (short) v);
+            outputBuffer.flip();
+            inputBuffer.position(originalPosition);
+            inputBuffer.limit(originalLimit);
+
+            return outputBuffer;
+        } catch (Exception e) {
+            inputBuffer.position(originalPosition);
+            inputBuffer.limit(originalLimit);
+            throw e;
         }
     }
 
-    private void processPCM24(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i += 3) {
-            int sample =
-                    (b.get(i) & 0xFF) |
-                            ((b.get(i + 1) & 0xFF) << 8) |
-                            (b.get(i + 2) << 16);
+    private void applyGain(ByteBuffer input, ByteBuffer output) {
+        ByteOrder originalInputOrder = input.order();
+        input.order(format.byteOrder());
 
-            sample = (sample << 8) >> 8; // sign extend
-
-            int v = (int) (sample * gain);
-            if (v > 8_388_607) v = 8_388_607;
-            else if (v < -8_388_608) v = -8_388_608;
-
-            b.put(i,     (byte) v);
-            b.put(i + 1, (byte) (v >> 8));
-            b.put(i + 2, (byte) (v >> 16));
+        try {
+            switch (format.audioCodec()) {
+                case PCM16 -> applyGainPCM16(input, output);
+                case PCM8 -> applyGainPCM8(input, output);
+                case PCM24 -> applyGainPCM24(input, output);
+                case PCM32 -> applyGainPCM32(input, output);
+                case FLOAT32 -> applyGainFloat32(input, output);
+                case FLOAT64 -> applyGainFloat64(input, output);
+                default -> throw new IllegalArgumentException("Неподдерживаемый формат: " + format.audioCodec());
+            }
+        } finally {
+            input.order(originalInputOrder);
         }
     }
 
-    private void processPCM32(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i += 4) {
-            long v = (long) (b.getInt(i) * gain);
-            if (v > Integer.MAX_VALUE) v = Integer.MAX_VALUE;
-            else if (v < Integer.MIN_VALUE) v = Integer.MIN_VALUE;
-            b.putInt(i, (int) v);
+    private void applyGainPCM16(ByteBuffer input, ByteBuffer output) {
+        int samples = input.capacity() / 2;
+
+        for (int i = 0; i < samples; i++) {
+            short sample = input.getShort();
+
+            // 1. Конвертируем в float [-1.0, 1.0]
+            float normalized = sample / 32768.0f;
+
+            // 2. Применяем усиление
+            float amplified = normalized * gain;
+            amplified = fastTanh(amplified);
+
+            // 4. Конвертируем обратно в short
+            short result = (short) (amplified * 32767.0f);
+
+            output.putShort(result);
         }
     }
 
-    /* ================= FLOAT ================= */
+    private void applyGainPCM8(ByteBuffer input, ByteBuffer output) {
+        int samples = input.capacity(); // 1 байт = 1 sample
 
-    private void processFloat32(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i += 4) {
-            b.putFloat(i, b.getFloat(i) * gain);
+        for (int i = 0; i < samples; i++) {
+            byte sample = input.get();
+
+            float normalized = sample / 128.0f;
+
+            // Применяем gain и tanh
+            float processed = normalized * gain;
+            processed = fastTanh(processed);
+
+            // Обратно в byte [-128..127]
+            int result = Math.round(processed * 127.0f);
+            if (result > 127) result = 127;
+            else if (result < -128) result = -128;
+
+            output.put((byte) result);
         }
     }
 
-    private void processFloat64(ByteBuffer b) {
-        for (int i = 0; i < b.remaining(); i += 8) {
-            b.putDouble(i, b.getDouble(i) * gain);
+    private void applyGainPCM24(ByteBuffer input, ByteBuffer output) {
+        int samples = input.capacity() / 3;
+
+        for (int i = 0; i < samples; i++) {
+            int b0 = input.get() & 0xFF;
+            int b1 = input.get() & 0xFF;
+            int b2 = input.get() & 0xFF;
+
+            int sample = b0 | (b1 << 8) | (b2 << 16);
+            if ((sample & 0x800000) != 0) {
+                sample |= 0xFF000000;
+            }
+
+            // Конвертируем в float [-1.0, 1.0]
+            float normalized = sample / 8388608.0f;
+
+            // Применяем gain и tanh
+            float processed = normalized * gain;
+            processed = fastTanh(processed);
+
+            // Обратно в 24-bit
+            int result = Math.round(processed * 8388607.0f);
+            if (result > 8388607) result = 8388607;
+            else if (result < -8388608) result = -8388608;
+
+            // Записываем 3 байта
+            output.put((byte) (result & 0xFF));
+            output.put((byte) ((result >> 8) & 0xFF));
+            output.put((byte) ((result >> 16) & 0xFF));
         }
     }
 
-    /* ================= API ================= */
+    private void applyGainPCM32(ByteBuffer input, ByteBuffer output) {
+        int samples = input.capacity() / 4;
 
-    public void setGainLinear(float gain) {
-        this.gain = Math.max(0.0f, gain);
+        for (int i = 0; i < samples; i++) {
+            int sample = input.getInt();
+            double normalized = sample / 2147483648.0;
+            double processed = normalized * gain;
+            processed = Math.tanh(processed);
+            double denormalized = processed * 2147483647.0;
+            long rounded = Math.round(denormalized);
+            int result = (int) rounded;
+
+            output.putInt(result);
+        }
     }
 
-    public void setGainDb(float db) {
-        this.gain = (float) Math.pow(10.0, db / 20.0);
+    private void applyGainFloat32(ByteBuffer input, ByteBuffer output) {
+        int bytesToProcess = input.capacity();
+        int samples = bytesToProcess / 4;
+
+        for (int i = 0; i < samples; i++) {
+            float sample = input.getFloat();
+            float result = sample * gain;
+
+            result = fastTanh(result);
+
+            output.putFloat(result);
+        }
     }
 
-    public float getGainLinear() {
+    private void applyGainFloat64(ByteBuffer input, ByteBuffer output) {
+        int bytesToProcess = input.capacity();
+        int samples = bytesToProcess / 8;
+
+        for (int i = 0; i < samples; i++) {
+            double sample = input.getDouble();
+            double result = sample * gain;
+
+            result = Math.tanh(result);
+
+            output.putDouble(result);
+        }
+    }
+
+    private float fastTanh(float x) {
+        float x2 = x * x;
+        return x * (27 + x2) / (27 + 9 * x2);
+    }
+
+    public float getGain() {
         return gain;
     }
 
-    public float getGainDb() {
-        return (float) (20.0 * Math.log10(gain));
+    public void setGain(float gain) {
+        if (gain < -10 || gain > 10) {
+            throw new IllegalArgumentException("Gain value is incorrect");
+        }
+        this.gain = gain;
     }
 }

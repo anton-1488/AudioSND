@@ -4,12 +4,12 @@ import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EffectsChain {
-    private final List<AudioEffect> effects = new CopyOnWriteArrayList<>();
+    private final List<AudioEffect> effects = new ArrayList<>();
 
     public EffectsChain() {
     }

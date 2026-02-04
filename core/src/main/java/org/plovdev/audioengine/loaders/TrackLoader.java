@@ -14,15 +14,15 @@ public interface TrackLoader {
     Track loadTrack(InputStream stream) throws TrackLoadException;
     Track loadTrack(URI uri) throws TrackLoadException;
 
-    TrackMetadata readTrackMetadata(String src);
+    TrackMetadata readTrackMetadata(File src);
     TrackMetadata readTrackMetadata(InputStream src);
     TrackMetadata readTrackMetadata(URI src);
 
-    TrackFormat getTrackFormat(String src);
+    TrackFormat getTrackFormat(File src);
     TrackFormat getTrackFormat(InputStream src);
     TrackFormat getTrackFormat(URI src);
 
-    boolean isSupported(String filename);
+    boolean isSupported(File file);
     boolean isSupported(TrackFormat format);
     boolean isSupported(InputStream stream);
     boolean isSupported(URI uri);

@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
 public class AudioDeviceExample {
     private static final Logger log = LoggerFactory.getLogger(AudioDeviceExample.class);
 
-    public static void main(String[] args) {
+    void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine()) {
             AudioDeviceManager manager = AudioDeviceManager.getInstance();
 

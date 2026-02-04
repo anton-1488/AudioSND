@@ -15,7 +15,7 @@ import org.plovdev.audioengine.tracks.NativeTrackPlayer;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.TrackPlayer;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.utils.AudioEngineConfig;
+import org.plovdev.audioengine.engine.AudioEngineConfig;
 import org.plovdev.audioengine.utils.NativeLibraryUnpacker;
 import org.plovdev.audioengine.utils.TrackLoaderSearcher;
 import org.slf4j.Logger;
@@ -78,17 +78,21 @@ public class NativeAudioEngine implements AudioEngine {
     @Override
     public synchronized void init(@NotNull AudioEngineConfig config) throws AudioEngineException {
         if (!isInited) {
-            this.config = config;
+            try {
+                this.config = config;
 
-            printEngineInfo(config);
+                printEngineInfo(config);
 
-            NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
-            System.load(unpacker.unpackLib());
+                NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
+                System.load(unpacker.unpackLib());
 
-            TrackLoaderSearcher.getSearchedLoaders().forEach(this::addLoaderManager);
-            AudioDeviceManager.getInstance();
-            _init();
-            isInited = true;
+                TrackLoaderSearcher.getSearchedLoaders().forEach(this::addLoaderManager);
+                AudioDeviceManager.getInstance();
+                _init();
+                isInited = true;
+            } catch (Exception e) {
+                throw new AudioEngineException("Cann't init AudioSND: " + e.getMessage());
+            }
         } else throw new AudioEngineException("Engine is already inited!");
     }
 
@@ -129,7 +133,7 @@ public class NativeAudioEngine implements AudioEngine {
         checkIfInited();
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(file.getName())) {
+            if (loader.isSupported(file)) {
                 return loader.loadTrack(file);
             }
         }

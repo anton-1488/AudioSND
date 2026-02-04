@@ -2,6 +2,7 @@ package org.plovdev.audioengine.loaders.wav;
 
 import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.loaders.LoadListener;
+import org.plovdev.audioengine.loaders.LoadListenerAdapter;
 import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.TrackLoader;
 import org.plovdev.audioengine.loaders.wav.chunks.DataChunk;
@@ -36,7 +37,7 @@ import static org.plovdev.audioengine.tracks.format.TrackFormat.AudioCodec.*;
 public class WavTrackLoader implements TrackLoader {
     private static final Logger log = LoggerFactory.getLogger(WavTrackLoader.class);
     private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
-    private LoadListener loadListener = null;
+    private LoadListener loadListener = new LoadListenerAdapter() {};
 
     private static final List<TrackFormat.AudioCodec> supportedCodecs = List.of(PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64, ALAW, ULAW, ADPCM);
 
@@ -58,9 +59,17 @@ public class WavTrackLoader implements TrackLoader {
     @Override
     public Track loadTrack(InputStream stream) throws TrackLoadException {
         try {
+            int total = stream.available();
+            if (loadListener != null) {
+                loadListener.onLoadStarted(total);
+            }
             WavParser parser = new WavParser(stream);
             parser.parse();
             log.debug("File parsing finished, collect result...");
+
+            if (loadListener != null) {
+                loadListener.onLoading(total - stream.available());
+            }
 
             DataChunk chunk = parser.getDataChunk();
             FormatChunk formatChunk = parser.getFormatChunk();
@@ -131,8 +140,14 @@ public class WavTrackLoader implements TrackLoader {
             }
 
             log.debug("File loaded successful");
+            if (loadListener != null) {
+                loadListener.onLoadFinished();
+            }
             return new Track(chunk.getData(), duration, format, metadata);
         } catch (Exception e) {
+            if (loadListener != null) {
+                loadListener.onLoadFailed(e);
+            }
             throw new TrackLoadException("Failed to load WAV from stream: " + e);
         }
     }
@@ -153,7 +168,7 @@ public class WavTrackLoader implements TrackLoader {
     }
 
     @Override
-    public TrackMetadata readTrackMetadata(String src) {
+    public TrackMetadata readTrackMetadata(File src) {
         return null;
     }
 
@@ -168,7 +183,7 @@ public class WavTrackLoader implements TrackLoader {
     }
 
     @Override
-    public TrackFormat getTrackFormat(String src) {
+    public TrackFormat getTrackFormat(File src) {
         return null;
     }
 
@@ -183,8 +198,10 @@ public class WavTrackLoader implements TrackLoader {
     }
 
     @Override
-    public boolean isSupported(String filename) {
-        if (filename == null) return false;
+    public boolean isSupported(File file) {
+        if (file == null) return false;
+        String filename = file.getName();
+
         String lower = filename.toLowerCase().trim();
         lower = lower.startsWith(".") ? lower : "." + lower;
         return lower.endsWith(".wav") || lower.endsWith(".wave");
@@ -244,7 +261,7 @@ public class WavTrackLoader implements TrackLoader {
 
     @Override
     public boolean isSupported(URI uri) {
-        return isSupported(uri.getPath());
+        return isSupported(new File(uri.getPath()));
     }
 
     private Calendar parsePartialDate(String input) {

@@ -2,8 +2,7 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
-import org.plovdev.audioengine.effects.EffectsChain;
-import org.plovdev.audioengine.effects.GainEffect;
+import org.plovdev.audioengine.loaders.LoadListener;
 import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.wav.WavTrackLoaderManager;
 import org.plovdev.audioengine.tracks.Track;
@@ -19,15 +18,32 @@ public class PlayerExample {
 
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
-            engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> m.registerPathLocator(new PathLocator(Path.of("testdata/wav/44100/16"))));
+            engine.getTrackLoaderManager(WavTrackLoaderManager.class).ifPresent(m -> {
+                m.registerPathLocator(new PathLocator(Path.of("testdata/wav/48000/16")));
+                m.getTrackLoader().setLoadListener(new LoadListener() {
+                    @Override
+                    public void onLoadStarted(long total) {
+                        log.info("Start downloading: {}", total);
+                    }
 
-            Track track = engine.loadTrack(new File("Pornhub intro.wav"));
-            System.out.println(track.getFormat());
-            EffectsChain chain = new EffectsChain().addEffect(new GainEffect(100f));
-            track = chain.apply(track);
+                    @Override
+                    public void onLoading(long loaded) {
+                        log.info("Loading...");
+                    }
 
-            System.out.println(track.getMetaData());
+                    @Override
+                    public void onLoadFinished() {
+                        log.info("Load finished");
+                    }
 
+                    @Override
+                    public void onLoadFailed(Exception error) {
+                        log.info("Load error: ", error);
+                    }
+                });
+            });
+
+            Track track = engine.loadTrack(new File("White Night.wav"));
             engine.getTrackPlayer(track).play();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {

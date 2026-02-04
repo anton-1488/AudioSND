@@ -8,7 +8,7 @@ import org.plovdev.audioengine.mixer.TrackMixer;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.TrackPlayer;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.utils.AudioEngineConfig;
+import org.plovdev.audioengine.engine.AudioEngineConfig;
 
 import java.io.File;
 import java.io.InputStream;
