@@ -1,4 +1,6 @@
 effects/src/main/java/org/plovdev/audioengine/effects/parsers/AudioEffectParser.java
+effects/src/main/java/org/plovdev/audioengine/effects/ReverbEffect.java
+effects/src/main/java/org/plovdev/audioengine/effects/OverdriveEffect.java
 effects/src/main/java/org/plovdev/audioengine/effects/PhaseInvertEffect.java
-effects/src/main/java/org/plovdev/audioengine/effects/EchoEffect.java
+effects/src/main/java/org/plovdev/audioengine/effects/GainEffect.java
 effects/src/main/java/org/plovdev/audioengine/effects/ReverseEffect.java

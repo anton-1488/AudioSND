@@ -96,7 +96,6 @@ std::vector<float> resample(const std::vector<float>& input, int inRate, int out
 std::vector<float> mixTracks(const std::vector<TrackData>& tracks, int outChannels, int outSampleRate) {
     if (tracks.empty()) return {};
 
-    // Находим максимальную длину в кадрах (frames)
     size_t maxFrames = 0;
     for (auto& t : tracks) {
         if (t.samples.empty() || t.channels == 0) continue;
@@ -289,12 +288,8 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         jmethodID metadataCtor = env->GetMethodID(metadataCls, "<init>", "()V");
         jobject metadataObj = env->NewObject(metadataCls, metadataCtor);
 
-        // Создаем новый Track объект
         jmethodID trackCtor = env->GetMethodID(trackCls, "<init>", "(Ljava/nio/ByteBuffer;Ljava/time/Duration;Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/tracks/meta/TrackMetadata;)V");
         jobject newTrack = env->NewObject(trackCls, trackCtor, resultBuffer, durationObj, formatObj, metadataObj);
-
-        // Освобождаем память (в продакшене нужно использовать finalizer или Cleaner)
-        // delete[] buffer; // Не удаляем - буфер принадлежит Java DirectByteBuffer
 
         return newTrack;
 

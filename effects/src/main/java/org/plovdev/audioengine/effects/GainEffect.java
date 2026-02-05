@@ -11,7 +11,7 @@ public class GainEffect implements AudioEffect {
     private float gain = 0.5f;
 
     public GainEffect(float gain) {
-        if (gain < -10 || gain > 10) {
+        if (gain < -20 || gain > 20) {
             throw new IllegalArgumentException("Gain value is incorrect");
         }
         this.gain = gain;

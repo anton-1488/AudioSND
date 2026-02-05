@@ -25,15 +25,17 @@ public class AudioDeviceExample {
         }
     }
 
-    private static <V> void testExecutionDelay(Callable<V> runnable) {
+    private static <V> V testExecutionDelay(Callable<V> runnable) {
         try {
             long start = System.currentTimeMillis();
             V exec = runnable.call();
             long end = System.currentTimeMillis();
 
             log.info("Execution test delay({}ms): {}", (end - start), exec);
+            return exec;
         } catch (Exception e) {
             log.error("Testing error: ", e);
         }
+        return null;
     }
 }

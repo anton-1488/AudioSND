@@ -417,6 +417,7 @@ jobject getDevicesByScope(JNIEnv* env, bool wantInputDevices) {
 
     jobject deviceList = env->NewObject(clsArrayList, ctorArrayList);
 
+
     for (AudioDeviceID devId : allDevices) {
         int inputChannels = getDeviceChannels(devId, true);
         int outputChannels = getDeviceChannels(devId, false);

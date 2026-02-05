@@ -1,3 +1,4 @@
+examples/src/main/java/org/plovdev/audioengine/examples/AudioDeviceListenerExample.java
 examples/src/main/java/org/plovdev/audioengine/examples/AudioDeviceExample.java
 examples/src/main/java/org/plovdev/audioengine/examples/PlayerExample.java
 examples/src/main/java/org/plovdev/audioengine/examples/GenerationExample.java

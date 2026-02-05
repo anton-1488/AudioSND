@@ -143,7 +143,7 @@ public class WavTrackLoader implements TrackLoader {
             if (loadListener != null) {
                 loadListener.onLoadFinished();
             }
-            return new Track(chunk.getData(), duration, format, metadata);
+            return new Track(chunk.getData().order(format.byteOrder()), duration, format, metadata);
         } catch (Exception e) {
             if (loadListener != null) {
                 loadListener.onLoadFailed(e);
