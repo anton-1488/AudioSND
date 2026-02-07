@@ -10,9 +10,18 @@
             <pattern>%msg%n</pattern>
         </encoder>
     </appender>
+    <appender name="TEST" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%green(%msg%n)</pattern>
+        </encoder>
+    </appender>
 
     <logger name="org.plovdev.audioengine" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <logger name="test.plovdev.audioengine" level="INFO">
+        <appender-ref ref="TEST"/>
     </logger>
 
     <logger name="InfoLogger" level="DEBUG" additivity="false">

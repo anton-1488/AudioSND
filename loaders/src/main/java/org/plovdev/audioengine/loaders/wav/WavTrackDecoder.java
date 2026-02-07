@@ -1,17 +1,40 @@
 package org.plovdev.audioengine.loaders.wav;
 
 import org.plovdev.audioengine.loaders.TrackDecoder;
+import org.plovdev.audioengine.loaders.wav.decoders.ULawDecoder;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.List;
+
+import static org.plovdev.audioengine.tracks.format.TrackFormat.AudioCodec.*;
 
 public class WavTrackDecoder implements TrackDecoder {
-    @Override
-    public Track decodeToPCM(Track input) {
-        return null;
-    }
+    private static final List<TrackFormat.AudioCodec> allowFromDecodeCodecs = List.of(ULAW, ALAW, IMA_ADPCM, MIC_ADPCM, GSM_6);
+    private static final List<TrackFormat.AudioCodec> allowToDecodeCodecs = List.of(PCM8, PCM16, PCM32, FLOAT32, FLOAT64);
+    private static final Logger log = LoggerFactory.getLogger(WavTrackDecoder.class);
 
     @Override
-    public Track decodeToFormat(Track input, TrackFormat outFormat) {
-        return null;
+    public Track decode(Track input, TrackFormat outFormat) {
+        TrackFormat.AudioCodec inCodec = input.getFormat().audioCodec();
+        TrackFormat.AudioCodec outCodec = outFormat.audioCodec();
+
+        if (!allowFromDecodeCodecs.contains(inCodec) || !allowToDecodeCodecs.contains(outCodec)) {
+            log.warn("Unsupported codec.");
+            return input;
+        }
+
+        TrackFormat format = input.getFormat();
+        Duration inputDuration = input.getDuration();
+        TrackMetadata metadata = input.getMetaData();
+
+        return switch (inCodec) {
+            case ULAW -> new Track(new ULawDecoder().decode(input.getTrackData()), inputDuration, outFormat, metadata);
+            default -> input;
+        };
     }
 }

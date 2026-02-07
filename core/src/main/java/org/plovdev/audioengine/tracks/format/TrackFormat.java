@@ -31,7 +31,9 @@ public record TrackFormat(int channels, int bitDepth, int sampleRate, boolean si
         FLOAT64,    // 64-bit float (для Hi-Res)
         ALAW,       // 8-bit A-law
         ULAW,       // 8-bit μ-law
-        ADPCM,      // IMA ADPCM
+        IMA_ADPCM,      // IMA ADPCM
+        MIC_ADPCM,
+        GSM_6,
         MP3,        // MPEG Layer III
         AAC,        // Advanced Audio Coding
         OPUS,       // Opus

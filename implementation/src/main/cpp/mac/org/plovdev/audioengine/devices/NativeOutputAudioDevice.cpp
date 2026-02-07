@@ -55,29 +55,42 @@ OSStatus renderCallback(
         AudioBufferList* ioData)
 {
     auto* c = static_cast<NativeOutputContext*>(refCon);
-    float* out = (float*) ioData->mBuffers[0].mData;
     size_t ch = c->dst.mChannelsPerFrame;
 
-
-    size_t available =
-            c->writeFrame.load(std::memory_order_acquire) -
-            c->readFrame.load(std::memory_order_acquire);
-
+    size_t available = c->writeFrame.load(std::memory_order_acquire) -
+                      c->readFrame.load(std::memory_order_acquire);
     size_t toRead = std::min<size_t>(available, frames);
 
-    for (size_t i = 0; i < toRead; i++) {
-        size_t idx = ((c->readFrame + i) % c->ringFrames) * ch;
-        memcpy(out + i * ch, &c->ring[idx], ch * sizeof(float));
-    }
+    // В зависимости от формата используем правильный тип
+    if (c->dst.mFormatFlags & kAudioFormatFlagIsFloat) {
+        float* out = (float*) ioData->mBuffers[0].mData;
 
-    if (toRead < frames) {
-        memset(out + toRead * ch, 0,
-               (frames - toRead) * ch * sizeof(float));
+        for (size_t i = 0; i < toRead; i++) {
+            size_t idx = ((c->readFrame + i) % c->ringFrames) * ch;
+            memcpy(out + i * ch, &c->ring[idx], ch * sizeof(float));
+        }
+
+        if (toRead < frames) {
+            memset(out + toRead * ch, 0, (frames - toRead) * ch * sizeof(float));
+        }
+    } else {
+        // Для integer PCM
+        uint8_t* out = (uint8_t*) ioData->mBuffers[0].mData;
+        size_t bytesPerSample = c->dst.mBitsPerChannel / 8;
+        size_t bytesPerFrame = ch * bytesPerSample;
+
+        for (size_t i = 0; i < toRead; i++) {
+            size_t idx = ((c->readFrame + i) % c->ringFrames) * ch;
+            memcpy(out + i * bytesPerFrame, &c->ring[idx], bytesPerFrame);
+        }
+
+        if (toRead < frames) {
+            memset(out + toRead * bytesPerFrame, 0, (frames - toRead) * bytesPerFrame);
+        }
     }
 
     c->readFrame.fetch_add(toRead, std::memory_order_release);
     c->canWrite.notify_one();
-
     return noErr;
 }
 
@@ -86,7 +99,6 @@ OSStatus renderCallback(
 #pragma mark ======================
 
 extern "C" {
-
 JNIEXPORT jlong JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
 (JNIEnv* env, jobject, jobject fmt, jobject deviceInfo)
@@ -97,38 +109,63 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     NativeOutputContext* ctxPtr = ctx.get();
 
     jclass infoCls = env->GetObjectClass(deviceInfo);
-    jstring jDevId = (jstring) env->CallObjectMethod(deviceInfo, env->GetMethodID(infoCls, "id", "()Ljava/lang/String;"));;
+    jstring jDevId = (jstring) env->CallObjectMethod(deviceInfo, env->GetMethodID(infoCls, "id", "()Ljava/lang/String;"));
 
     jclass fmtCls = env->GetObjectClass(fmt);
 
+    // Получаем параметры
     int sr = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "sampleRate", "()I"));
     int ch = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "channels", "()I"));
     int bits = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "bitDepth", "()I"));
     jboolean signedPcm = env->CallBooleanMethod(fmt, env->GetMethodID(fmtCls, "signed", "()Z"));
 
+    jmethodID audioCodecMethod = env->GetMethodID(fmtCls, "audioCodec", "()Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+    jobject audioCodecObj = env->CallObjectMethod(fmt, audioCodecMethod);
+    jclass audioCodecClass = env->GetObjectClass(audioCodecObj);
+    jmethodID nameMethod = env->GetMethodID(audioCodecClass, "name", "()Ljava/lang/String;");
+
+    jstring codecName = (jstring) env->CallObjectMethod(audioCodecObj, nameMethod);
+
+    const char* codecStr = env->GetStringUTFChars(codecName, NULL);
+    std::string codec(codecStr);
+    env->ReleaseStringUTFChars(codecName, codecStr);
+
+    // Настраиваем формат
     ctx->src.mSampleRate = sr;
     ctx->src.mFormatID = kAudioFormatLinearPCM;
-    ctx->src.mFormatFlags =
-        (signedPcm ? kLinearPCMFormatFlagIsSignedInteger : 0) |
-        kLinearPCMFormatFlagIsPacked;
-    ctx->src.mBitsPerChannel = bits;
     ctx->src.mChannelsPerFrame = ch;
     ctx->src.mFramesPerPacket = 1;
-    ctx->src.mBytesPerFrame = ch * (bits / 8);
+
+    if (codec == "FLOAT32") {
+        ctx->src.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
+        ctx->src.mBitsPerChannel = 32;
+    } else if (codec == "FLOAT64") {
+        ctx->src.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
+        ctx->src.mBitsPerChannel = 64;
+    } else if (codec == "PCM8") {
+        ctx->src.mFormatFlags = kLinearPCMFormatFlagIsPacked;
+        if (signedPcm) ctx->src.mFormatFlags |= kLinearPCMFormatFlagIsSignedInteger;
+        ctx->src.mBitsPerChannel = 8;
+    } else if (codec == "PCM16") {
+        ctx->src.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+        ctx->src.mBitsPerChannel = 16;
+    } else if (codec == "PCM24") {
+        ctx->src.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+        ctx->src.mBitsPerChannel = 24;
+    } else if (codec == "PCM32") {
+        ctx->src.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+        ctx->src.mBitsPerChannel = 32;
+    } else {
+        std::cerr << "Unsupported codec: " << codec << std::endl;
+        return 0;
+    }
+
+    ctx->src.mBytesPerFrame = ch * (ctx->src.mBitsPerChannel / 8);
     ctx->src.mBytesPerPacket = ctx->src.mBytesPerFrame;
 
-    ctx->dst.mSampleRate = sr;
-    ctx->dst.mFormatID = kAudioFormatLinearPCM;
-    ctx->dst.mFormatFlags =
-        kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
-    ctx->dst.mBitsPerChannel = 32;
-    ctx->dst.mChannelsPerFrame = ch;
-    ctx->dst.mFramesPerPacket = 1;
-    ctx->dst.mBytesPerFrame = ch * sizeof(float);
-    ctx->dst.mBytesPerPacket = ctx->dst.mBytesPerFrame;
+    ctx->dst = ctx->src; // Просто копируем!
 
-    OSStatus status = AudioConverterNew(&ctx->src, &ctx->dst, &ctx->converter);
-    if (status != noErr) return 0;
+    ctx->converter = nullptr;
 
     const char* devStr = env->GetStringUTFChars(jDevId, nullptr);
     AudioDeviceID devId = (AudioDeviceID) strtoul(devStr, nullptr, 10);
@@ -145,6 +182,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     AudioComponent comp = AudioComponentFindNext(nullptr, &desc);
     AudioComponentInstanceNew(comp, &ctx->unit);
 
+    // Устанавливаем устройство
     AudioUnitSetProperty(ctx->unit,
         kAudioOutputUnitProperty_CurrentDevice,
         kAudioUnitScope_Global, 0,
@@ -155,6 +193,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
         kAudioUnitScope_Input, 0,
         &ctx->dst, sizeof(ctx->dst));
 
+    // Callback
     AURenderCallbackStruct cb{};
     cb.inputProc = renderCallback;
     cb.inputProcRefCon = ctxPtr;
@@ -171,6 +210,13 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     std::lock_guard<std::mutex> lock(contexts_mutex);
     long handle = nextContextId++;
     contexts[handle] = std::move(ctx);
+
+    env->DeleteLocalRef(infoCls);
+    env->DeleteLocalRef(jDevId);
+    env->DeleteLocalRef(fmtCls);
+    env->DeleteLocalRef(audioCodecObj);
+    env->DeleteLocalRef(audioCodecClass);
+    env->DeleteLocalRef(codecName);
     return handle;
 }
 
@@ -178,59 +224,38 @@ JNIEXPORT jint JNICALL
 Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
 (JNIEnv* env, jobject, jobject buffer, jlong handle) {
     auto* ctx = getContext(handle);
-
-    if (!ctx || !ctx->running) {
-        return 0;
-    }
+    if (!ctx || !ctx->running) return 0;
 
     auto* src = (uint8_t*) env->GetDirectBufferAddress(buffer);
     jlong cap = env->GetDirectBufferCapacity(buffer);
     size_t frames = cap / ctx->src.mBytesPerFrame;
+    size_t ch = ctx->src.mChannelsPerFrame;
 
     std::unique_lock<std::mutex> lock(ctx->mtx);
 
     while (frames > 0) {
-        size_t used =
-            ctx->writeFrame.load() -
-            ctx->readFrame.load();
+        size_t used = ctx->writeFrame.load(std::memory_order_acquire) -
+                     ctx->readFrame.load(std::memory_order_acquire);
         size_t freeFrames = ctx->ringFrames - used;
 
         while (freeFrames == 0) {
             ctx->canWrite.wait(lock);
-            used = ctx->writeFrame.load() - ctx->readFrame.load();
+            used = ctx->writeFrame.load(std::memory_order_acquire) -
+                  ctx->readFrame.load(std::memory_order_acquire);
             freeFrames = ctx->ringFrames - used;
         }
 
         size_t toWrite = std::min(frames, freeFrames);
 
-        std::vector<float> tmp(toWrite * ctx->dst.mChannelsPerFrame);
-
-        AudioBufferList in{}, out{};
-        in.mNumberBuffers = 1;
-        in.mBuffers[0].mData = src;
-        in.mBuffers[0].mDataByteSize =
-            toWrite * ctx->src.mBytesPerFrame;
-        in.mBuffers[0].mNumberChannels = ctx->src.mChannelsPerFrame;
-
-        out.mNumberBuffers = 1;
-        out.mBuffers[0].mData = tmp.data();
-        out.mBuffers[0].mDataByteSize =
-            toWrite * ctx->dst.mBytesPerFrame;
-        out.mBuffers[0].mNumberChannels = ctx->dst.mChannelsPerFrame;
-
-        AudioConverterConvertComplexBuffer(
-            ctx->converter, toWrite, &in, &out);
-
+        // ПРЯМОЕ КОПИРОВАНИЕ! Никакой конвертации!
         for (size_t i = 0; i < toWrite; i++) {
-            size_t idx =
-                ((ctx->writeFrame + i) % ctx->ringFrames) *
-                ctx->dst.mChannelsPerFrame;
+            size_t idx = ((ctx->writeFrame + i) % ctx->ringFrames) * ch;
             memcpy(&ctx->ring[idx],
-                   &tmp[i * ctx->dst.mChannelsPerFrame],
-                   ctx->dst.mBytesPerFrame);
+                   src + i * ctx->src.mBytesPerFrame,
+                   ctx->src.mBytesPerFrame);
         }
 
-        ctx->writeFrame.fetch_add(toWrite);
+        ctx->writeFrame.fetch_add(toWrite, std::memory_order_release);
         src += toWrite * ctx->src.mBytesPerFrame;
         frames -= toWrite;
     }

@@ -28,26 +28,82 @@ public class FormatChunkParser implements WavChunkParser {
         int blockAlign = ExportUtils.bytesToInt(body, 12, 2);
         int bitsPerSample = ExportUtils.bytesToInt(body, 14, 2);
 
-        TrackFormat format = getFormat(bitsPerSample, channels, sampleRate);
+        TrackFormat format = getFormat(compressionCode, bitsPerSample, channels, sampleRate);
 
         return new FormatChunk(format, body.length, body);
     }
 
-    private TrackFormat getFormat(int bitsPerSample, int channels, int sampleRate) {
-        TrackFormat.AudioCodec codec = switch (bitsPerSample) {
-            case 8 -> TrackFormat.AudioCodec.PCM8;
-            case 16 -> TrackFormat.AudioCodec.PCM16;
-            case 20, 24 -> TrackFormat.AudioCodec.PCM24;
-            case 32 -> TrackFormat.AudioCodec.PCM32;
-            default -> throw new IllegalArgumentException("Неподдерживаемый битрейт: " + bitsPerSample);
-        };
+    private TrackFormat getFormat(int code, int bitsPerSample, int channels, int sampleRate) {
+        TrackFormat.AudioCodec codec;
+        boolean signed = true;
+        ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
+
+        switch (code) {
+            case 1:
+                codec = switch (bitsPerSample) {
+                    case 8 -> {
+                        signed = false;
+                        yield TrackFormat.AudioCodec.PCM8;
+                    }
+                    case 16 -> TrackFormat.AudioCodec.PCM16;
+                    case 20, 24 -> TrackFormat.AudioCodec.PCM24;
+                    case 32 -> TrackFormat.AudioCodec.PCM32;
+                    default -> throw new IllegalArgumentException(
+                            "Неподдерживаемый битрейт для PCM: " + bitsPerSample
+                    );
+                };
+                break;
+
+            case 3:
+                if (bitsPerSample == 32) {
+                    codec = TrackFormat.AudioCodec.FLOAT32;
+                } else if (bitsPerSample == 64) {
+                    codec = TrackFormat.AudioCodec.FLOAT64;
+                } else {
+                    throw new IllegalArgumentException(
+                            "IEEE Float поддерживает только 32 или 64-bit: " + bitsPerSample
+                    );
+                }
+                break;
+
+            case 6:
+                if (bitsPerSample == 8) {
+                    codec = TrackFormat.AudioCodec.ALAW;
+                    signed = false;
+                } else {
+                    throw new IllegalArgumentException("A-law поддерживает только 8-bit");
+                }
+                break;
+
+            case 7:
+                if (bitsPerSample == 8) {
+                    codec = TrackFormat.AudioCodec.ULAW;
+                    signed = false;
+                } else {
+                    throw new IllegalArgumentException("μ-law поддерживает только 8-bit");
+                }
+                break;
+
+            case 0x0011:
+                codec = TrackFormat.AudioCodec.IMA_ADPCM;
+                break;
+
+            case 0x0055:
+                codec = TrackFormat.AudioCodec.MP3;
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        String.format("Неподдерживаемый compression code: 0x%04X (%d)", code, code)
+                );
+        }
 
         return new TrackFormat(
                 channels,
                 bitsPerSample,
                 sampleRate,
-                true,
-                ByteOrder.LITTLE_ENDIAN,
+                signed,
+                byteOrder,
                 codec
         );
     }

@@ -39,7 +39,7 @@ public class WavTrackLoader implements TrackLoader {
     private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
     private LoadListener loadListener = new LoadListenerAdapter() {};
 
-    private static final List<TrackFormat.AudioCodec> supportedCodecs = List.of(PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64, ALAW, ULAW, ADPCM);
+    private static final List<TrackFormat.AudioCodec> supportedCodecs = List.of(PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64, ALAW, ULAW, IMA_ADPCM, MIC_ADPCM);
 
     public void addLoactor(PathLocator locator) {
         locators.add(locator);

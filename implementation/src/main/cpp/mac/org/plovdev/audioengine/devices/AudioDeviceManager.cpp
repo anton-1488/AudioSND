@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 #include "h/org_plovdev_audioengine_devices_AudioDeviceManager.h"
 
@@ -357,23 +359,43 @@ jobject createAudioDeviceInfo(
         formatsList = env->NewObject(clsArrayList, ctorArrayList);
     }
 
-    const char* vendorStr = "Apple";
-    UInt32 vendor = 0;
-    UInt32 sizeVendor = sizeof(vendor);
-    AudioObjectPropertyAddress propAddrVendor{
-        kAudioDevicePropertyDeviceManufacturer,
+    std::string vendorStr = "Unknown";
+    CFStringRef vendorRef = nullptr;
+    UInt32 dataSize = sizeof(vendorRef);
+
+    AudioObjectPropertyAddress propAddrVendor {
+        kAudioDevicePropertyDeviceManufacturerCFString,
         kAudioObjectPropertyScopeGlobal,
         kAudioObjectPropertyElementMaster
     };
 
-    if (AudioObjectGetPropertyData(devId, &propAddrVendor, 0, nullptr, &sizeVendor, &vendor) == noErr) {
-        char buf[5];
-        buf[0] = (vendor >> 24) & 0xFF;
-        buf[1] = (vendor >> 16) & 0xFF;
-        buf[2] = (vendor >> 8) & 0xFF;
-        buf[3] = (vendor) & 0xFF;
-        buf[4] = '\0';
-        vendorStr = buf;
+    OSStatus status = AudioObjectGetPropertyData(devId, &propAddrVendor, 0, nullptr, &dataSize, &vendorRef);
+
+    if (status == noErr && vendorRef != nullptr) {
+        char buffer[256];
+        if (CFStringGetCString(vendorRef, buffer, sizeof(buffer), kCFStringEncodingUTF8)) {
+            vendorStr = buffer;
+        }
+        CFRelease(vendorRef);
+    } else {
+        UInt32 vendorCode = 0;
+        dataSize = sizeof(vendorCode);
+
+        AudioObjectPropertyAddress propAddrVendorCode {
+            kAudioDevicePropertyDeviceManufacturer,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMaster
+        };
+
+        if (AudioObjectGetPropertyData(devId, &propAddrVendorCode, 0, nullptr, &dataSize, &vendorCode) == noErr) {
+            std::ostringstream oss;
+            oss << std::hex << std::uppercase << std::setfill('0')
+                << std::setw(2) << ((vendorCode >> 24) & 0xFF)
+                << std::setw(2) << ((vendorCode >> 16) & 0xFF)
+                << std::setw(2) << ((vendorCode >> 8) & 0xFF)
+                << std::setw(2) << (vendorCode & 0xFF);
+            vendorStr = oss.str();
+        }
     }
 
     // Создаем AudioDeviceInfo
@@ -382,7 +404,7 @@ jobject createAudioDeviceInfo(
         ctorAudioDeviceInfo,
         env->NewStringUTF(std::to_string(devId).c_str()), // id
         env->NewStringUTF(name.c_str()),                  // name
-        env->NewStringUTF(vendorStr),                     // vendor
+        env->NewStringUTF(vendorStr.c_str()),             // vendor
         deviceType,                                       // AudioDeviceType enum
         formatsList                                       // List<TrackFormat>
     );
@@ -566,6 +588,7 @@ extern "C" {
         notifyConnectedMethod = env->GetMethodID(clsAudioDeviceManager, "notifyConnected", "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V");
         notifyDisconnectedMethod = env->GetMethodID(clsAudioDeviceManager, "notifyDisconnected", "(Lorg/plovdev/audioengine/devices/AudioDeviceInfo;)V");
 
+        lastDeviceList = getCurrentAudioDeviceList();
         subscribeToNativeDeviceEvents();
     }
 

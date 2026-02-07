@@ -34,7 +34,7 @@ public class FormatChunkWriter implements WavChunkWriter<TrackFormat> {
 
             switch (format.audioCodec()) {
                 case PCM8, PCM16, PCM24, PCM32 -> outputStream.write(shortToLittleEndian((short) 1));
-                case ADPCM -> outputStream.write(shortToLittleEndian((short) 2));
+                case IMA_ADPCM -> outputStream.write(shortToLittleEndian((short) 2));
                 case FLOAT32, FLOAT64 -> outputStream.write(shortToLittleEndian((short) 3));
                 case ALAW -> outputStream.write(shortToLittleEndian((short) 4));
                 case ULAW -> outputStream.write(shortToLittleEndian((short) 5));

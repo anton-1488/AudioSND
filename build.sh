@@ -72,11 +72,6 @@ compile_java_modules() {
     if [ -s ./builds/core.txt ]; then
         print_info "  Компиляция core..."
         javac -d out/core -cp "$classpath" @./builds/core.txt 2>&1 | tee ./builds/core_compile.log
-        if [ $? -eq 0 ]; then
-            print_info "    ✓ core скомпилирован"
-        else
-            print_error "    ✗ Ошибка компиляции core"
-        fi
     fi
     
     # Loaders (зависит от core)
@@ -111,7 +106,7 @@ compile_java_modules() {
     
     # Implementation (зависит от core, генерирует заголовки для JNI)
     if [ -s ./builds/implementation.txt ]; then
-        print_info "  Компиляция implementation (с генерацией JNI заголовков)..."
+        print_info "  Компиляция implementation..."
         javac -h ./implementation/src/main/cpp/mac/org/plovdev/audioengine \
               -d out/implementation \
               -cp "out/core:$classpath" \

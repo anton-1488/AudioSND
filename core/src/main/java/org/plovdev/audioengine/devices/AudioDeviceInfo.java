@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Класс-описание конкретного аудио устройства.
@@ -37,6 +38,18 @@ public record AudioDeviceInfo(@NotNull String id, String name, String vendor, @N
 
     @Override
     public String toString() {
-        return String.format("%s(%s) powered by %s. AudioDevice pictureType: %s, Supports formats: %s", name(), id(), vendor(), type.name(), supportedFormats().size());
+        return String.format("%s(%s) powered by %s. AudioDevice pictureType: %s, Supports formats: %s", name(), id(), vendor().replace(".", ""), type.name(), supportedFormats().size());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        AudioDeviceInfo that = (AudioDeviceInfo) o;
+        return Objects.equals(id, that.id);
     }
 }

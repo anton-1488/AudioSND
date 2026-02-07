@@ -351,4 +351,6 @@ CMakeFiles/AudioSND.dir/src/main/cpp/mac/org/plovdev/audioengine/devices/AudioDe
   /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/HostTime.h \
   /Library/Developer/CommandLineTools/usr/bin/../include/c++/v1/vector \
   /Library/Developer/CommandLineTools/usr/bin/../include/c++/v1/__split_buffer \
+  /Library/Developer/CommandLineTools/usr/bin/../include/c++/v1/sstream \
+  /Library/Developer/CommandLineTools/usr/bin/../include/c++/v1/iomanip \
   /Users/mac/IdeaProjects/AudioSND/implementation/src/main/cpp/mac/org/plovdev/audioengine/devices/h/org_plovdev_audioengine_devices_AudioDeviceManager.h
