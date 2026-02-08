@@ -36,6 +36,10 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
      * @param info устройство с которым будет работать класс.
      */
     public NativeOutputAudioDevice(@NotNull AudioDeviceInfo info) {
+        Objects.requireNonNull(info);
+        if (info.type() == AudioDeviceInfo.AudioDeviceType.INPUT) {
+            throw new AudioDeviceException("Unsupported device type");
+        }
         this.info = info;
     }
 

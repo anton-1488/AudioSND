@@ -70,8 +70,8 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testIsCdCompatible() {
-        TrackFormat cdFormat = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
-        TrackFormat nonCdFormat = new TrackFormat("wav", 1, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat cdFormat = new TrackFormat( 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat nonCdFormat = new TrackFormat( 1, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
 
         assertTrue(TrackFormatUtils.isCdCompatible(cdFormat));
         assertFalse(TrackFormatUtils.isCdCompatible(nonCdFormat));
@@ -79,9 +79,9 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testIsDvdCompatible() {
-        TrackFormat dvdFormat = new TrackFormat("wav", 2, 16, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
-        TrackFormat highResFormat = new TrackFormat("wav", 2, 24, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM24);
-        TrackFormat nonDvdFormat = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat dvdFormat = new TrackFormat(2, 16, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat highResFormat = new TrackFormat(2, 24, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM24);
+        TrackFormat nonDvdFormat = new TrackFormat( 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
 
         assertTrue(TrackFormatUtils.isDvdCompatible(dvdFormat));
         assertTrue(TrackFormatUtils.isDvdCompatible(highResFormat)); // битрейт >= 16
@@ -90,9 +90,9 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testIsBroadcastCompatible() {
-        TrackFormat broadcastFormat = new TrackFormat("wav", 2, 16, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
-        TrackFormat unsignedFormat = new TrackFormat("wav", 2, 16, 48000, false, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
-        TrackFormat lowBitFormat = new TrackFormat("wav", 2, 8, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM8);
+        TrackFormat broadcastFormat = new TrackFormat(2, 16, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat unsignedFormat = new TrackFormat( 2, 16, 48000, false, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat lowBitFormat = new TrackFormat( 2, 8, 48000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM8);
 
         assertTrue(TrackFormatUtils.isBroadcastCompatible(broadcastFormat));
         assertFalse(TrackFormatUtils.isBroadcastCompatible(unsignedFormat)); // не signed
@@ -123,7 +123,7 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testCalculateFileSize() {
-        TrackFormat cdFormat = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat cdFormat = new TrackFormat(2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
         long size = TrackFormatUtils.calculateFileSize(cdFormat, 60); // 60 секунд
 
         // 44100 * 16 * 2 * 60 / 8 = 10,584,000 bytes
@@ -132,7 +132,7 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testCalculateFileSizeForMono() {
-        TrackFormat monoFormat = new TrackFormat("wav", 1, 8, 8000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM8);
+        TrackFormat monoFormat = new TrackFormat(1, 8, 8000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM8);
         long size = TrackFormatUtils.calculateFileSize(monoFormat, 30); // 30 секунд
 
         // 8000 * 8 * 1 * 30 / 8 = 240,000 bytes
@@ -141,7 +141,7 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testCalculateFileSizeForHighResolution() {
-        TrackFormat hiResFormat = new TrackFormat("wav", 2, 24, 96000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM24);
+        TrackFormat hiResFormat = new TrackFormat(2, 24, 96000, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM24);
         long size = TrackFormatUtils.calculateFileSize(hiResFormat, 180); // 3 минуты
 
         // 96000 * 24 * 2 * 180 / 8 = 103,680,000 bytes
@@ -152,14 +152,14 @@ public class TrackFormatUtilsTest {
 
     @Test
     public void testZeroDuration() {
-        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat format = new TrackFormat(2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
         long size = TrackFormatUtils.calculateFileSize(format, 0);
         assertEquals(0, size);
     }
 
     @Test
     public void testNegativeDuration() {
-        TrackFormat format = new TrackFormat("wav", 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
+        TrackFormat format = new TrackFormat(2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
         long size = TrackFormatUtils.calculateFileSize(format, -10);
         // Ожидаем отрицательный размер (формула даст отрицательное значение)
         assertEquals(-10584000L / 6, size); // 10,584,000 / 6 = 1,764,000 * -10

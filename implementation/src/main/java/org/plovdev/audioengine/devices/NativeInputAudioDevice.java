@@ -35,6 +35,10 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
      */
     public NativeInputAudioDevice(AudioDeviceInfo info) {
         Objects.requireNonNull(info);
+        if (info.type() == AudioDeviceInfo.AudioDeviceType.OUTPUT) {
+            throw new AudioDeviceException("Unsupported device type");
+        }
+
         this.info = info;
     }
 
