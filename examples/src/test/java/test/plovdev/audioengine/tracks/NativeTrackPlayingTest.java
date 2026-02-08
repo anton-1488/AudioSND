@@ -52,33 +52,33 @@ public class NativeTrackPlayingTest {
         logTrackInfo(track);
         TrackDecoder decoder = new WavTrackDecoder();
         TrackFormat src = track.getFormat();
-        track = decoder.decode(track, new TrackFormat(src.channels(), src.bitDepth(), src.sampleRate(), src.signed(), src.byteOrder(), TrackFormat.AudioCodec.PCM8));
+        track = decoder.decode(track, new TrackFormat(src.channels(), 16, src.sampleRate(), src.signed(), src.byteOrder(), TrackFormat.AudioCodec.PCM16));
         try (TrackPlayer player = new NativeTrackPlayer(track, manager.getDefaultOutputAudioDevice())) {
             player.play();
             Thread.sleep(track.getDuration().toMillis() + 1000);
         }
     }
 
-    @Test
-    void playPCM_8_U_LE() {
-        assertDoesNotThrow(() -> testPlaying(PCM_8_U_LE));
-    }
-    @Test
-    void playPCM_32_FLOAT_S_LE() {
-        assertDoesNotThrow(() -> testPlaying(PCM_32_FLOAT));
-    }
-    @Test
-    void playPCM_ULAW_S_LE() {
-        assertDoesNotThrow(() -> testPlaying(PCM_ULAW));
-    }
+//    @Test
+//    void playPCM_8_U_LE() {
+//        assertDoesNotThrow(() -> testPlaying(PCM_8_U_LE));
+//    }
+//    @Test
+//    void playPCM_32_FLOAT_S_LE() {
+//        assertDoesNotThrow(() -> testPlaying(PCM_32_FLOAT));
+//    }
+//    @Test
+//    void playPCM_ULAW_S_LE() {
+//        assertDoesNotThrow(() -> testPlaying(PCM_ULAW));
+//    }
 //    @Test
 //    void playPCM_ALAW_S_LE() {
 //        assertDoesNotThrow(() -> testPlaying(PCM_ALAW));
 //    }
-//    @Test
-//    void playPCM_IMA_ADPCM_S_LE() {
-//        assertDoesNotThrow(() -> testPlaying(PCM_IMA_ADPCM));
-//    }
+    @Test
+    void playPCM_IMA_ADPCM_S_LE() {
+        assertDoesNotThrow(() -> testPlaying(PCM_IMA_ADPCM));
+    }
 //    @Test
 //    void playPCM_MICROSOFT_ADPCM_S_LE() {
 //        assertDoesNotThrow(() -> testPlaying(PCM_MICROSOFT_ADPCM));

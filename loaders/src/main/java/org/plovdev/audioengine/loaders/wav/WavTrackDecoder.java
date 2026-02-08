@@ -1,6 +1,8 @@
 package org.plovdev.audioengine.loaders.wav;
 
 import org.plovdev.audioengine.loaders.TrackDecoder;
+import org.plovdev.audioengine.loaders.wav.decoders.ALawDecoder;
+import org.plovdev.audioengine.loaders.wav.decoders.IMAADPCMDecoder;
 import org.plovdev.audioengine.loaders.wav.decoders.ULawDecoder;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
@@ -34,6 +36,8 @@ public class WavTrackDecoder implements TrackDecoder {
 
         return switch (inCodec) {
             case ULAW -> new Track(new ULawDecoder().decode(input.getTrackData()), inputDuration, outFormat, metadata);
+            case ALAW -> new Track(new ALawDecoder().decode(input.getTrackData()), inputDuration, outFormat, metadata);
+            case IMA_ADPCM -> new Track(new IMAADPCMDecoder(1024).decode(input.getTrackData()), inputDuration, outFormat, metadata);
             default -> input;
         };
     }
