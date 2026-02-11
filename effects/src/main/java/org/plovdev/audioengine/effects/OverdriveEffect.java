@@ -20,7 +20,7 @@ public class OverdriveEffect implements AudioEffect {
     private float maxSampleValue;
 
     public OverdriveEffect() {
-        this(Type.SOFT_CLIPPING, 0.5f, 0.5f, 0.7f, 0.8f);
+        this(Type.SOFT_CLIPPING, 0.1f, 0.9f, 0.1f, 0.1f);
     }
 
     public OverdriveEffect(Type type, float drive, float tone, float level, float mix) {
@@ -201,10 +201,6 @@ public class OverdriveEffect implements AudioEffect {
 
     private float denormalizeSample(float sample) {
         // Для float форматов оставляем как есть
-        if (format.audioCodec() == TrackFormat.AudioCodec.FLOAT32 ||
-                format.audioCodec() == TrackFormat.AudioCodec.FLOAT64) {
-            return sample;
-        }
         return sample; // readSample уже нормализовал, возвращаем
     }
 

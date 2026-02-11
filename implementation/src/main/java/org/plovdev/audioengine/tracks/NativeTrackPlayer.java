@@ -47,7 +47,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         data = track.getTrackData();
 
         initPlayer();
-        chunkSize = TrackFormatUtils.calculateChunkSizeInBytes(track.getFormat(), ms);
+        chunkSize = (TrackFormatUtils.calculateFrameSizeInBytes(track.getFormat()) * ms);
 
         log.debug("Native track player inited success");
     }
@@ -100,7 +100,6 @@ public class NativeTrackPlayer implements TrackPlayer {
         if (!isPlaying.get()) return;
 
         isPlaying.set(false);
-        audioDevice.flush();
         setStatus(TrackStatus.PAUSED);
     }
 
@@ -116,8 +115,6 @@ public class NativeTrackPlayer implements TrackPlayer {
 
         isPlaying.set(false);
         position.set(0);
-
-        audioDevice.flush();
 
         setStatus(TrackStatus.STOPPED);
     }

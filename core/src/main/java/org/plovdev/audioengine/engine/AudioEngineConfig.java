@@ -1,5 +1,6 @@
 package org.plovdev.audioengine.engine;
 
+import java.util.Objects;
 import java.util.prefs.Preferences;
 
 /**
@@ -17,6 +18,7 @@ public class AudioEngineConfig {
     private static final String NATIVE_LIB_KEY = "native-lib";
     private static final String BANNER = "banner";
     public static final String VERSION = "1.0.0-BETA";
+    private static final String DEFAULT_PREFS_KEY = "AudioSND";
 
     // Configurable fields
     private NativeLib nativeLib;
@@ -27,21 +29,17 @@ public class AudioEngineConfig {
      *
      */
     public AudioEngineConfig(NativeLib lib, String banner) {
-        nativeLib = lib;
-        this.banner = banner;
+        setNativeLib(lib);
+        setBanner(banner);
     }
 
     /**
      * Loads configuration using default preferences key "AudioSND".
-     * <p>
-     * If no saved configuration exists, returns default values:
-     * {@code NativeLib.DEFAULT, bufferSize=8, playerThreadsSize=25}.
-     * </p>
      *
      * @return loaded or default configuration
      */
     public static AudioEngineConfig load() {
-        return load("AudioSND");
+        return load(DEFAULT_PREFS_KEY);
     }
 
     /**
@@ -74,7 +72,7 @@ public class AudioEngineConfig {
      * </p>
      */
     public void save() {
-        save("AudioSND");
+        save(DEFAULT_PREFS_KEY);
     }
 
     /**
@@ -95,7 +93,7 @@ public class AudioEngineConfig {
     }
 
     public void setNativeLib(NativeLib nativeLib) {
-        this.nativeLib = nativeLib;
+        this.nativeLib = Objects.requireNonNull(nativeLib);
     }
 
     public String getBanner() {
@@ -103,7 +101,7 @@ public class AudioEngineConfig {
     }
 
     public void setBanner(String banner) {
-        this.banner = banner;
+        this.banner = Objects.requireNonNull(banner);
     }
 
 
@@ -129,6 +127,13 @@ public class AudioEngineConfig {
         }
     }
 
+    /**
+     * AudioEngine config builder.
+     * @see EngineConfigBuilderImpl
+     *
+     * @author Anton
+     * @since 1.0
+     */
     public interface AudioEngineConfigBuilder {
         AudioEngineConfigBuilder nativeLib(NativeLib lib);
         AudioEngineConfigBuilder banner(String banner);

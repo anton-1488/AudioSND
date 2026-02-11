@@ -19,14 +19,21 @@ public interface TrackMixer {
     void setOutputFormat(TrackFormat format);
 
     /**
-     * Get setuped output track format
+     * Get configured output track format
      */
     TrackFormat getOutputFormat();
 
 
+    /**
+     * Adds a track to the mixing list
+     * @param track to mix
+     */
     void addTrack(Track track);
 
-
+    /**
+     * Removes a track from the mixing list
+     * @param track track to mix
+     */
     void removeTrack(Track track);
 
     /**
@@ -41,10 +48,17 @@ public interface TrackMixer {
     void clearTracks();
 
     /**
-     * Mix all track in list.
-     * @throws MixingException when mixing failed.
+     * Mixes all added tracks into a single new track.
+     * <p>
+     * Creates a new track instance. Original tracks are not modified.
+     * Output format must be set via {@link #setOutputFormat(TrackFormat)}
+     * before calling this method.
+     * </p>
+     *
+     * @return new mixed track
+     * @throws MixingException if mixing failed
      */
-    Track doMixing() throws MixingException;
+    Track doMixing();
 
 
     boolean isEmpty();
@@ -53,5 +67,7 @@ public interface TrackMixer {
      * Returns tracks in mixer.
      * @return mixing tracks.
      */
-    int getTrackCount();
+    default int getTrackCount() {
+        return getMixingTracks().size();
+    }
 }

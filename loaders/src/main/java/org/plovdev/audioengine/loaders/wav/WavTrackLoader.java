@@ -67,10 +67,6 @@ public class WavTrackLoader implements TrackLoader {
             parser.parse();
             log.debug("File parsing finished, collect result...");
 
-            if (loadListener != null) {
-                loadListener.onLoading(total - stream.available());
-            }
-
             DataChunk chunk = parser.getDataChunk();
             FormatChunk formatChunk = parser.getFormatChunk();
             TrackFormat format = formatChunk.getFormat();
@@ -146,7 +142,7 @@ public class WavTrackLoader implements TrackLoader {
             return new Track(chunk.getData().order(format.byteOrder()), duration, format, metadata);
         } catch (Exception e) {
             if (loadListener != null) {
-                loadListener.onLoadFailed(e);
+                loadListener.onLoadFailed(new TrackLoadException(e));
             }
             throw new TrackLoadException("Failed to load WAV from stream: " + e);
         }

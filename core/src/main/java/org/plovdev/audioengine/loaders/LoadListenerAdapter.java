@@ -1,10 +1,19 @@
 package org.plovdev.audioengine.loaders;
 
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
+
+/**
+ * Listener adapter for track loading events.
+ *
+ * @author Anton
+ * @version 1.0
+ * @since 1.0
+ */
 public abstract class LoadListenerAdapter implements LoadListener {
     /**
-     * Вызывается когда начинается загрузка
+     * Called when loading starts.
      *
-     * @param total общий размер в байтах (если известен)
+     * @param total total size in bytes, or {@code -1} if unknown
      */
     @Override
     public void onLoadStarted(long total) {
@@ -12,17 +21,7 @@ public abstract class LoadListenerAdapter implements LoadListener {
     }
 
     /**
-     * Вызывается во время загрузки
-     *
-     * @param loaded уже загружено байт
-     */
-    @Override
-    public void onLoading(long loaded) {
-
-    }
-
-    /**
-     * Вызывается когда загрузка завершена успешно
+     * Called when loading completes successfully.
      */
     @Override
     public void onLoadFinished() {
@@ -30,12 +29,12 @@ public abstract class LoadListenerAdapter implements LoadListener {
     }
 
     /**
-     * Вызывается при ошибке загрузки
+     * Called when loading fails.
      *
-     * @param error исключение
+     * @param error detailed exception describing the failure
      */
     @Override
-    public void onLoadFailed(Exception error) {
+    public void onLoadFailed(TrackLoadException error) {
 
     }
 }

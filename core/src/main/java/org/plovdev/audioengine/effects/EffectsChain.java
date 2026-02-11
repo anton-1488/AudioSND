@@ -25,6 +25,25 @@ public class EffectsChain {
         return this;
     }
 
+    /**
+     * Applies the chain of effects to a track.
+     * <p>
+     * Each effect is {@link AudioEffect#setup(TrackFormat) setup} with the track's format
+     * before processing. Setup is called on every apply — implementations should be idempotent.
+     * </p>
+     * <p>
+     * The track's audio data is read-only. Effects that need mutable buffers
+     * must copy the data internally.
+     * </p>
+     * <p>
+     * This method modifies neither the original track nor its buffer.
+     * Returns a new track instance with processed audio.
+     * </p>
+     *
+     * @param source input track (not modified)
+     * @return new track with applied effects
+     * @throws IllegalArgumentException if source is null
+     */
     public Track apply(Track source) {
         if (source == null) {
             throw new IllegalArgumentException("Source track cannot be null");

@@ -14,7 +14,7 @@ public class GenerationExample {
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
             Track track = engine.loadTrack(new File("testdata/wav/48000/24/pornhub-stereo.wav"));
-            engine.getTrackPlayer(track).play();
+            engine.createTrackPlayer(track).play();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);

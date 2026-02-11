@@ -47,6 +47,14 @@ public class Track {
         this.metaData = metaData; // Can be null
     }
 
+    /**
+     * Returns read-only view of track audio data.
+     * <p>
+     * Buffer is {@link ByteBuffer#isReadOnly() read-only} and direct.
+     * Position and limit should not be modified — use {@link ByteBuffer#duplicate()}
+     * if you need to manipulate position.
+     * </p>
+     */
     public ByteBuffer getTrackData() {
         return trackData;
     }
@@ -64,9 +72,12 @@ public class Track {
     }
 
     /**
-     * Able set metadata to export track.
+     * Sets track metadata.
+     * <p>
+     * Useful for updating tags before export or after editing.
+     * </p>
      *
-     * @param metaData new track metadata.
+     * @param metaData new metadata (can be null)
      */
     public void setMetaData(TrackMetadata metaData) {
         this.metaData = metaData;

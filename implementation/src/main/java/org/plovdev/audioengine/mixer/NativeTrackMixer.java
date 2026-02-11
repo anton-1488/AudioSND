@@ -78,15 +78,5 @@ public class NativeTrackMixer implements TrackMixer {
         return mixingTracks.isEmpty();
     }
 
-    /**
-     * Returns tracks in mixer.
-     *
-     * @return mixing tracks.
-     */
-    @Override
-    public int getTrackCount() {
-        return mixingTracks.size();
-    }
-
     private native Track _doMixing(List<Track> tracks, TrackFormat format);
 }

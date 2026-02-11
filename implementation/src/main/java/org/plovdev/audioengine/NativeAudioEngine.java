@@ -86,7 +86,7 @@ public class NativeAudioEngine implements AudioEngine {
                 NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
                 System.load(unpacker.unpackLib());
 
-                TrackLoaderSearcher.getSearchedLoaders().forEach(this::addLoaderManager);
+                TrackLoaderSearcher.searchAvailableTrackLoaderManagers().forEach(this::addLoaderManager);
                 AudioDeviceManager.getInstance();
                 _init();
                 isInited = true;
@@ -165,13 +165,13 @@ public class NativeAudioEngine implements AudioEngine {
     }
 
     @Override
-    public TrackMixer getTrackMixer() {
+    public TrackMixer createTrackMixer() {
         checkIfInited();
         return new NativeTrackMixer();
     }
 
     @Override
-    public TrackPlayer getTrackPlayer(@NotNull Track track) {
+    public TrackPlayer createTrackPlayer(@NotNull Track track) {
         checkIfInited();
         return new NativeTrackPlayer(track, AudioDeviceManager.getInstance().getDefaultOutputAudioDevice());
     }

@@ -65,15 +65,6 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     }
 
     /**
-     * Flush data to audio device
-     */
-    @Override
-    public void flush() {
-        checkForInited();
-        _flush(nativeHandle);
-    }
-
-    /**
      * Open audio device.
      *
      * @param format working format
@@ -123,6 +114,16 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     @Override
     public AudioDeviceStatus getDeviceStatus() {
         return status;
+    }
+
+    /**
+     * Checks if the audio device is open.
+     *
+     * @return is audio device open.
+     */
+    @Override
+    public boolean isOpen() {
+        return isInited.get();
     }
 
     @Override
@@ -200,8 +201,6 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     private native long _open(TrackFormat format, AudioDeviceInfo info);
 
     private native int _write(ByteBuffer buffer, long handle);
-
-    private native void _flush(long handle);
 
     private native void _close(long handle);
 }

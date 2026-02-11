@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Класс-описание конкретного аудио устройства.
+ * Describes a specific audio device.
  *
- * @param id id устройства
- * @param name имя устройства
- * @param vendor производитель устройства
- * @param type тип устройства(на вход, выход, или дуплексное)
- * @param supportedFormats поддерживаемые устройством форматы
+ * @param id device identifier
+ * @param name device name
+ * @param vendor device manufacturer
+ * @param type device type (input, output, or duplex)
+ * @param supportedFormats formats supported by the device
  *
  * @see TrackFormat
  *
@@ -26,19 +26,19 @@ public record AudioDeviceInfo(@NotNull String id, String name, String vendor, @N
     }
 
     public enum AudioDeviceType {
-        /** Устройство ввода (микрофон, линейный вход) */
+        /** Input device (microphone, line-in) */
         INPUT,
 
-        /** Устройство вывода (динамики, колонки, наушники) */
+        /** Output device (speakers, headphones) */
         OUTPUT,
 
-        /** Полнодуплексное устройство (ввод и вывод одновременно) */
+        /** Full-duplex device (input and output simultaneously) */
         DUPLEX
     }
 
     @Override
     public String toString() {
-        return String.format("%s(%s) powered by %s. AudioDevice pictureType: %s, Supports formats: %s", name(), id(), vendor().replace(".", ""), type.name(), supportedFormats().size());
+        return String.format("%s(%s) powered by %s. AudioDevice type: %s, Supports formats size: %s", name(), id(), vendor().replaceAll("\\.$", ""), type.name(), supportedFormats().size());
     }
 
     @Override
@@ -50,6 +50,6 @@ public record AudioDeviceInfo(@NotNull String id, String name, String vendor, @N
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         AudioDeviceInfo that = (AudioDeviceInfo) o;
-        return Objects.equals(id, that.id);
+        return Objects.equals(id, that.id); // ID is unique
     }
 }

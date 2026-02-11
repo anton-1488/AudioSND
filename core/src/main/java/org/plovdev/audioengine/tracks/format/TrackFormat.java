@@ -8,8 +8,8 @@ import java.nio.ByteOrder;
  * Track format description.
  *
  * @param channels channels count in audio.
- * @param bitDepth auio format width.
- * @param sampleRate auio sample rate.
+ * @param bitDepth audio format width.
+ * @param sampleRate audio sample rate.
  * @param signed is signed audio.
  * @param byteOrder audio byte order.
  * @param audioCodec audio data codec.
@@ -31,15 +31,15 @@ public record TrackFormat(int channels, int bitDepth, int sampleRate, boolean si
         FLOAT64,    // 64-bit float (для Hi-Res)
         ALAW,       // 8-bit A-law
         ULAW,       // 8-bit μ-law
-        IMA_ADPCM,      // IMA ADPCM
-        MIC_ADPCM,
-        GSM_6,
+        IMA_ADPCM,  // IMA ADPCM
+        MIC_ADPCM,  // MICROSOFT ADPCM
+        GSM_6,      // GSM 6
         MP3,        // MPEG Layer III
         AAC,        // Advanced Audio Coding
         OPUS,       // Opus
         VORBIS,     // Ogg Vorbis
         ALAC,       // Apple Lossless
-        WAVPACK,     // WavPack lossless
+        WAVPACK,    // WavPack lossless
         FLAC,
         OTHER
     }
@@ -52,20 +52,20 @@ public record TrackFormat(int channels, int bitDepth, int sampleRate, boolean si
 
     private void validateField(int field) {
         if (field <= 0) {
-            throw new IllegalArgumentException("Parameter must be greather than 0!");
+            throw new IllegalArgumentException("Parameter must be greater than 0!");
         }
     }
 
     /**
-     * Calculate bitrate of givven format data.
-     * @return audio bitrate.
+     * Calculates bitrate for uncompressed PCM audio.
+     * For compressed formats returns estimated or 0.
      */
     public int bitRate() {
         return sampleRate * bitDepth * channels;
     }
 
     /**
-     * Calculate bytes per sample of givven format data.
+     * Calculate bytes per sample for uncompressed PCM audio.
      * @return audio bytes per sample.
      */
     public int bytesPerSample() {

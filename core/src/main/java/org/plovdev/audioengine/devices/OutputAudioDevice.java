@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.ByteBuffer;
 
 /**
- * Базовый интерфейс для аудио устройств вывода (динамики, наушники).
- * Предоставляет методы для записи аудиоданных на устройство.
+ * Base interface for audio output devices (speakers, headphones).
+ * Provides methods for writing audio data to the device.
  *
  * @see AudioDevice
  * @see InputAudioDevice
@@ -15,6 +15,15 @@ import java.nio.ByteBuffer;
  * @author Anton
  */
 public interface OutputAudioDevice extends AudioDevice {
+
+    /**
+     * Writes audio data from the buffer to the output device.
+     * Blocks until at least one byte is written or device is closed.
+     * The method may write fewer bytes than requested.
+     *
+     * @param byteBuffer buffer containing audio data to write
+     * @return number of bytes actually written, or -1 if device is closed
+     * @throws IllegalStateException if device is not opened
+     */
     int write(@NotNull ByteBuffer byteBuffer);
-    void flush();
 }

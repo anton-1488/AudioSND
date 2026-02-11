@@ -63,10 +63,6 @@ public class RawTrackLoader implements TrackLoader {
                 while ((n = stream.read(buffer)) != -1) {
                     baos.write(buffer, 0, n);
                     bytesRead += n;
-
-                    if (loadListener != null) {
-                        loadListener.onLoading(bytesRead);
-                    }
                 }
 
                 byte[] allBytes = baos.toByteArray();
@@ -91,7 +87,7 @@ public class RawTrackLoader implements TrackLoader {
 
                 return new Track(data, duration, format, metadata);
 
-            } catch (Exception e) {
+            } catch (TrackLoadException e) {
                 if (loadListener != null) {
                     loadListener.onLoadFailed(e);
                 }

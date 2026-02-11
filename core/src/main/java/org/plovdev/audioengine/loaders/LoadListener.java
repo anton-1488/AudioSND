@@ -1,27 +1,36 @@
 package org.plovdev.audioengine.loaders;
 
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
+
+/**
+ * Listener for track loading events.
+ * <p>
+ * Implement this interface to receive notifications about
+ * asynchronous track loading operations.
+ * </p>
+ *
+ * @author Anton
+ * @version 1.0
+ * @since 1.0
+ */
 public interface LoadListener {
 
     /**
-     * Вызывается когда начинается загрузка
-     * @param total общий размер в байтах (если известен)
+     * Called when loading starts.
+     *
+     * @param total total size in bytes, or {@code -1} if unknown
      */
     void onLoadStarted(long total);
 
     /**
-     * Вызывается во время загрузки
-     * @param loaded уже загружено байт
-     */
-    void onLoading(long loaded);
-
-    /**
-     * Вызывается когда загрузка завершена успешно
+     * Called when loading completes successfully.
      */
     void onLoadFinished();
 
     /**
-     * Вызывается при ошибке загрузки
-     * @param error исключение
+     * Called when loading fails.
+     *
+     * @param error detailed exception describing the failure
      */
-    void onLoadFailed(Exception error);
+    void onLoadFailed(TrackLoadException error);
 }

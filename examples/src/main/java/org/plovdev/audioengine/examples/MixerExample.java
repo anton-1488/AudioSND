@@ -15,7 +15,7 @@ public class MixerExample {
         try (AudioEngine engine = new NativeAudioEngine()) {
             Track track = engine.loadTrack(new File("testdata/wav/48000/16/White Night.wav"));
 
-            engine.getTrackPlayer(track).play();
+            engine.createTrackPlayer(track).play();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("AudioEngine error: ", e);

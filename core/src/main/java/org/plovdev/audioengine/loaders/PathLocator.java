@@ -2,7 +2,7 @@ package org.plovdev.audioengine.loaders;
 
 import java.nio.file.Path;
 
-public final class PathLocator {
+public class PathLocator {
     private Path path;
 
     public PathLocator() {

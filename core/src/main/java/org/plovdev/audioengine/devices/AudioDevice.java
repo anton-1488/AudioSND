@@ -1,13 +1,12 @@
 package org.plovdev.audioengine.devices;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.exceptions.devices.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 
 /**
  * Base interface for all audio devices (input or output).
- * Most abstractly device desctiption.
+ * Most abstractly device description.
  * <p>
  * Devices follow this lifecycle:
  * 1. {@link #open(TrackFormat)} - allocate resources
@@ -28,7 +27,7 @@ public interface AudioDevice extends AutoCloseable {
     void open(@NotNull TrackFormat format) throws OpenAudioDeviceException;
 
     /**
-     * Check, supported audio device this format?
+     * Checks if this format is supported by the audio device.
      *
      * @param format checking format.
      * @return is supported
@@ -52,22 +51,11 @@ public interface AudioDevice extends AutoCloseable {
     AudioDeviceStatus getDeviceStatus();
 
     /**
-     * Checks if device is ready for I/O operations.
+     * Checks if the audio device is open.
+     * @return is audio device open.
      */
-    default boolean isReady() {
-        return getDeviceStatus() == AudioDeviceStatus.OPENED;
-    }
-
-    /**
-     * Check if device open.
-     * @return is device opened.
-     */
-    default boolean isOpen() {
-        AudioDeviceStatus status = getDeviceStatus();
-        return status == AudioDeviceStatus.OPENED ||
-                status == AudioDeviceStatus.RUNNING;
-    }
+    boolean isOpen();
 
     @Override
-    void close() throws CloseAudioDeviceException;
+    void close();
 }

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.plovdev.audioengine.devices.AudioDeviceStatus.*;
 
@@ -23,7 +24,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     private static final Logger log = LoggerFactory.getLogger(NativeInputAudioDevice.class);
     private final AudioDeviceInfo info;
     private volatile AudioDeviceStatus status = AudioDeviceStatus.UNAVAILABLE;
-    private volatile boolean isInited = false;
+    private final AtomicBoolean isInited = new AtomicBoolean(false);
     private long nativeHandle = 0;
 
     private Runnable onStatusChanged = () -> {
@@ -68,7 +69,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
      */
     @Override
     public synchronized void open(TrackFormat format) throws OpenAudioDeviceException {
-        if (isInited) {
+        if (isInited.get()) {
             log.warn("Audio device {} already initialized.", info.id());
             return;
         }
@@ -81,7 +82,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         setStatus(OPENING);
         try {
             nativeHandle = _open(format, info);
-            isInited = true;
+            isInited.set(true);
             setStatus(OPENED);
             log.debug("Audio device {} opened", info.id());
         } catch (Throwable e) {
@@ -110,9 +111,19 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         return status;
     }
 
+    /**
+     * Checks if the audio device is open.
+     *
+     * @return is audio device open.
+     */
+    @Override
+    public boolean isOpen() {
+        return isInited.get();
+    }
+
     @Override
     public synchronized void close() throws CloseAudioDeviceException {
-        if (!isInited) {
+        if (!isInited.get()) {
             log.warn("Audio device {} not initialized for closing.", info.id());
             return;
         }
@@ -120,7 +131,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         setStatus(CLOSING);
         try {
             _close(nativeHandle);
-            isInited = false;
+            isInited.set(false);
             setStatus(CLOSED);
             log.debug("Audio device {} closed", info.id());
         } catch (Throwable e) {
@@ -141,13 +152,9 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
     }
 
     private void checkForInited() {
-        if (!isInited) {
+        if (!isInited.get()) {
             throw new AudioDeviceException("Audio device not opened!");
         }
-    }
-
-    public boolean isInited() {
-        return isInited;
     }
 
     public Runnable getOnStatusChanged() {

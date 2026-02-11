@@ -1,23 +1,36 @@
 package org.plovdev.audioengine.tracks.format;
 
 import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.flac16bitStereo44kHz;
-import static org.plovdev.audioengine.tracks.format.factories.FlacTrackFormatFactory.flac24bitStereo96kHz;
-import static org.plovdev.audioengine.tracks.format.factories.Mp3TrackFormatFactory.*;
+import static org.plovdev.audioengine.tracks.format.factories.Mp3TrackFormatFactory.mp3Stereo192kbps;
 import static org.plovdev.audioengine.tracks.format.factories.TrackFormatFactory.*;
 import static org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory.*;
 
 /**
- * Provide utilities to comfort working with TrackFormat
+ * Utility class for common operations with {@link TrackFormat}.
+ * <p>
+ * Provides factory methods for quality presets, file size calculations,
+ * duration estimation and chunk size determination.
+ * </p>
  *
  * @author Anton
  * @version 1.0
  * @see TrackFormat
- * see also: track format factories
+ * @see org.plovdev.audioengine.tracks.format.factories.TrackFormatFactory
  */
-public class TrackFormatUtils {
+public final class TrackFormatUtils {
     private TrackFormatUtils() {
+        // Utility class, no instances
     }
 
+    /**
+     * Returns a {@link TrackFormat} for the given quality preset.
+     * <p>
+     * Presets cover common use cases from telephone quality to Dolby Atmos.
+     * </p>
+     *
+     * @param preset quality preset
+     * @return track format matching the preset
+     */
     public static TrackFormat fromQualityPreset(QualityPreset preset) {
         return switch (preset) {
             case TELEPHONE -> telephoneMono8kHz();
@@ -34,111 +47,97 @@ public class TrackFormatUtils {
         };
     }
 
-    public static TrackFormat fromName(String formatName) {
-        if (formatName == null) return null;
-
-        return switch (formatName.toLowerCase()) {
-            // WAV
-            case "cd_quality", "redbook" -> wav16bitStereo44kHz();
-            case "dvd_audio" -> wav24bitStereo48kHz();
-            case "bluray_audio", "film" -> wav24bitStereo96kHz();
-            case "studio_24_96" -> studioMaster24bit96kHz();
-
-            // MP3
-            case "mp3_low" -> mp3Stereo64kbps();
-            case "mp3_medium" -> mp3Stereo128kbps();
-            case "mp3_high" -> mp3Stereo192kbps();
-            case "mp3_extreme" -> mp3Stereo320kbps();
-
-            // FLAC
-            case "flac_cd" -> flac16bitStereo44kHz();
-            case "flac_hd" -> flac24bitStereo96kHz();
-
-            // Профессиональные
-            case "broadcast" -> wav24bitStereo48kHz();
-
-            default -> wav16bitStereo44kHz(); // default fallback
-        };
-    }
-
+    /**
+     * Predefined quality levels for common audio applications.
+     */
     public enum QualityPreset {
-        TELEPHONE,      // Телефонное качество
-        RADIO,          // Радиовещание
-        PODCAST,        // Подкаст/интернет
-        MUSIC_MP3,      // Музыка MP3
-        MUSIC_LOSSLESS, // Музыка lossless
-        GAME,           // Игровое аудио
-        DVD,            // DVD качество
-        BLURAY,         // Blu-ray качество
-        STUDIO_MASTER,  // Студийный мастер
-        SURROUND_51,    // Объемный звук 5.1
-        DOLBY_ATMOS     // Dolby Atmos
+        /** Telephone quality (8kHz, mono, low bitrate) */
+        TELEPHONE,
+        /** FM radio quality (44.1kHz, mono, 16-bit) */
+        RADIO,
+        /** Podcast / internet streaming quality (44.1kHz, stereo, 16-bit) */
+        PODCAST,
+        /** Standard MP3 music quality (192kbps stereo) */
+        MUSIC_MP3,
+        /** CD-quality lossless (44.1kHz, stereo, 16-bit FLAC) */
+        MUSIC_LOSSLESS,
+        /** Game audio (32kHz, stereo, optimized for performance) */
+        GAME,
+        /** DVD quality (48kHz, stereo, 24-bit) */
+        DVD,
+        /** Blu-ray quality (96kHz, stereo, 24-bit) */
+        BLURAY,
+        /** Studio master quality (96kHz, stereo, 24-bit) */
+        STUDIO_MASTER,
+        /** 5.1 surround sound (48kHz, 6 channels, 24-bit) */
+        SURROUND_51,
+        /** Dolby Atmos immersive audio (48kHz, 32-bit float) */
+        DOLBY_ATMOS
     }
 
-    // ==== Методы для проверки совместимости ====
-
-    public static boolean isCdCompatible(TrackFormat format) {
-        return format.sampleRate() == 44100 &&
-                format.channels() == 2 &&
-                format.bitDepth() == 16;
-    }
-
-    public static boolean isDvdCompatible(TrackFormat format) {
-        return format.sampleRate() == 48000 &&
-                format.bitDepth() >= 16;
-    }
-
-    public static boolean isBroadcastCompatible(TrackFormat format) {
-        return format.sampleRate() == 48000 &&
-                format.bitDepth() >= 16 &&
-                format.signed();
-    }
-
-    public static boolean isLossyFormat(String extension) {
-        return switch (extension.toLowerCase()) {
-            case "mp3", "ogg", "aac", "m4a", "opus", "wma" -> true;
-            default -> false;
-        };
-    }
-
-    public static boolean isLosslessFormat(String extension) {
-        return switch (extension.toLowerCase()) {
-            case "wav", "aiff", "flac", "alac", "ape", "wavpack" -> true;
-            default -> false;
-        };
-    }
-
+    /**
+     * Estimates file size for the given format and duration.
+     * <p>
+     * For PCM formats uses sample rate, bit depth and channel count.
+     * For compressed formats uses {@link TrackFormat#bitRate()} which may be
+     * estimated or fixed (e.g., MP3 with constant bitrate).
+     * </p>
+     *
+     * @param format         track format
+     * @param durationSeconds duration in seconds
+     * @return estimated file size in bytes
+     */
     public static long calculateFileSize(TrackFormat format, long durationSeconds) {
         if (format.bitRate() > 0) {
-            // Для форматов с известным битрейтом
+            // For formats with known/estimated bitrate
             return (format.bitRate() * durationSeconds) / 8;
         } else {
-            // Для PCM форматов
+            // For uncompressed PCM formats
             return format.sampleRate() * format.bitDepth() * format.channels() * durationSeconds / 8;
         }
     }
 
+    /**
+     * Calculates audio duration in milliseconds from file size.
+     * <p>
+     * Works correctly only for uncompressed PCM formats.
+     * For compressed formats the result will be inaccurate.
+     * </p>
+     *
+     * @param format       track format (must be PCM)
+     * @param sizeInBytes  file size in bytes
+     * @return duration in milliseconds, or 0 if calculation fails
+     */
     public static long calculateDurationMs(TrackFormat format, int sizeInBytes) {
-        long sampleRate = format.sampleRate();        // Гц (например, 44100)
-        long bitsPerSample = format.bitDepth();  // бит (например, 16)
-        long channels = format.channels();            // каналов (например, 2)
+        long sampleRate = format.sampleRate();
+        long bitsPerSample = format.bitDepth();
+        long channels = format.channels();
 
-        // Байт в секунду = (сэмплов/сек) * (байт/сэмпл) * каналы
+        // Bytes per second = samples/sec * bytes/sample * channels
         long bytesPerSecond = (sampleRate * (bitsPerSample / 8) * channels);
 
         if (bytesPerSecond == 0) {
-            return 0; // Защита от деления на ноль
+            return 0; // Avoid division by zero
         }
 
-        // Миллисекунд = (байт * 1000) / (байт/сек)
+        // Duration in ms = (bytes * 1000) / (bytes/sec)
         return (sizeInBytes * 1000L) / bytesPerSecond;
     }
 
-    public static int calculateChunkSizeInBytes(TrackFormat f, int ms) {
-        int bytesPerSample = f.bitDepth() / 8;
-        int bytesPerFrame = bytesPerSample * f.channels();
-        int framesPerMs = Math.max(1, f.sampleRate() / 1000);
+    /**
+     * Returns the size of one audio frame in bytes for the given format.
+     * <p>
+     * One frame represents one sample across all channels.
+     * </p>
+     *
+     * @param format track format
+     * @return frame size in bytes
+     */
+    public static int calculateFrameSizeInBytes(TrackFormat format) {
+        int bytesPerSample = format.bitDepth() / 8;
+        int bytesPerFrame = bytesPerSample * format.channels();
+        int framesPerMs = Math.max(1, format.sampleRate() / 1000);
 
-        return (framesPerMs * bytesPerFrame) * ms;
+        return (framesPerMs * bytesPerFrame);
     }
 }
