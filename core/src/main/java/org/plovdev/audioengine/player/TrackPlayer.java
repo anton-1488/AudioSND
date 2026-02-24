@@ -1,4 +1,6 @@
-package org.plovdev.audioengine.tracks;
+package org.plovdev.audioengine.player;
+
+import org.plovdev.audioengine.tracks.Track;
 
 import java.time.Duration;
 
@@ -67,7 +69,7 @@ public interface TrackPlayer extends AutoCloseable {
     /**
      * @return Returns current player status.
      */
-    TrackStatus getStatus();
+    TrackPlayerStatus getStatus();
 
     /**
      * Gets current playback time.

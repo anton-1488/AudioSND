@@ -1,4 +1,6 @@
-package org.plovdev.audioengine.tracks;
+package org.plovdev.audioengine.player;
+
+import org.plovdev.audioengine.tracks.Track;
 
 /**
  * Statuses of track playing lifecycle.
@@ -8,6 +10,6 @@ package org.plovdev.audioengine.tracks;
  * @author Anton
  * @version 1.0
  */
-public enum TrackStatus {
+public enum TrackPlayerStatus {
     INITED, PLAYING, PAUSED, STOPPED, DESTROYED, UNAVAILABLE
 }

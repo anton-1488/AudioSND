@@ -13,7 +13,7 @@ import org.plovdev.audioengine.mixer.NativeTrackMixer;
 import org.plovdev.audioengine.mixer.TrackMixer;
 import org.plovdev.audioengine.tracks.NativeTrackPlayer;
 import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.TrackPlayer;
+import org.plovdev.audioengine.player.TrackPlayer;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.engine.AudioEngineConfig;
 import org.plovdev.audioengine.utils.NativeLibraryUnpacker;

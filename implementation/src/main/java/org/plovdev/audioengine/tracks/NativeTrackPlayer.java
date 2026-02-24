@@ -4,6 +4,8 @@ import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
 import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
+import org.plovdev.audioengine.player.TrackPlayer;
+import org.plovdev.audioengine.player.TrackPlayerStatus;
 import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +25,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     private final AtomicInteger position = new AtomicInteger(0);
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isInited = new AtomicBoolean(false);
-    private TrackStatus status = TrackStatus.UNAVAILABLE;
+    private TrackPlayerStatus status = TrackPlayerStatus.UNAVAILABLE;
     private final int chunkSize;
     private int currentCycle = 0;
     private final int ms = 10;
@@ -58,9 +60,9 @@ public class NativeTrackPlayer implements TrackPlayer {
             try {
                 audioDevice.open(track.getFormat());
                 isInited.set(true);
-                setStatus(TrackStatus.INITED);
+                setStatus(TrackPlayerStatus.INITED);
             } catch (OpenAudioDeviceException e) {
-                setStatus(TrackStatus.UNAVAILABLE);
+                setStatus(TrackPlayerStatus.UNAVAILABLE);
                 throw new OpenAudioDeviceException(e.getMessage());
             }
         }
@@ -80,7 +82,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         }
 
         isPlaying.set(true);
-        setStatus(TrackStatus.PLAYING);
+        setStatus(TrackPlayerStatus.PLAYING);
 
         Thread audioThred = new Thread(this::audioLoop, "audio-loop");
         audioThred.setPriority(Thread.MAX_PRIORITY);
@@ -100,7 +102,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         if (!isPlaying.get()) return;
 
         isPlaying.set(false);
-        setStatus(TrackStatus.PAUSED);
+        setStatus(TrackPlayerStatus.PAUSED);
     }
 
     /**
@@ -116,7 +118,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(false);
         position.set(0);
 
-        setStatus(TrackStatus.STOPPED);
+        setStatus(TrackPlayerStatus.STOPPED);
     }
 
     /**
@@ -155,7 +157,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      * @return Returns current player status.
      */
     @Override
-    public TrackStatus getStatus() {
+    public TrackPlayerStatus getStatus() {
         return status;
     }
 
@@ -245,7 +247,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         onStatusChanged = onChange;
     }
 
-    private void setStatus(TrackStatus status) {
+    private void setStatus(TrackPlayerStatus status) {
         if (this.status != status) { // Только при реальном изменении
             this.status = status;
             try {
@@ -276,7 +278,7 @@ public class NativeTrackPlayer implements TrackPlayer {
 
         currentCycle++;
         log.debug("Stop playing");
-        setStatus(TrackStatus.STOPPED);
+        setStatus(TrackPlayerStatus.STOPPED);
     }
 
     public Runnable getOnChunkPlayed() {

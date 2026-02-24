@@ -2,6 +2,8 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
+import org.plovdev.audioengine.profiler.AudioEngineProfiler;
+import org.plovdev.audioengine.profiler.DefaultEngineProfiler;
 import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +17,11 @@ public class PlayerExample {
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
             Track track = engine.loadTrack(new File("sotw-ov.wav"));
-
             engine.createTrackPlayer(track).play();
+
+            AudioEngineProfiler profiler = new DefaultEngineProfiler(engine);
+            System.out.println(profiler.snapshot());
+
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
