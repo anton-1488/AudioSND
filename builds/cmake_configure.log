@@ -1,6 +1,0 @@
--- Используем JNI_INCLUDE_PATH: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include
--- Используем JNI_INCLUDE_DARWIN: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin
--- JNI include directories: /Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include;/Library/Java/JavaVirtualMachines/jdk-18/Contents/Home/include/darwin
--- Configuring done
--- Generating done
--- Build files have been written to: /Users/mac/IdeaProjects/AudioSND/build

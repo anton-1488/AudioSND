@@ -33,7 +33,7 @@ check_dependencies() {
 
 # Создание директорий
 create_dirs() {
-    mkdir -p ./builds
+    mkdir -p ./build
     mkdir -p ./out
     mkdir -p ./build
     mkdir -p implementation/src/main/resources/natives/libs
@@ -47,11 +47,11 @@ find_java_files() {
     
     for module in "${modules[@]}"; do
         if [ -d "${module}/src/main/java" ]; then
-            find "${module}/src/main/java" -name "*.java" > "./builds/${module}.txt"
+            find "${module}/src/main/java" -name "*.java" > "./build/${module}.txt"
             print_info "  Найдены файлы для модуля ${module}"
         else
             print_warn "  Директория ${module}/src/main/java не найдена"
-            touch "./builds/${module}.txt"
+            touch "./build/${module}.txt"
         fi
     done
 }
@@ -61,72 +61,72 @@ compile_java_modules() {
     print_info "Компиляция Java модулей..."
     
     # Проверяем наличие cp.txt
-    if [ ! -f "./builds/cp.txt" ]; then
+    if [ ! -f "./build/cp.txt" ]; then
         print_warn "Файл classpath (cp.txt) не найден. Используется пустой classpath."
         local classpath=""
     else
-        local classpath=$(cat ./builds/cp.txt)
+        local classpath=$(cat ./build/cp.txt)
     fi
     
     # Core - базовый модуль
-    if [ -s ./builds/core.txt ]; then
+    if [ -s ./build/core.txt ]; then
         print_info "  Компиляция core..."
-        javac -d out/core -cp "$classpath" @./builds/core.txt 2>&1 | tee ./builds/core_compile.log
+        javac -d out/core -cp "$classpath" @./build/core.txt 2>&1 | tee ./build/core_compile.log
     fi
     
     # Loaders (зависит от core)
-    if [ -s ./builds/loaders.txt ]; then
+    if [ -s ./build/loaders.txt ]; then
         print_info "  Компиляция loaders..."
-        javac -d out/loaders -cp "out/core:$classpath" @./builds/loaders.txt 2>&1 | tee ./builds/loaders_compile.log
+        javac -d out/loaders -cp "out/core:$classpath" @./build/loaders.txt 2>&1 | tee ./build/loaders_compile.log
     fi
     
     # Effects (зависит от core)
-    if [ -s ./builds/effects.txt ]; then
+    if [ -s ./build/effects.txt ]; then
         print_info "  Компиляция effects..."
-        javac -d out/effects -cp "out/core:$classpath" @./builds/effects.txt 2>&1 | tee ./builds/effects_compile.log
+        javac -d out/effects -cp "out/core:$classpath" @./build/effects.txt 2>&1 | tee ./build/effects_compile.log
     fi
     
     # Profiler (зависит от core)
-    if [ -s ./builds/profiler.txt ]; then
+    if [ -s ./build/profiler.txt ]; then
         print_info "  Компиляция profiler..."
-        javac -d out/profiler -cp "out/core:$classpath" @./builds/profiler.txt 2>&1 | tee ./builds/profiler_compile.log
+        javac -d out/profiler -cp "out/core:$classpath" @./build/profiler.txt 2>&1 | tee ./build/profiler_compile.log
     fi
     
     # MIDI (зависит от core)
-    if [ -s ./builds/midi.txt ]; then
+    if [ -s ./build/midi.txt ]; then
         print_info "  Компиляция midi..."
-        javac -d out/midi -cp "out/core:$classpath" @./builds/midi.txt 2>&1 | tee ./builds/midi_compile.log
+        javac -d out/midi -cp "out/core:$classpath" @./build/midi.txt 2>&1 | tee ./build/midi_compile.log
     fi
     
     # Tools (зависит от core)
-    if [ -s ./builds/tools.txt ]; then
+    if [ -s ./build/tools.txt ]; then
         print_info "  Компиляция tools..."
-        javac -d out/tools -cp "out/core:$classpath" @./builds/tools.txt 2>&1 | tee ./builds/tools_compile.log
+        javac -d out/tools -cp "out/core:$classpath" @./build/tools.txt 2>&1 | tee ./build/tools_compile.log
     fi
     
     # Implementation (зависит от core, генерирует заголовки для JNI)
-    if [ -s ./builds/implementation.txt ]; then
+    if [ -s ./build/implementation.txt ]; then
         print_info "  Компиляция implementation..."
         javac -h ./implementation/src/main/cpp/mac/org/plovdev/audioengine \
               -d out/implementation \
               -cp "out/core:$classpath" \
-              @./builds/implementation.txt 2>&1 | tee ./builds/implementation_compile.log
+              @./build/implementation.txt 2>&1 | tee ./build/implementation_compile.log
     fi
     
     # Examples (зависит от всех модулей)
-    if [ -s ./builds/examples.txt ]; then
+    if [ -s ./build/examples.txt ]; then
         print_info "  Компиляция examples..."
         javac -d out/examples \
               -cp "out/implementation:out/profiler:out/loaders:out/core:out/effects:out/midi:out/tools:$classpath" \
-              @./builds/examples.txt 2>&1 | tee ./builds/examples_compile.log
+              @./build/examples.txt 2>&1 | tee ./build/examples_compile.log
     fi
 }
 
 # Поиск C++ файлов для CMake
 find_cpp_files() {
     print_info "Поиск C++ файлов для CMake..."
-    find . -name "*.cpp" > ./builds/natives.txt
-    local count=$(wc -l < ./builds/natives.txt)
+    find . -name "*.cpp" > ./build/natives.txt
+    local count=$(wc -l < ./build/natives.txt)
     print_info "  Найдено $count C++ файлов"
 }
 
@@ -196,12 +196,12 @@ compile_native_cmake() {
         cmake ../implementation \
             -DJNI_INCLUDE_PATH="$jni_include_path" \
             -DJNI_INCLUDE_DARWIN="$jni_include_darwin" \
-            2>&1 | tee ../builds/cmake_configure.log
+            2>&1 | tee ../build/cmake_configure.log
     else
         cmake ../implementation \
             -DJNI_INCLUDE_PATH="$jni_include_path" \
             -DJNI_INCLUDE_LINUX="$jni_include_linux" \
-            2>&1 | tee ../builds/cmake_configure.log
+            2>&1 | tee ../build/cmake_configure.log
     fi
 
     if [ $? -eq 0 ]; then
@@ -214,7 +214,7 @@ compile_native_cmake() {
 
     # Сборка
     print_info "  Сборка нативной библиотеки..."
-    cmake --build . 2>&1 | tee ../builds/cmake_build.log
+    cmake --build . 2>&1 | tee ../build/cmake_build.log
 
     local build_result=$?
 

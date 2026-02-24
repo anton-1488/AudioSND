@@ -1,6 +1,0 @@
-Consolidate compiler generated dependencies of target AudioSND
-[ 16%] Building CXX object CMakeFiles/AudioSND.dir/src/main/cpp/mac/org/plovdev/audioengine/AudioEngine.cpp.o
-[ 33%] Building CXX object CMakeFiles/AudioSND.dir/src/main/cpp/mac/org/plovdev/audioengine/devices/NativeOutputAudioDevice.cpp.o
-[ 50%] Linking CXX shared library libaudio-snd.dylib
-Копирование библиотеки в resources/natives/libs
-[100%] Built target AudioSND

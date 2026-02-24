@@ -21,14 +21,14 @@ core/target/**
 *.jpg
 *.png
 
-recorded.wav
+testdata/recorded.wav
 
 audio-snd.dylib
 audio-snd.dll
 audio-snd.so
 
-build
-build/*
+**/build/
+**/build/**
 
 /testdata/
 /testdata/44100/
@@ -47,6 +47,9 @@ code.txt
 /dist/
 /nbdist/
 /.nb-gradle/
+
+**/target/
+**/target/**
 
 
 ### VS Code ###
