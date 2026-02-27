@@ -25,14 +25,6 @@ JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDev
 
 /*
  * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
- * Method:    _flush
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_plovdev_audioengine_devices_NativeOutputAudioDevice
  * Method:    _close
  * Signature: (J)V
  */

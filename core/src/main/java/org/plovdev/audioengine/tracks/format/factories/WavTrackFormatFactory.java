@@ -65,7 +65,7 @@ public class WavTrackFormatFactory {
                 44100,
                 true,
                 ByteOrder.LITTLE_ENDIAN,
-                TrackFormat.AudioCodec.PCM32
+                TrackFormat.AudioCodec.FLOAT32
         );
     }
 
@@ -98,7 +98,7 @@ public class WavTrackFormatFactory {
                 48000,
                 true,
                 ByteOrder.LITTLE_ENDIAN,
-                TrackFormat.AudioCodec.PCM32
+                TrackFormat.AudioCodec.FLOAT32
         );
     }
 

@@ -103,6 +103,12 @@ compile_java_modules() {
         print_info "  Компиляция tools..."
         javac -d out/tools -cp "out/core:$classpath" @./build/tools.txt 2>&1 | tee ./build/tools_compile.log
     fi
+
+    # Generator (зависит от core)
+    if [ -s ./build/generator.txt ]; then
+        print_info "  Компиляция generator..."
+        javac -d out/generator -cp "out/core:$classpath" @./build/generator.txt 2>&1 | tee ./build/generator_compile.log
+    fi
     
     # Implementation (зависит от core, генерирует заголовки для JNI)
     if [ -s ./build/implementation.txt ]; then
@@ -117,7 +123,7 @@ compile_java_modules() {
     if [ -s ./build/examples.txt ]; then
         print_info "  Компиляция examples..."
         javac -d out/examples \
-              -cp "out/implementation:out/profiler:out/loaders:out/core:out/effects:out/midi:out/tools:$classpath" \
+              -cp "out/implementation:out/generator:out/profiler:out/loaders:out/core:out/effects:out/midi:out/tools:$classpath" \
               @./build/examples.txt 2>&1 | tee ./build/examples_compile.log
     fi
 }

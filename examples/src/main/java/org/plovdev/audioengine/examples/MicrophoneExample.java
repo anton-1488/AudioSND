@@ -13,7 +13,7 @@ import java.io.FileOutputStream;
 public class MicrophoneExample {
     private static final Logger log = LoggerFactory.getLogger(MicrophoneExample.class);
 
-    public static void main(String[] args) {
+    void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine();
              Microphone microphone = Microphone.open(WavTrackFormatFactory.wav16bitStereo44kHz())) {
 

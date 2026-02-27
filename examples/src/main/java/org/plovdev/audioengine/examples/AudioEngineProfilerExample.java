@@ -10,20 +10,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
-public class PlayerExample {
-    private static final Logger log = LoggerFactory.getLogger(PlayerExample.class);
+public class AudioEngineProfilerExample {
+    private static final Logger log = LoggerFactory.getLogger(AudioEngineProfilerExample.class);
 
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
             Track track = engine.loadTrack(new File("testdata/sotw-ov.wav"));
-            log.info("Start playing");
             engine.createTrackPlayer(track).play();
-
-            Thread.sleep(1000);
-
             AudioEngineProfiler profiler = new DefaultEngineProfiler(engine);
             System.out.println(profiler.snapshot());
-
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
