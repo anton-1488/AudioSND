@@ -7,6 +7,7 @@ import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DefaultEngineProfiler implements AudioEngineProfiler {
     private final AudioEngine engine;
@@ -16,10 +17,12 @@ public class DefaultEngineProfiler implements AudioEngineProfiler {
 
     @Override
     public EngineSnapshot snapshot() {
+        Objects.requireNonNull(engine);
+
         OperatingSystemMXBean mxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
         long timestamp = System.currentTimeMillis();
-        double cpuUsage = mxBean.getCpuLoad();
+        double cpuUsage = mxBean.getProcessCpuLoad();
 
         Runtime runtime = Runtime.getRuntime();
         long usedMemory = runtime.maxMemory() - runtime.freeMemory();

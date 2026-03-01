@@ -33,7 +33,7 @@ public class ReverbEffect implements AudioEffect {
     private int channels;
 
     public ReverbEffect() {
-        this(Type.HALL, 0.7f, 2.5f, 0.5f, 0.3f);
+        this(Type.CATHEDRAL, 1f, 10f, 0.7f, 0.7f);
     }
 
     public ReverbEffect(Type type, float roomSize, float decayTime, float damping, float mix) {

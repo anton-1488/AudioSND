@@ -4,6 +4,8 @@ import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
 import org.plovdev.audioengine.generator.Note;
 import org.plovdev.audioengine.generator.TrackGenerator;
+import org.plovdev.audioengine.profiler.AudioEngineProfiler;
+import org.plovdev.audioengine.profiler.DefaultEngineProfiler;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
@@ -16,6 +18,10 @@ public class GenerationExample {
     private static final AudioEngine engine = new NativeAudioEngine();
 
     void main() {
+        AudioEngineProfiler profiler = new DefaultEngineProfiler(null);
+        long delay = profiler.executionTime(() -> TrackGenerator.generateSine(WavTrackFormatFactory.wav16bitStereo44kHz(), Duration.ofSeconds(1), Note.A2)) / 1_000_000;
+        log.info("Generation delay: {}", delay);
+
         Track track1 = TrackGenerator.generateSine(WavTrackFormatFactory.wav16bitStereo44kHz(), Duration.ofSeconds(10), Note.A2); // generate A2
         Track track2 = TrackGenerator.generateSine(WavTrackFormatFactory.wav24bitStereo48kHz(), Duration.ofSeconds(5), Note.C2, Note.E2, Note.G2); // generate chord
         Track track3 = TrackGenerator.generateNoise(WavTrackFormatFactory.wav16bitMono44kHz(), Duration.ofSeconds(10));
@@ -26,6 +32,9 @@ public class GenerationExample {
         Track track8 = TrackGenerator.generateSquare(WavTrackFormatFactory.wav24bitStereo96kHz(), Duration.ofSeconds(10), Note.E2, 0.5);
         Track track9 = TrackGenerator.generateSweep(WavTrackFormatFactory.wav32bitFloatStereo48kHz(), Duration.ofSeconds(10), Note.G2, Note.C2);
         Track track10 = TrackGenerator.generateTriangle(WavTrackFormatFactory.wav32bitFloatStereo44kHz(), Duration.ofSeconds(5), Note.A2);
+
+        Track pad = TrackGenerator.generateSine(WavTrackFormatFactory.wav16bitStereo48kHz(), Duration.ofSeconds(30), Note.C2, Note.E2, Note.G2, Note.B2);
+        play(pad);
     }
     private static void play(Track track) {
         try {

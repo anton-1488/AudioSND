@@ -171,7 +171,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     AudioDeviceID devId = (AudioDeviceID) strtoul(devStr, nullptr, 10);
     env->ReleaseStringUTFChars(jDevId, devStr);
 
-    ctx->ringFrames = sr * 2;
+    ctx->ringFrames = sr;
     ctx->ring.resize(ctx->ringFrames * ch);
 
     AudioComponentDescription desc{};
@@ -261,13 +261,6 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
     }
 
     return cap;
-}
-
-JNIEXPORT void JNICALL
-Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1flush
-(JNIEnv*, jobject, jlong handle)
-{
-    // no-op
 }
 
 JNIEXPORT void JNICALL
