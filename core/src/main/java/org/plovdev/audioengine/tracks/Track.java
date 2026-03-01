@@ -82,4 +82,13 @@ public class Track {
     public void setMetaData(TrackMetadata metaData) {
         this.metaData = metaData;
     }
+
+    @Override
+    public String toString() {
+        return "Track{" +
+                "format=" + format +
+                ", duration=" + duration +
+                ", trackData=" + trackData +
+                '}';
+    }
 }

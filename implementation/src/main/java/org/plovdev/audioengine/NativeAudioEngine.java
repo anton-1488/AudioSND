@@ -55,7 +55,7 @@ public class NativeAudioEngine implements AudioEngine {
         try {
             init(config);
         } catch (AudioEngineException e) {
-            throw new AudioEngineException(e.getMessage());
+            throw new AudioEngineException(e);
         }
     }
 
@@ -64,7 +64,7 @@ public class NativeAudioEngine implements AudioEngine {
         try {
             init(config);
         } catch (AudioEngineException e) {
-            throw new AudioEngineException(e.getMessage());
+            throw new AudioEngineException(e);
         }
     }
 
@@ -80,15 +80,10 @@ public class NativeAudioEngine implements AudioEngine {
         if (!isInited) {
             try {
                 this.config = config;
-
                 printEngineInfo(config);
 
-                NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
-                System.load(unpacker.unpackLib());
-
+                initNative();
                 TrackLoaderSearcher.searchAvailableTrackLoaderManagers().forEach(this::addLoaderManager);
-                AudioDeviceManager.getInstance();
-                _init();
                 isInited = true;
             } catch (Exception e) {
                 throw new AudioEngineException("Cann't init AudioSND: " + e.getMessage());
@@ -256,6 +251,21 @@ public class NativeAudioEngine implements AudioEngine {
             exporter.save(track, outputStream);
         } else {
             throw new TrackExportException("Cann't find situable exporter");
+        }
+    }
+
+    private void initNative() {
+        try {
+            NativeLibraryUnpacker unpacker = new NativeLibraryUnpacker(config.getNativeLib());
+            System.load(unpacker.unpackLib());
+            _init();
+            AudioDeviceManager.getInstance();
+        } catch (Throwable e) {
+            if (config.isIgnoreNativeWhenFail()) {
+                log.warn("Unable to init native part: {}", e.getMessage());
+            } else {
+                throw new AudioEngineException(e);
+            }
         }
     }
 

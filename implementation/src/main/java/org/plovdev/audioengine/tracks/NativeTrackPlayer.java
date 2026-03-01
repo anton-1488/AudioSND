@@ -1,8 +1,10 @@
 package org.plovdev.audioengine.tracks;
 
+import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.AudioDeviceStatus;
 import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
+import org.plovdev.audioengine.effects.GainEffect;
 import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
 import org.plovdev.audioengine.player.TrackPlayer;
@@ -20,25 +22,54 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Controls playback of a single audio track.
+ * <p>
+ * Player follows strict lifecycle:
+ * <ol>
+ *   <li>{@link #initPlayer()} - prepare player (called automatically)</li>
+ *   <li>{@link #play()} - start playback</li>
+ *   <li>{@link #pause()} - pause playback</li>
+ *   <li>{@link #stop()} - stop playback</li>
+ *   <li>{@link #close()} - release all resources</li>
+ * </ol>
+ * </p>
+ * <p>
+ * Additional controls:
+ * <ul>
+ *   <li>{@link #setVolume(float)} - adjust volume in real-time</li>
+ *   <li>{@link #setSpeed(float)} - change playback speed</li>
+ *   <li>{@link #setLoopCount(int)} - configure looping</li>
+ *   <li>{@link #seek(Duration)} - jump to position</li>
+ *   <li>{@link #setAudioDevice(AudioDeviceInfo)} - switch output device on the fly</li>
+ * </ul>
+ * </p>
+ *
+ * @author Anton
+ * @version 1.0
+ * @see Track
+ */
 public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
-    private final Track track;
-    private final AtomicReference<NativeOutputAudioDevice> audioDeviceReference;
-    private final ByteBuffer data;
-    private final AtomicInteger position = new AtomicInteger(0);
-    private final AtomicBoolean isPlaying = new AtomicBoolean(false);
-    private final AtomicBoolean isInited = new AtomicBoolean(false);
-    private TrackPlayerStatus status = TrackPlayerStatus.UNAVAILABLE;
-    private final int chunkSize;
-    private int currentCycle = 0;
-    private final int ms = 10;
-
     private final ExecutorService eventExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     private float speed = 1.0f;
-    private float volume = 0.5f;
-
+    private float volume = 1f;
     private int totalCycles = 1;
+
+    private final AtomicInteger position = new AtomicInteger(0);
+    private final AtomicBoolean isPlaying = new AtomicBoolean(false);
+    private final AtomicBoolean isInited = new AtomicBoolean(false);
+    private final AtomicReference<NativeOutputAudioDevice> audioDeviceReference;
+    private final GainEffect gainEffect = new GainEffect(volume);
+
+    private TrackPlayerStatus status = TrackPlayerStatus.UNAVAILABLE;
+    private final Track track;
+    private final ByteBuffer data;
+
+    private final int chunkSize;
+    private int currentCycle = 0;
+    private final int ms = 10;
 
     private Runnable onStatusChanged = () -> {
     };
@@ -53,12 +84,20 @@ public class NativeTrackPlayer implements TrackPlayer {
 
         initPlayer();
         chunkSize = (TrackFormatUtils.calculateFrameSizeInBytes(track.getFormat()) * ms);
+        gainEffect.setup(track.getFormat());
 
         log.debug("Native track player inited success");
     }
 
+
+    /**
+     * Initializes the player with track format and opens audio device.
+     * Called automatically in constructor, but can be called manually if needed.
+     *
+     * @throws IllegalStateException if already initialized
+     */
     @Override
-    public void initPlayer() {
+    public synchronized void initPlayer() {
         if (!isInited.get()) {
             try {
                 audioDeviceReference.get().open(track.getFormat());
@@ -72,9 +111,11 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Starts or resumes playback.
+     * Starts or resumes playback from current position.
+     * If player is stopped, starts from beginning.
+     * If player is paused, resumes from paused position.
      *
-     * @throws IllegalStateException if player is not prepared
+     * @throws IllegalStateException if player is not initialized
      */
     @Override
     public synchronized void play() {
@@ -94,7 +135,8 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Pauses playback. Playback can be resumed with {@link #play()}.
+     * Pauses playback at current position.
+     * Playback can be resumed with {@link #play()}.
      *
      * @throws IllegalStateException if player is not playing
      */
@@ -109,7 +151,7 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     /**
      * Stops playback and resets position to beginning.
-     * Player remains prepared and can be played again.
+     * Player remains initialized and can be played again.
      *
      * @throws IllegalStateException if player is not active
      */
@@ -125,6 +167,8 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     /**
      * Gets current playback volume.
+     *
+     * @return volume value (typically 0.0 = silent, 1.0 = normal, >1.0 = boost)
      */
     @Override
     public float getVolume() {
@@ -133,6 +177,8 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     /**
      * Gets current playback speed.
+     *
+     * @return speed multiplier (1.0 = normal)
      */
     @Override
     public float getSpeed() {
@@ -140,7 +186,9 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Gets total cycles count.
+     * Gets total cycles (loops) count.
+     *
+     * @return number of times to repeat (0 = no loop, -1 = infinite)
      */
     @Override
     public int getCycles() {
@@ -148,7 +196,9 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Gets current playing cycle.
+     * Gets current playing cycle number.
+     *
+     * @return current cycle index (0 = first play)
      */
     @Override
     public int getCurrentCycle() {
@@ -156,7 +206,9 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * @return Returns current player status.
+     * Returns current player status.
+     *
+     * @return current status (PLAYING, PAUSED, STOPPED, etc.)
      */
     @Override
     public TrackPlayerStatus getStatus() {
@@ -164,53 +216,59 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Gets current playback time.
+     * Gets current playback time position.
+     *
+     * @return elapsed time from start of track
      */
     @Override
-    public Duration getCurrentTime() {
+    public synchronized Duration getCurrentTime() {
         return Duration.ofMillis(position.get() / (chunkSize / ms));
     }
 
     /**
-     * Sets playback volume.
+     * Sets playback volume in real-time.
+     * Implementation may delegate to internal GainEffect.
      *
-     * @param volume volume (0.0 = silent, 1.0 = max)
-     * @throws IllegalArgumentException if volume out of range
+     * @param volume volume (0.0 = silent, 1.0 = normal, >1.0 = boost)
+     * @throws IllegalArgumentException if volume out of valid range
      */
     @Override
-    public void setVolume(float volume) {
-        this.volume = volume;
+    public synchronized void setVolume(float volume) {
+        this.volume = Math.clamp(volume, -10.0f, 10.0f);
+        gainEffect.setGain(volume);
     }
 
     /**
      * Sets playback speed multiplier.
+     * Note: Speed change may affect pitch unless advanced resampling is used.
      *
      * @param speed speed (0.5 = half, 1.0 = normal, 2.0 = double)
-     * @throws IllegalArgumentException      if speed out of range
-     * @throws UnsupportedOperationException if speed change not supported
+     * @throws IllegalArgumentException      if speed <= 0
+     * @throws UnsupportedOperationException if speed change not supported by implementation
      */
     @Override
-    public void setSpeed(float speed) {
+    public synchronized void setSpeed(float speed) {
         this.speed = speed;
     }
 
     /**
-     * Sets loop count.
+     * Sets loop (repeat) count.
      *
      * @param count number of times to repeat (0 = no loop, -1 = infinite)
-     * @throws IllegalArgumentException if count < -1
      */
     @Override
-    public void setLoopCount(int count) {
-        totalCycles = count;
+    public synchronized void setLoopCount(int count) {
+        this.totalCycles = count;
+        log.debug("Loop count set to: {}", count == -1 ? "infinite" : count);
     }
 
     /**
      * Seeks to specific position in track.
+     * Position is clamped to track duration.
      *
-     * @param position position to seek to
-     * @throws IllegalArgumentException if position is out of bounds
-     * @throws IllegalStateException    if player is not prepared
+     * @param position target position to seek to
+     * @throws IllegalArgumentException if position is null or negative
+     * @throws IllegalStateException    if player is not initialized
      */
     @Override
     public void seek(Duration position) {
@@ -225,8 +283,55 @@ public class NativeTrackPlayer implements TrackPlayer {
     }
 
     /**
-     * Closes player and releases all resources.
-     * Player cannot be used after close.
+     * Switches audio output device during playback.
+     * Player will pause briefly during device switch and resume automatically.
+     *
+     * @param newOutDevice new output device info
+     * @throws NullPointerException     if device is null
+     * @throws IllegalArgumentException if device type is not OUTPUT
+     */
+    @SuppressWarnings("resource")
+    @Override
+    public synchronized void setAudioDevice(AudioDeviceInfo newOutDevice) {
+        Objects.requireNonNull(newOutDevice, "Audio device cannot be null");
+        log.debug("Re-init audio device. Old device: {}, new device: {}", audioDeviceReference.get(), newOutDevice);
+        pause();
+
+        setOnStatusChanged(() -> {
+            if (status == TrackPlayerStatus.STOPPED) {
+                NativeOutputAudioDevice newOutput = new NativeOutputAudioDevice(newOutDevice);
+                newOutput.setOnStatusChanged(() -> {
+                    if (newOutput.getDeviceStatus() == AudioDeviceStatus.OPENED) {
+                        audioDeviceReference.get().close();
+                        audioDeviceReference.set(newOutput);
+                        play();
+                        newOutput.setOnStatusChanged(() -> {
+                        }); // зануляем
+                    }
+                });
+                newOutput.open(track.getFormat());
+                setOnStatusChanged(() -> {
+                });
+            }
+        });
+    }
+
+    /**
+     * Gets current audio device info.
+     *
+     * @return device information of current output device
+     */
+    @Override
+    public AudioDeviceInfo getCurrentDevice() {
+        return audioDeviceReference.get().getDeviceInfo();
+    }
+
+    /**
+     * Closes player and releases all native resources.
+     * Player cannot be used after closing.
+     * <p>
+     * Safe to call multiple times.
+     * </p>
      */
     @Override
     public void close() {
@@ -239,16 +344,83 @@ public class NativeTrackPlayer implements TrackPlayer {
         }
     }
 
+    /**
+     * Main audio playback loop.
+     * <p>
+     * Runs in a separate high-priority thread and handles:
+     * <ul>
+     *   <li>Reading audio data from track</li>
+     *   <li>Applying effects via {@link #processChunk(ByteBuffer)}</li>
+     *   <li>Writing processed data to audio device</li>
+     *   <li>Looping logic (finite/infinite cycles)</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Thread stops when {@link #isPlaying} becomes false or track ends.
+     * </p>
+     */
+    private void audioLoop() {
+        if (totalCycles == 0) return;
+
+        final int limit = data.limit();
+        log.debug("Start playing");
+
+        NativeOutputAudioDevice audioDevice = audioDeviceReference.get();
+
+        while (isPlaying.get()) {
+            int start = position.get();
+            int rem = limit - start;
+
+            if (start >= limit || rem <= 0) {
+                currentCycle++;
+                if (totalCycles < 0) {
+                    position.set(0);
+                    continue;
+                } else if (currentCycle < totalCycles) {
+                    position.set(0);
+                    continue;
+                } else {
+                    stop();
+                    break;
+                }
+            }
+
+            ByteBuffer chunk = processChunk(data.slice(start, Math.min(chunkSize, rem)));
+            audioDevice.write(chunk);
+            position.set(Math.min(start + chunkSize, limit));
+        }
+
+        log.debug("Stop playing");
+        setStatus(TrackPlayerStatus.STOPPED);
+    }
+
+    //=========== UTILS ===========\\
+
+    /**
+     * Checks if player is initialized.
+     *
+     * @throws AudioDeviceException if player not initialized
+     */
     private void checkIfInited() {
         if (!isInited.get()) {
             throw new AudioDeviceException("TrackPlayer is not ready!");
         }
     }
 
+    /**
+     * Registers callback for player status changes.
+     *
+     * @param onChange runnable to execute when status changes
+     */
     public void setOnStatusChanged(Runnable onChange) {
         onStatusChanged = onChange;
     }
 
+    /**
+     * Updates player status and triggers callback if status changed.
+     *
+     * @param status new status
+     */
     private void setStatus(TrackPlayerStatus status) {
         if (this.status != status) { // Только при реальном изменении
             this.status = status;
@@ -260,75 +432,64 @@ public class NativeTrackPlayer implements TrackPlayer {
         }
     }
 
-    private void audioLoop() {
-        final int limit = data.limit();
-        log.debug("Start playing");
-
-        NativeOutputAudioDevice audioDevice = audioDeviceReference.get();
-
-        while (isPlaying.get()) {
-            int start = position.get();
-            int rem = limit - start;
-            if (start >= limit || rem <= 0) {
-                stop();
-                break;
-            }
-
-            ByteBuffer chunk = data.slice(start, Math.min(chunkSize, rem));
-            audioDevice.write(chunk);
-            position.set(Math.min(start + chunkSize, limit));
-            //onChunkPlayed.run();
-        }
-
-        currentCycle++;
-        log.debug("Stop playing");
-        setStatus(TrackPlayerStatus.STOPPED);
-    }
-
+    /**
+     * Gets callback for chunk playback events.
+     *
+     * @return runnable that executes on each chunk played
+     */
     public Runnable getOnChunkPlayed() {
         return onChunkPlayed;
     }
 
+    /**
+     * Sets callback to execute on each chunk playback.
+     * Useful for visualizers or progress monitoring.
+     *
+     * @param onChunkPlayed runnable to execute per chunk
+     */
     public void setOnChunkPlayed(Runnable onChunkPlayed) {
         this.onChunkPlayed = onChunkPlayed;
     }
 
+    /**
+     * Checks if player is initialized.
+     *
+     * @return true if player is ready
+     */
     public boolean isInited() {
         return isInited.get();
     }
 
+    /**
+     * Gets current status change callback.
+     *
+     * @return current status listener
+     */
     public Runnable getOnStatusChanged() {
         return onStatusChanged;
     }
 
+    /**
+     * Gets current audio device.
+     *
+     * @return native output audio device
+     */
     public NativeOutputAudioDevice getAudioDevice() {
         return audioDeviceReference.get();
     }
 
-    @Override
-    public synchronized void setAudioDevice(AudioDeviceInfo audioDevice) {
-        Objects.requireNonNull(audioDevice, "Audio device cannot be null");
-        log.debug("Re-init audio device. Old device: {}, new device: {}", audioDeviceReference.get(), audioDevice);
-        pause();
-
-        setOnStatusChanged(() -> {
-            if (status == TrackPlayerStatus.STOPPED) {
-                NativeOutputAudioDevice newOutput = new NativeOutputAudioDevice(audioDevice);
-                newOutput.setOnStatusChanged(() -> {
-                    if (newOutput.getDeviceStatus() == AudioDeviceStatus.OPENED) {
-                        audioDeviceReference.get().close();
-                        audioDeviceReference.set(newOutput);
-                        play();
-                        newOutput.setOnStatusChanged(() -> {}); // зануляем
-                    }
-                });
-                newOutput.open(track.getFormat());
-                setOnStatusChanged(() -> {});
-            }
-        });
-    }
-
-    public AudioDeviceInfo getCurrentDevice() {
-        return audioDeviceReference.get().getDeviceInfo();
+    /**
+     * Processes audio chunk through gain effect.
+     * <p>
+     * Currently applies only {@link GainEffect} for volume control.
+     * In future versions may support full effect chain.
+     * </p>
+     *
+     * @param chunk raw audio chunk to process
+     * @return processed audio chunk with gain applied
+     */
+    @NotNull
+    private ByteBuffer processChunk(ByteBuffer chunk) {
+        return gainEffect.process(chunk);
     }
 }

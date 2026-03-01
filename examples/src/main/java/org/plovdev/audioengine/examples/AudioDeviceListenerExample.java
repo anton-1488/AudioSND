@@ -5,9 +5,13 @@ import org.plovdev.audioengine.NativeAudioEngine;
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.AudioDeviceListener;
 import org.plovdev.audioengine.devices.AudioDeviceManager;
+import org.plovdev.audioengine.player.TrackPlayer;
+import org.plovdev.audioengine.tracks.NativeTrackPlayer;
+import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,24 +21,33 @@ public class AudioDeviceListenerExample {
 
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
+            Track track = engine.loadTrack(new File("testdata/wav/48000/24/block-story-stereo.wav"));
             AudioDeviceManager manager = AudioDeviceManager.getInstance();
-            service.execute(() -> {
-                log.info("Start monitoringdevice...");
+            AudioDeviceInfo defaultOut = manager.getDefaultOutputAudioDevice();
+
+            try (TrackPlayer player = new NativeTrackPlayer(track, defaultOut)) {
+                player.play();
+
                 manager.addAudioDeviceListener(new AudioDeviceListener() {
                     @Override
                     public void onDeviceConnected(AudioDeviceInfo info) {
-                        log.info("Device connected: {}", info);
+                        if (info.type() != AudioDeviceInfo.AudioDeviceType.INPUT) {
+                            player.setAudioDevice(info);
+                        }
                     }
 
                     @Override
                     public void onDeviceDisconnected(AudioDeviceInfo info) {
-                        log.info("Device disconnected: {}", info);
+                        if (info != defaultOut) {
+                            player.setAudioDevice(defaultOut);
+                        }
                     }
                 });
-            });
-            // service.shutdown(); // Wait...
+
+                Thread.sleep(track.getDuration());
+            }
         } catch (Exception e) {
-            log.error("AudioEngine error: ", e);
+            log.error("Audio engine error: ", e);
         }
     }
 }

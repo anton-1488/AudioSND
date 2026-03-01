@@ -33,8 +33,9 @@ public record TrackImage(ImageMimeType mimeType, ImageType pictureType, Buffered
     @Override
     public String toString() {
         return "TrackImage{" +
-                "mimeType='" + mimeType + "', " +
-                "pictureType=" + pictureType + ", " +
-                "}";
+                "mimeType=" + mimeType +
+                ", pictureType=" + pictureType +
+                ", image=" + image +
+                '}';
     }
 }
