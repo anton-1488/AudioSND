@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.player;
 
+import org.plovdev.audioengine.devices.AudioDeviceInfo;
+import org.plovdev.audioengine.devices.OutputAudioDevice;
 import org.plovdev.audioengine.tracks.Track;
 
 import java.time.Duration;
@@ -111,6 +113,8 @@ public interface TrackPlayer extends AutoCloseable {
      * @throws IllegalStateException if player is not prepared
      */
     void seek(Duration position);
+
+    void setAudioDevice(AudioDeviceInfo newOutDevice);
 
     /**
      * Closes player and releases all resources.

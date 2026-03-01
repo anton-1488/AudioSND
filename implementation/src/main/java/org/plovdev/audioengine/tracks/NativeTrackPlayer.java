@@ -1,6 +1,7 @@
 package org.plovdev.audioengine.tracks;
 
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
+import org.plovdev.audioengine.devices.AudioDeviceStatus;
 import org.plovdev.audioengine.devices.NativeOutputAudioDevice;
 import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
@@ -12,15 +13,17 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
     private final Track track;
-    private final NativeOutputAudioDevice audioDevice;
+    private final AtomicReference<NativeOutputAudioDevice> audioDeviceReference;
     private final ByteBuffer data;
     private final AtomicInteger position = new AtomicInteger(0);
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
@@ -45,7 +48,7 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     public NativeTrackPlayer(Track track, AudioDeviceInfo info) {
         this.track = track;
-        audioDevice = new NativeOutputAudioDevice(info);
+        audioDeviceReference = new AtomicReference<>(new NativeOutputAudioDevice(info));
         data = track.getTrackData();
 
         initPlayer();
@@ -58,7 +61,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     public void initPlayer() {
         if (!isInited.get()) {
             try {
-                audioDevice.open(track.getFormat());
+                audioDeviceReference.get().open(track.getFormat());
                 isInited.set(true);
                 setStatus(TrackPlayerStatus.INITED);
             } catch (OpenAudioDeviceException e) {
@@ -84,11 +87,10 @@ public class NativeTrackPlayer implements TrackPlayer {
         isPlaying.set(true);
         setStatus(TrackPlayerStatus.PLAYING);
 
-        Thread audioThred = new Thread(this::audioLoop, "audio-loop");
-        audioThred.setPriority(Thread.MAX_PRIORITY);
-        audioThred.setDaemon(true);
-
-        audioThred.start();
+        Thread audioLoopThread = new Thread(this::audioLoop, "audio-loop");
+        audioLoopThread.setPriority(Thread.MAX_PRIORITY);
+        audioLoopThread.setDaemon(true);
+        audioLoopThread.start();
     }
 
     /**
@@ -230,7 +232,7 @@ public class NativeTrackPlayer implements TrackPlayer {
     public void close() {
         if (isInited.get()) {
             stop();
-            audioDevice.close();
+            audioDeviceReference.get().close();
             eventExecutor.shutdown();
             eventExecutor.shutdownNow();
             eventExecutor.close();
@@ -261,6 +263,8 @@ public class NativeTrackPlayer implements TrackPlayer {
     private void audioLoop() {
         final int limit = data.limit();
         log.debug("Start playing");
+
+        NativeOutputAudioDevice audioDevice = audioDeviceReference.get();
 
         while (isPlaying.get()) {
             int start = position.get();
@@ -295,5 +299,36 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     public Runnable getOnStatusChanged() {
         return onStatusChanged;
+    }
+
+    public NativeOutputAudioDevice getAudioDevice() {
+        return audioDeviceReference.get();
+    }
+
+    @Override
+    public synchronized void setAudioDevice(AudioDeviceInfo audioDevice) {
+        Objects.requireNonNull(audioDevice, "Audio device cannot be null");
+        log.debug("Re-init audio device. Old device: {}, new device: {}", audioDeviceReference.get(), audioDevice);
+        pause();
+
+        setOnStatusChanged(() -> {
+            if (status == TrackPlayerStatus.STOPPED) {
+                NativeOutputAudioDevice newOutput = new NativeOutputAudioDevice(audioDevice);
+                newOutput.setOnStatusChanged(() -> {
+                    if (newOutput.getDeviceStatus() == AudioDeviceStatus.OPENED) {
+                        audioDeviceReference.get().close();
+                        audioDeviceReference.set(newOutput);
+                        play();
+                        newOutput.setOnStatusChanged(() -> {}); // зануляем
+                    }
+                });
+                newOutput.open(track.getFormat());
+                setOnStatusChanged(() -> {});
+            }
+        });
+    }
+
+    public AudioDeviceInfo getCurrentDevice() {
+        return audioDeviceReference.get().getDeviceInfo();
     }
 }

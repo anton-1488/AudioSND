@@ -16,6 +16,7 @@
         </encoder>
     </appender>
 
+    <!-- Main logger !-->
     <logger name="org.plovdev.audioengine" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>

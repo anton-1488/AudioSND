@@ -2,6 +2,11 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
+import org.plovdev.audioengine.devices.AudioDeviceInfo;
+import org.plovdev.audioengine.devices.AudioDeviceListener;
+import org.plovdev.audioengine.devices.AudioDeviceManager;
+import org.plovdev.audioengine.player.TrackPlayer;
+import org.plovdev.audioengine.tracks.NativeTrackPlayer;
 import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +19,30 @@ public class PlayerExample {
     void main() {
         try (AudioEngine engine = new NativeAudioEngine()) {
             Track track = engine.loadTrack(new File("testdata/wav/48000/24/block-story-stereo.wav"));
-            log.info("Start playing");
-            engine.createTrackPlayer(track).play();
-            Thread.sleep(track.getDuration());
+            AudioDeviceManager manager = AudioDeviceManager.getInstance();
+            AudioDeviceInfo defaultOut = manager.getOutputDeviceById("48");
+
+            try (TrackPlayer player = new NativeTrackPlayer(track, defaultOut)) {
+                player.play();
+
+                manager.addAudioDeviceListener(new AudioDeviceListener() {
+                    @Override
+                    public void onDeviceConnected(AudioDeviceInfo info) {
+                        if (info.type() != AudioDeviceInfo.AudioDeviceType.INPUT) {
+                            player.setAudioDevice(info);
+                        }
+                    }
+
+                    @Override
+                    public void onDeviceDisconnected(AudioDeviceInfo info) {
+                        if (info != defaultOut) {
+                            player.setAudioDevice(defaultOut);
+                        }
+                    }
+                });
+
+                Thread.sleep(track.getDuration());
+            }
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
         }

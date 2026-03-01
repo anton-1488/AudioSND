@@ -56,12 +56,8 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
             throw new AudioDeviceException(String.format("Device %s is in %s state", info.id(), status));
         }
 
-        try {
-            status = RUNNING;
-            return _write(byteBuffer, nativeHandle);
-        } finally {
-            status = OPENED;
-        }
+        status = RUNNING;
+        return _write(byteBuffer, nativeHandle);
     }
 
     /**
@@ -85,8 +81,8 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
             setStatus(OPENING);
             trackFormat = format;
             nativeHandle = _open(format, info);
-            setStatus(OPENED);
             isInited.set(true);
+            setStatus(OPENED);
             log.debug("Audio output device {} opened", info.id());
         } catch (Throwable e) {
             log.error("Initiliazing error: ", e);
@@ -168,7 +164,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
 
     private void checkForInited() {
         if (!isInited.get()) {
-            throw new AudioDeviceException("Audio device not opened!");
+            throw new AudioDeviceException(String.format("Audio device %s is not opened!", info.id()));
         }
     }
 
