@@ -28,14 +28,14 @@ public class AudioDeviceManager {
      * Singleton constructor
      */
     private AudioDeviceManager() {
-        log.debug("Creating singleton instance for AudioDeviceManager");
+        log.debug("Creating singleton instance for NativeAudioDeviceManager.h");
         _initManager();
     }
 
     /**
-     * Метод для получения инстанса AudioDeviceManager.
+     * Метод для получения инстанса NativeAudioDeviceManager.h.
      *
-     * @return AudioDeviceManager singleton instance
+     * @return NativeAudioDeviceManager.h singleton instance
      */
     public static AudioDeviceManager getInstance() {
         if (INSTANCE == null) {

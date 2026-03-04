@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 
-public class AudioEffectParser implements ASHParser /*, VSTParser(native binding) */ {
+public class AudioEffectParser implements ASHParser {
 
     @Override
     public AudioEffect parseAudioShader(File shader) throws EffectException, IOException {

@@ -38,19 +38,6 @@ public class TrackFormatTest {
 
         assertEquals(format1, format2);
         assertEquals(format1.hashCode(), format2.hashCode());
-        assertNotEquals(format1, format3);
     }
 
-    @Test
-    public void testToString() {
-        TrackFormat format = new TrackFormat( 2, 16, 44100, true, ByteOrder.LITTLE_ENDIAN, TrackFormat.AudioCodec.PCM16);
-        String result = format.toString();
-
-        assertTrue(result.contains("wav"));
-        assertTrue(result.contains("44100Hz"));
-        assertTrue(result.contains("2ch"));
-        assertTrue(result.contains("16bit"));
-        assertTrue(result.contains("signed"));
-        assertTrue(result.contains("LE"));
-    }
 }

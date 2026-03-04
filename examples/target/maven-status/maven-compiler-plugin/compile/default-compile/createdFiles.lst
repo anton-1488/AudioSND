@@ -1,5 +1,8 @@
 org/plovdev/audioengine/examples/GenerationExample.class
-org/plovdev/audioengine/examples/MixerExample.class
+org/plovdev/audioengine/examples/AudioDeviceListenerExample.class
 org/plovdev/audioengine/examples/PlayerExample.class
 org/plovdev/audioengine/examples/AudioDeviceExample.class
 org/plovdev/audioengine/examples/MicrophoneExample.class
+org/plovdev/audioengine/examples/AudioDeviceListenerExample$1.class
+org/plovdev/audioengine/examples/MixerExample.class
+org/plovdev/audioengine/examples/AudioEngineProfilerExample.class

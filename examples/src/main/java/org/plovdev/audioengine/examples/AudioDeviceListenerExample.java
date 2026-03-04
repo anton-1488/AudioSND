@@ -6,7 +6,7 @@ import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.AudioDeviceListener;
 import org.plovdev.audioengine.devices.AudioDeviceManager;
 import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.NativeTrackPlayer;
+import org.plovdev.audioengine.player.NativeTrackPlayer;
 import org.plovdev.audioengine.tracks.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

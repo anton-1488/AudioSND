@@ -1,159 +1,141 @@
 package org.plovdev.audioengine.generator;
 
+import org.plovdev.audioengine.generator.config.GeneratorConfig;
+import org.plovdev.audioengine.generator.strategies.envelope.EnvelopeStrategy;
+import org.plovdev.audioengine.generator.strategies.frequency.FrequencyStrategy;
+import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.tracks.meta.TrackMetadata;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
 
-import static org.plovdev.audioengine.generator.TrackGeneratorHelper.generate;
-
+/**
+ * Audio generator that uses strategies to produce sound.
+ * <p>
+ * Combines frequency, wave, and envelope strategies to generate audio samples.
+ * </p>
+ *
+ * @version 1.0
+ * @author Anton
+ */
 public class TrackGenerator {
-    /**
-     * Создание тестовых треков
-     */
-    public static Track generateSine(TrackFormat format, Duration duration, Note note) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(note.frequency())
-                .amplitude(note.amplitude())
-                .waveType(WaveType.SINE)
-                .build();
+    private GeneratorConfig config;
+    private TrackFormat trackFormat;
 
-        return generate(duration, format, config);
+    public TrackGenerator(GeneratorConfig config, TrackFormat format) {
+        this.config = config;
+        trackFormat = format;
+        validateStrategies();
     }
 
+    private void validateStrategies() {
+        if (config.getFrequencyStrategy() == null) {
+            throw new IllegalStateException("FrequencyStrategy not set");
+        }
+        if (config.getWaveStrategy() == null) {
+            throw new IllegalStateException("WaveStrategy not set");
+        }
+        if (config.getEnvelopeStrategy() == null) {
+            throw new IllegalStateException("EnvelopeStrategy not set");
+        }
+    }
 
-    public static Track generateSine(TrackFormat format, Duration duration, Note... notes) {
-        double[] freqs = new double[notes.length];
-        double[] ampls = new double[notes.length];
+    /**
+     * Generates audio track of specified duration.
+     *
+     * @param duration track duration
+     * @return generated Track
+     */
+    public synchronized Track generate(Duration duration) {
+        int sampleRate = trackFormat.sampleRate();
+        int bitsPerSample = trackFormat.bitDepth();
+        int bytesPerSample = trackFormat.bytesPerSample();
+        int channels = trackFormat.channels();
+        ByteOrder byteOrder = trackFormat.byteOrder();
+        long totalSamples = duration.toMillis() * sampleRate / 1000;
+        int bufferSize = (int) (totalSamples * channels * bytesPerSample);
 
-        for (int i = 0; i < notes.length; i++) {
-            Note note = notes[i];
-            freqs[i] = note.frequency();
-            ampls[i] = note.amplitude();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+        buffer.order(byteOrder);
+
+        FrequencyStrategy freqStrategy = config.getFrequencyStrategy();
+        WaveStrategy waveStrategy = config.getWaveStrategy();
+        EnvelopeStrategy envStrategy = config.getEnvelopeStrategy();
+
+        for (long samplePos = 0; samplePos < totalSamples; samplePos++) {
+            for (int channel = 0; channel < channels; channel++) {
+                float frequency = freqStrategy.getFrequency(channel, samplePos, totalSamples);
+                float sample = waveStrategy.generate(samplePos, frequency, config.getPhase(), config.getDutyCycle());
+                float amplitude = envStrategy.getAmplitude(samplePos, totalSamples, 1.0f);
+                sample *= amplitude;
+                if (config.getNoiseLevel() > 0 && config.getNoiseStrategy() != null) {
+                    float noise = config.getNoiseStrategy().nextSample(channel);
+                    sample = sample * (1 - config.getNoiseLevel()) + noise * config.getNoiseLevel();
+                }
+                sample = clamp(sample, -1.0f, 1.0f);
+                writeSample(buffer, sample);
+            }
         }
 
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(freqs)
-                .amplitude(ampls)
-                .waveType(WaveType.SINE)
-                .build();
-
-        return generate(duration, format, config);
+        buffer.flip();
+        return new Track(buffer, duration, trackFormat, new TrackMetadata());
     }
 
-    public static Track generateNoise(TrackFormat format, Duration duration) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .amplitude(0.1)
-                .waveType(WaveType.NOISE)
-                .build();
+    private void writeSample(ByteBuffer buffer, float sample) {
+        TrackFormat.AudioCodec codec = trackFormat.audioCodec();
 
-        return generate(duration, format, config);
+        switch (codec) {
+            case PCM8:
+                buffer.put((byte) (sample * 128));
+                break;
+            case PCM16:
+                buffer.putShort((short) (sample * 32767));
+                break;
+            case PCM24:
+                int intSample24 = (int) (sample * 8388607);
+                if (trackFormat.byteOrder() == ByteOrder.LITTLE_ENDIAN) {
+                    buffer.put((byte) (intSample24 & 0xFF));
+                    buffer.put((byte) ((intSample24 >> 8) & 0xFF));
+                    buffer.put((byte) ((intSample24 >> 16) & 0xFF));
+                } else {
+                    buffer.put((byte) ((intSample24 >> 16) & 0xFF));
+                    buffer.put((byte) ((intSample24 >> 8) & 0xFF));
+                    buffer.put((byte) (intSample24 & 0xFF));
+                }
+                break;
+            case PCM32:
+                buffer.putLong((long) (sample * 2147483647));
+                break;
+            case FLOAT32:
+                buffer.putFloat(sample);
+                break;
+            case FLOAT64:
+                buffer.putDouble(sample * 2147483647);
+                break;
+            default:
+                throw new UnsupportedOperationException("Bits per sample: " + codec);
+        }
+    }
+    private float clamp(float value, float min, float max) {
+        return value < min ? min : Math.min(value, max);
     }
 
-    public static Track generateSilence(TrackFormat format, Duration duration) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .amplitude(0.0)
-                .waveType(WaveType.SILENCE)
-                .build();
-
-        return generate(duration, format, config);
+    public GeneratorConfig getConfig() {
+        return config;
     }
 
-    /**
-     * Создание чирпа (частотной развертки)
-     */
-    public static Track generateChirp(TrackFormat format, Duration duration, Note note1, Note note2) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(note1.frequency())
-                .amplitude((note1.amplitude()) + note2.amplitude() / 2.0)
-                .waveType(WaveType.CHIRP)
-                .frequencySweep(note1.frequency(), note2.frequency())
-                .build();
-
-        return generate(duration, format, config);
+    public synchronized void setConfig(GeneratorConfig config) {
+        this.config = config;
     }
 
-    /**
-     * Генерация прямоугольной волны (Square wave)
-     *
-     * @param dutyCycle скважность 0.0-1.0 (0.5 = меандр)
-     */
-    public static Track generateSquare(TrackFormat format, Duration duration,
-                                       Note note, double dutyCycle) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(note.frequency())
-                .amplitude(note.amplitude())
-                .waveType(WaveType.SQUARE)
-                .dutyCycle(dutyCycle) // Важно! Без этого будет дефолтный 0.5
-                .build();
-
-        return generate(duration, format, config);
+    public TrackFormat getTrackFormat() {
+        return trackFormat;
     }
 
-    /**
-     * Генерация пилообразной волны (Sawtooth)
-     * Идеально для басов в электронной музыке
-     */
-    public static Track generateSawtooth(TrackFormat format, Duration duration, Note note) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(note.frequency())
-                .amplitude(note.amplitude())
-                .waveType(WaveType.SAWTOOTH)
-                .build();
-
-        return generate(duration, format, config);
-    }
-
-
-    /**
-     * Генерация треугольной волны (Triangle)
-     * Мягкий звук, похож на флейту
-     */
-    public static Track generateTriangle(TrackFormat format, Duration duration, Note note) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .frequency(note.frequency())
-                .amplitude(note.amplitude())
-                .waveType(WaveType.TRIANGLE)
-                .build();
-
-        return generate(duration, format, config);
-    }
-
-
-    /**
-     * Генерация импульса (Impulse)
-     * Дираковский импульс - полезен для тестирования
-     */
-    public static Track generateImpulse(TrackFormat format, Duration duration) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .amplitude(1.0) // Полная амплитуда
-                .waveType(WaveType.IMPULSE)
-                .build();
-
-        return generate(duration, format, config);
-    }
-
-    /**
-     * Экспоненциальный свип (Sweep)
-     * Логарифмическая развертка частоты
-     */
-    public static Track generateSweep(TrackFormat format, Duration duration, Note startNote, Note endNote) {
-        GeneratorConfig config = new GeneratorConfig.Builder()
-                .channels(format.channels())
-                .amplitude((startNote.amplitude() + endNote.amplitude()) / 2.0)
-                .waveType(WaveType.SWEEP)
-                .frequencySweep(startNote.frequency(), endNote.frequency())
-                .build();
-
-        return generate(duration, format, config);
+    public synchronized void setTrackFormat(TrackFormat trackFormat) {
+        this.trackFormat = trackFormat;
     }
 }
