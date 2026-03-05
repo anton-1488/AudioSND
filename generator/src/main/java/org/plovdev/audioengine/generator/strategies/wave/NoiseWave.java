@@ -2,17 +2,7 @@ package org.plovdev.audioengine.generator.strategies.wave;
 
 import org.plovdev.audioengine.math.Functions;
 
-/**
- * Sine wave generation strategy.
- * <p>
- * Generates pure sine wave: sin(2π * frequency * time + phase)
- * where time = samplePosition / sampleRate
- * </p>
- *
- * @version 1.0
- * @author Anton
- */
-public class SineWave implements WaveStrategy {
+public class NoiseWave implements WaveStrategy {
     /**
      * Generates a single sample value.
      *
@@ -20,11 +10,11 @@ public class SineWave implements WaveStrategy {
      * @param frequency      current frequency in Hz
      * @param phase          phase offset in radians
      * @param dutyCycle      duty cycle for square wave (0.0-1.0)
+     * @param sampleRate     sample rate
      * @return sample value in range -1.0 to 1.0
      */
     @Override
     public float generate(long samplePosition, float frequency, float phase, float dutyCycle, float sampleRate) {
-        float time = samplePosition / sampleRate;
-        return Functions.sine(time, frequency, phase);
+        return Functions.noise();
     }
 }

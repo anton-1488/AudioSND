@@ -21,7 +21,6 @@ namespace audiosnd {
             , m_sampleRate(sampleRate)
             , m_signed(signed_)
             , m_audioCodec(codec) {
-            // Можно добавить валидацию
         }
 
         // Getters

@@ -24,7 +24,8 @@ public interface WaveStrategy {
      * @param frequency current frequency in Hz
      * @param phase phase offset in radians
      * @param dutyCycle duty cycle for square wave (0.0-1.0)
+     * @param sampleRate sample rate
      * @return sample value in range -1.0 to 1.0
      */
-    float generate(long samplePosition, float frequency, float phase, float dutyCycle);
+    float generate(long samplePosition, float frequency, float phase, float dutyCycle, float sampleRate);
 }

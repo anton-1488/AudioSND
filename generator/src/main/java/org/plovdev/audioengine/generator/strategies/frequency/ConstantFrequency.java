@@ -9,14 +9,14 @@ package org.plovdev.audioengine.generator.strategies.frequency;
  * @version 1.0
  * @author Anton
  */
-public class LinearFrequncy implements FrequencyStrategy {
+public class ConstantFrequency implements FrequencyStrategy {
     private final float[] frequencies;
 
-    public LinearFrequncy(float[] freqs) {
+    public ConstantFrequency(float[] freqs) {
         frequencies = freqs;
     }
 
-    public LinearFrequncy(int channels, float freq) {
+    public ConstantFrequency(int channels, float freq) {
         this.frequencies = new float[channels];
         for (int i = 0; i < channels; i++) {
             frequencies[i] = freq;

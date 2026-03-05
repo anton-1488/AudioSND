@@ -28,7 +28,7 @@ public class AudioDeviceManager {
      * Singleton constructor
      */
     private AudioDeviceManager() {
-        log.debug("Creating singleton instance for NativeAudioDeviceManager.h");
+        log.debug("Creating singleton instance for NativeAudioDeviceManager");
         _initManager();
     }
 

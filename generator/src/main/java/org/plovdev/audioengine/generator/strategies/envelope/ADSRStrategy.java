@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.generator.strategies.envelope;
 
+import org.plovdev.audioengine.math.Functions;
+
 /**
  * ADSR (Attack-Decay-Sustain-Release) envelope strategy.
  * <p>
@@ -48,20 +50,6 @@ public class ADSRStrategy implements EnvelopeStrategy {
     @Override
     public float getAmplitude(long samplePosition, long totalSamples, float baseAmplitude) {
         float t = (float) samplePosition / totalSamples;
-        float amp;
-
-        if (t < attack) {
-            amp = t / attack;
-        } else if (t < attack + decay) {
-            float decayTime = (t - attack) / decay;
-            amp = 1 - (1 - sustain) * decayTime;
-        } else if (t < 1 - release) {
-            amp = sustain;
-        } else {
-            float releaseTime = (t - (1 - release)) / release;
-            amp = sustain * (1 - releaseTime);
-        }
-
-        return baseAmplitude * amp;
+        return Functions.adsrEnvelope(t, attack, decay, sustain, release, baseAmplitude);
     }
 }

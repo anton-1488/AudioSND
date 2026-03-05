@@ -1,10 +1,13 @@
 package org.plovdev.audioengine.generator.config;
 
+import org.plovdev.audioengine.generator.note.Note;
+import org.plovdev.audioengine.generator.strategies.envelope.ConstantEnvelope;
 import org.plovdev.audioengine.generator.strategies.envelope.EnvelopeStrategy;
+import org.plovdev.audioengine.generator.strategies.frequency.ConstantFrequency;
 import org.plovdev.audioengine.generator.strategies.frequency.FrequencyStrategy;
 import org.plovdev.audioengine.generator.strategies.modulation.ModulationStrategy;
 import org.plovdev.audioengine.generator.strategies.noise.NoiseStrategy;
-import org.plovdev.audioengine.generator.strategies.stereo.StereoStrategy;
+import org.plovdev.audioengine.generator.strategies.wave.SineWave;
 import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
 
 /**
@@ -42,48 +45,44 @@ import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
  * @see WaveStrategy
  * @see ModulationStrategy
  * @see NoiseStrategy
- * @see StereoStrategy
  */
-public class GeneratorConfig {
-    private FrequencyStrategy frequencyStrategy;
-    private EnvelopeStrategy envelopeStrategy;
-    private WaveStrategy waveStrategy;
-    private ModulationStrategy modulationStrategy;
-    private NoiseStrategy noiseStrategy;
-    private StereoStrategy stereoStrategy;
+public class GenerationConfig {
+    private FrequencyStrategy frequencyStrategy = new ConstantFrequency(2, Note.A2.frequency());
+    private EnvelopeStrategy envelopeStrategy = new ConstantEnvelope(Note.A2.amplitude());
+    private WaveStrategy waveStrategy = new SineWave();
+    private ModulationStrategy modulationStrategy = ((samplePosition, totalSamples, channel, input) -> 0);
+    private NoiseStrategy noiseStrategy = (channel -> 0);
 
     private float phase;
     private float dutyCycle;
     private float noiseLevel;
+    private float pan;
 
     /**
-     * Constructs a new GeneratorConfig with all specified strategies and parameters.
+     * Constructs a new GenerationConfig with all specified strategies and parameters.
      *
      * @param frequencyStrategy   strategy for frequency generation
      * @param envelopeStrategy    strategy for amplitude envelope
      * @param waveStrategy        strategy for waveform shape
      * @param modulationStrategy  strategy for modulation effects
      * @param noiseStrategy       strategy for noise generation
-     * @param stereoStereategy    strategy for stereo panning (may be null)
      * @param phase               initial phase in radians
      * @param dutyCycle           duty cycle for square wave (0.0-1.0)
      * @param noiseLevel          mix level for noise (0.0-1.0)
      */
-    public GeneratorConfig(FrequencyStrategy frequencyStrategy,
-                           EnvelopeStrategy envelopeStrategy,
-                           WaveStrategy waveStrategy,
-                           ModulationStrategy modulationStrategy,
-                           NoiseStrategy noiseStrategy,
-                           StereoStrategy stereoStereategy,
-                           float phase,
-                           float dutyCycle,
-                           float noiseLevel) {
+    public GenerationConfig(FrequencyStrategy frequencyStrategy,
+                            EnvelopeStrategy envelopeStrategy,
+                            WaveStrategy waveStrategy,
+                            ModulationStrategy modulationStrategy,
+                            NoiseStrategy noiseStrategy,
+                            float phase,
+                            float dutyCycle,
+                            float noiseLevel, float pan) {
         this.frequencyStrategy = frequencyStrategy;
         this.envelopeStrategy = envelopeStrategy;
         this.waveStrategy = waveStrategy;
         this.modulationStrategy = modulationStrategy;
         this.noiseStrategy = noiseStrategy;
-        this.stereoStrategy = stereoStereategy;
 
         this.phase = phase;
         this.dutyCycle = dutyCycle;
@@ -94,11 +93,11 @@ public class GeneratorConfig {
      * Default constructor for frameworks that require no-arg construction.
      * Strategies should be set via setters before use.
      */
-    public GeneratorConfig() {
+    public GenerationConfig() {
     }
 
     /**
-     * Creates a new builder instance for constructing GeneratorConfig objects.
+     * Creates a new builder instance for constructing GenerationConfig objects.
      *
      * @return a new Builder instance
      */
@@ -107,7 +106,7 @@ public class GeneratorConfig {
     }
 
     /**
-     * Builder interface for constructing {@link GeneratorConfig} instances.
+     * Builder interface for constructing {@link GenerationConfig} instances.
      * <p>
      * Provides fluent API for setting all configuration options.
      * </p>
@@ -154,14 +153,6 @@ public class GeneratorConfig {
         Builder noiseStrategy(NoiseStrategy strategy);
 
         /**
-         * Sets the stereo strategy.
-         *
-         * @param stereoStrategy the stereo strategy
-         * @return this builder
-         */
-        Builder stereoStereategy(StereoStrategy stereoStrategy);
-
-        /**
          * Sets the initial phase.
          *
          * @param phase phase in radians
@@ -185,12 +176,14 @@ public class GeneratorConfig {
          */
         Builder noiseLevel(float noiseLevel);
 
+        Builder pan(float pan);
+
         /**
-         * Builds the GeneratorConfig instance with all set parameters.
+         * Builds the GenerationConfig instance with all set parameters.
          *
-         * @return the configured GeneratorConfig
+         * @return the configured GenerationConfig
          */
-        GeneratorConfig build();
+        GenerationConfig build();
     }
 
     /**
@@ -284,24 +277,6 @@ public class GeneratorConfig {
     }
 
     /**
-     * Returns the stereo strategy.
-     *
-     * @return the stereo strategy
-     */
-    public StereoStrategy getStereoStereategy() {
-        return stereoStrategy;
-    }
-
-    /**
-     * Sets the stereo strategy.
-     *
-     * @param stereoStereategy the stereo strategy to set
-     */
-    public void setStereoStereategy(StereoStrategy stereoStereategy) {
-        this.stereoStrategy = stereoStereategy;
-    }
-
-    /**
      * Returns the initial phase.
      *
      * @return phase in radians
@@ -353,5 +328,13 @@ public class GeneratorConfig {
      */
     public void setNoiseLevel(float noiseLevel) {
         this.noiseLevel = noiseLevel;
+    }
+
+    public float getPan() {
+        return pan;
+    }
+
+    public void setPan(float pan) {
+        this.pan = pan;
     }
 }

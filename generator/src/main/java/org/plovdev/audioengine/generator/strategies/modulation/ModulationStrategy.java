@@ -1,5 +1,5 @@
 package org.plovdev.audioengine.generator.strategies.modulation;
 
 public interface ModulationStrategy {
-    float modulate(int channel, float time, float totalTime, float input);
+    float modulate(long samplePosition, long totalSamples, int channel, float input);
 }

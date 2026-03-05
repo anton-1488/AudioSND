@@ -51,7 +51,7 @@ public record Note(float frequency, float amplitude, int octaveShift, int semito
     public static Note G2 = ofFreq(392.00f);
 
     /**
-     * A4 note (440.00 Hz) - standard tuning reference
+     * A4 note (440.00 Hz)
      */
     public static Note A2 = ofFreq(440.00f);
 

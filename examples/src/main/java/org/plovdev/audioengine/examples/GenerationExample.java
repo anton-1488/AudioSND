@@ -2,6 +2,8 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
+import org.plovdev.audioengine.effects.EffectsChain;
+import org.plovdev.audioengine.effects.GainEffect;
 import org.plovdev.audioengine.generator.TrackGenerationFactory;
 import org.plovdev.audioengine.generator.note.Note;
 import org.plovdev.audioengine.tracks.Track;
@@ -16,7 +18,8 @@ public class GenerationExample {
     private static final AudioEngine engine = new NativeAudioEngine();
 
     void main() {
-        Track track = TrackGenerationFactory.generateSineWave(Duration.ofSeconds(5), WavTrackFormatFactory.wav16bitStereo48kHz(), Note.A2);
+        Track track = TrackGenerationFactory.generateSineWave(Duration.ofSeconds(5), WavTrackFormatFactory.wav16bitStereo48kHz(), Note.E2);
+        track = new EffectsChain().addEffect(new GainEffect(5)).apply(track);
         play(track);
     }
     private static void play(Track track) {

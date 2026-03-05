@@ -17,8 +17,6 @@ public class PlayerExample {
             Track track = engine.loadTrack(new File("testdata/Cotton Eye Joe.wav"));
             TrackPlayer player = engine.createTrackPlayer(track);
             player.play();
-            Thread.sleep(1000);
-            player.pause();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);

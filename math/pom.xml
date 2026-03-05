@@ -9,7 +9,7 @@
         <version>1.0.0-BETA</version>
     </parent>
 
-    <artifactId>generator</artifactId>
+    <artifactId>math</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -22,12 +22,6 @@
             <groupId>org.plovdev.audiosnd</groupId>
             <artifactId>core</artifactId>
             <version>1.0.0-BETA</version>
-        </dependency>
-        <dependency>
-            <groupId>org.plovdev.audiosnd</groupId>
-            <artifactId>math</artifactId>
-            <version>1.0.0-BETA</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

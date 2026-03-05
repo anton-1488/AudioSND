@@ -1,9 +1,12 @@
 package org.plovdev.audioengine.generator;
 
-import org.plovdev.audioengine.generator.config.GeneratorConfig;
+import org.plovdev.audioengine.generator.config.GenerationConfig;
 import org.plovdev.audioengine.generator.strategies.envelope.EnvelopeStrategy;
 import org.plovdev.audioengine.generator.strategies.frequency.FrequencyStrategy;
+import org.plovdev.audioengine.generator.strategies.modulation.ModulationStrategy;
+import org.plovdev.audioengine.generator.strategies.noise.NoiseStrategy;
 import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
+import org.plovdev.audioengine.math.AudioMath;
 import org.plovdev.audioengine.tracks.Track;
 import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.tracks.meta.TrackMetadata;
@@ -22,25 +25,12 @@ import java.time.Duration;
  * @author Anton
  */
 public class TrackGenerator {
-    private GeneratorConfig config;
+    private GenerationConfig config;
     private TrackFormat trackFormat;
 
-    public TrackGenerator(GeneratorConfig config, TrackFormat format) {
+    public TrackGenerator(GenerationConfig config, TrackFormat format) {
         this.config = config;
         trackFormat = format;
-        validateStrategies();
-    }
-
-    private void validateStrategies() {
-        if (config.getFrequencyStrategy() == null) {
-            throw new IllegalStateException("FrequencyStrategy not set");
-        }
-        if (config.getWaveStrategy() == null) {
-            throw new IllegalStateException("WaveStrategy not set");
-        }
-        if (config.getEnvelopeStrategy() == null) {
-            throw new IllegalStateException("EnvelopeStrategy not set");
-        }
     }
 
     /**
@@ -64,23 +54,52 @@ public class TrackGenerator {
         FrequencyStrategy freqStrategy = config.getFrequencyStrategy();
         WaveStrategy waveStrategy = config.getWaveStrategy();
         EnvelopeStrategy envStrategy = config.getEnvelopeStrategy();
+        ModulationStrategy modulationStrategy = config.getModulationStrategy();
+        NoiseStrategy noiseStrategy = config.getNoiseStrategy();
 
         for (long samplePos = 0; samplePos < totalSamples; samplePos++) {
+            float[] channelSamples = new float[channels];
+
             for (int channel = 0; channel < channels; channel++) {
                 float frequency = freqStrategy.getFrequency(channel, samplePos, totalSamples);
-                float sample = waveStrategy.generate(samplePos, frequency, config.getPhase(), config.getDutyCycle());
-                float amplitude = envStrategy.getAmplitude(samplePos, totalSamples, 1.0f);
+
+                if (modulationStrategy != null) {
+                    frequency = modulationStrategy.modulate(samplePos, totalSamples, channel, frequency);
+                }
+                float sample = waveStrategy.generate(samplePos, frequency, config.getPhase(), config.getDutyCycle(), sampleRate);
+                float amplitude = envStrategy.getAmplitude(samplePos, totalSamples, 0.5f);
                 sample *= amplitude;
-                if (config.getNoiseLevel() > 0 && config.getNoiseStrategy() != null) {
-                    float noise = config.getNoiseStrategy().nextSample(channel);
+
+                if (config.getNoiseLevel() > 0 && noiseStrategy != null) {
+                    float noise = noiseStrategy.nextSample(channel);
                     sample = sample * (1 - config.getNoiseLevel()) + noise * config.getNoiseLevel();
                 }
-                sample = clamp(sample, -1.0f, 1.0f);
+
+                channelSamples[channel] = sample;
+            }
+
+            if (channels == 2) {
+                float pan = config.getPan();
+                float leftGain, rightGain;
+
+                if (pan <= 0) {
+                    leftGain = 1.0f;
+                    rightGain = 1.0f + pan;
+                } else {
+                    leftGain = 1.0f - pan;
+                    rightGain = 1.0f;
+                }
+
+                channelSamples[0] *= leftGain;
+                channelSamples[1] *= rightGain;
+            }
+
+            for (int channel = 0; channel < channels; channel++) {
+                float sample = AudioMath.clamp(channelSamples[channel], -1.0f, 1.0f);
                 writeSample(buffer, sample);
             }
         }
 
-        buffer.flip();
         return new Track(buffer, duration, trackFormat, new TrackMetadata());
     }
 
@@ -92,7 +111,7 @@ public class TrackGenerator {
                 buffer.put((byte) (sample * 128));
                 break;
             case PCM16:
-                buffer.putShort((short) (sample * 32767));
+                buffer.putShort((short) (sample * 32767.0));
                 break;
             case PCM24:
                 int intSample24 = (int) (sample * 8388607);
@@ -119,15 +138,12 @@ public class TrackGenerator {
                 throw new UnsupportedOperationException("Bits per sample: " + codec);
         }
     }
-    private float clamp(float value, float min, float max) {
-        return value < min ? min : Math.min(value, max);
-    }
 
-    public GeneratorConfig getConfig() {
+    public GenerationConfig getConfig() {
         return config;
     }
 
-    public synchronized void setConfig(GeneratorConfig config) {
+    public synchronized void setConfig(GenerationConfig config) {
         this.config = config;
     }
 
