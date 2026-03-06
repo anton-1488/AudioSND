@@ -21,7 +21,6 @@ public class DefaultEngineProfiler implements AudioEngineProfiler {
 
         OperatingSystemMXBean mxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
-        long timestamp = System.currentTimeMillis();
         double cpuUsage = mxBean.getProcessCpuLoad();
 
         Runtime runtime = Runtime.getRuntime();
@@ -34,7 +33,7 @@ public class DefaultEngineProfiler implements AudioEngineProfiler {
         infos.addAll(engine.getAvailableInputAudioDevices());
         infos.addAll(engine.getAvailableOutputAudioDevices());
 
-        return new EngineSnapshot(timestamp, cpuUsage, usedMemory, nativeMemoryUsed, threads, LoadedTrakCounter.getTracksCount(), infos);
+        return new EngineSnapshot(System.currentTimeMillis(), cpuUsage, usedMemory, nativeMemoryUsed, threads, LoadedTrakCounter.getTracksCount(), infos);
     }
 
     @Override

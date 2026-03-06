@@ -67,7 +67,7 @@ public class TrackGenerator {
                     frequency = modulationStrategy.modulate(samplePos, totalSamples, channel, frequency);
                 }
                 float sample = waveStrategy.generate(samplePos, frequency, config.getPhase(), config.getDutyCycle(), sampleRate);
-                float amplitude = envStrategy.getAmplitude(samplePos, totalSamples, 0.5f);
+                float amplitude = envStrategy.getAmplitude(samplePos, totalSamples, 1);
                 sample *= amplitude;
 
                 if (config.getNoiseLevel() > 0 && noiseStrategy != null) {

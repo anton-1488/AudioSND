@@ -1,8 +1,13 @@
 package org.plovdev.audioengine.generator.strategies.wave;
 
-import org.plovdev.audioengine.math.Functions;
+import org.plovdev.audioengine.generator.strategies.noise.NoiseStrategy;
 
 public class NoiseWave implements WaveStrategy {
+    private final NoiseStrategy strategy;
+    public NoiseWave(NoiseStrategy strategy) {
+        this.strategy = strategy;
+    }
+
     /**
      * Generates a single sample value.
      *
@@ -15,6 +20,6 @@ public class NoiseWave implements WaveStrategy {
      */
     @Override
     public float generate(long samplePosition, float frequency, float phase, float dutyCycle, float sampleRate) {
-        return Functions.noise();
+        return strategy.nextSample(1);
     }
 }

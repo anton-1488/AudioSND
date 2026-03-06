@@ -1,12 +1,16 @@
 package org.plovdev.audioengine.examples;
 
-import org.plovdev.audioengine.AudioEngine;
-import org.plovdev.audioengine.NativeAudioEngine;
-import org.plovdev.audioengine.effects.EffectsChain;
-import org.plovdev.audioengine.effects.GainEffect;
-import org.plovdev.audioengine.generator.TrackGenerationFactory;
+import org.plovdev.audioengine.*;
+import org.plovdev.audioengine.generator.TrackGenerator;
+import org.plovdev.audioengine.generator.config.GenerationConfig;
 import org.plovdev.audioengine.generator.note.Note;
+import org.plovdev.audioengine.generator.strategies.envelope.*;
+import org.plovdev.audioengine.generator.strategies.frequency.*;
+import org.plovdev.audioengine.generator.strategies.noise.*;
+import org.plovdev.audioengine.generator.strategies.wave.*;
+import org.plovdev.audioengine.player.TrackPlayer;
 import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.tracks.format.TrackFormat;
 import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +20,27 @@ import java.time.Duration;
 public class GenerationExample {
     private static final Logger log = LoggerFactory.getLogger(GenerationExample.class);
     private static final AudioEngine engine = new NativeAudioEngine();
+    private static final TrackFormat format = WavTrackFormatFactory.wav24bitStereo48kHz();
+    private static final Duration duration = Duration.ofSeconds(6);
 
     void main() {
-        Track track = TrackGenerationFactory.generateSineWave(Duration.ofSeconds(5), WavTrackFormatFactory.wav16bitStereo48kHz(), Note.E2);
-        track = new EffectsChain().addEffect(new GainEffect(5)).apply(track);
+        Note note = Note.C2;
+        GenerationConfig config = GenerationConfig.builder()
+                .frequencyStrategy(new ConstantFrequency(2, note.frequency()))
+                .envelopeStrategy(new ConstantEnvelope(note.amplitude()))
+                .waveStrategy(new TriangleWave())
+                .noiseStrategy(new PinkNoise())
+                .noiseLevel(0.1f)
+                .build();
+        TrackGenerator generator = new TrackGenerator(config, format);
+
+        Track track = generator.generate(duration);
         play(track);
     }
+
     private static void play(Track track) {
-        try {
-            engine.createTrackPlayer(track).play();
+        try (TrackPlayer player = engine.createTrackPlayer(track)) {
+            player.play();
             Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Playing error: ", e);

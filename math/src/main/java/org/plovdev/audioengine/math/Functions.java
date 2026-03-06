@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.math;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class Functions {
     public static final float PI = 3.1415927f;
     public static final float TWO_PI = 6.2831855f;
@@ -11,7 +13,7 @@ public class Functions {
     }
     public static float square(float time, float frequency, float phase, float dutyCycle) {
         float t = (time * frequency + phase / TWO_PI) % 1;
-        return t < dutyCycle? 1 : -1;
+        return t < dutyCycle ? 1 : -1;
     }
     public static float sawtooth(float time, float frequency, float phase) {
         float t = (time * frequency + phase / TWO_PI) % 1.0f;
@@ -67,6 +69,6 @@ public class Functions {
     }
 
     public static float whiteNoise() {
-        return (float) (Math.random() * 2.0 - 1.0);
+        return (float) (ThreadLocalRandom.current().nextDouble() * 2.0 - 1.0);
     }
 }

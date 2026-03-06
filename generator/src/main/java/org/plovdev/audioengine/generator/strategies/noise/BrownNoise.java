@@ -1,22 +1,40 @@
 package org.plovdev.audioengine.generator.strategies.noise;
 
-import org.plovdev.audioengine.math.Functions;
+import java.util.Random;
 
+/**
+ * Качественная реализация коричневого шума (1/f^2).
+ * Использует leaky integrator для предотвращения DC-смещения и клиппинга.
+ */
 public class BrownNoise implements NoiseStrategy {
-    private float lastSample;
+    private final Random random = new Random();
+    private final float[] lastSamples;
 
+    // Коэффициент утечки, предотвращающий "уход" сигнала в бесконечность
+    private static final float LEAK_FACTOR = 0.99f;
+    // Масштабирующий коэффициент для поддержания громкости
+    private static final float GAIN = 0.05f;
+
+    public BrownNoise(int channels) {
+        this.lastSamples = new float[channels];
+    }
     public BrownNoise() {
-        this.lastSample = 0.0f;
+        this.lastSamples = new float[2];
     }
 
     @Override
     public float nextSample(int channel) {
-        float sample = lastSample + Functions.whiteNoise() * 0.02f;
+        // 1. Генерируем белый шум
+        float white = (random.nextFloat() * 2.0f - 1.0f);
 
-        if (sample > 1.0f) sample = 1.0f;
-        if (sample < -1.0f) sample = -1.0f;
+        // 2. Применяем формулу: y[n] = (leak * y[n-1]) + white
+        float brown = (LEAK_FACTOR * lastSamples[channel]) + (GAIN * white);
 
-        lastSample = sample;
-        return sample;
+        // 3. Ограничиваем (clamping), чтобы избежать искажений
+        if (brown > 1.0f) brown = 1.0f;
+        if (brown < -1.0f) brown = -1.0f;
+
+        lastSamples[channel] = brown;
+        return brown;
     }
 }
