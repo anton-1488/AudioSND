@@ -17,8 +17,6 @@
         <module>examples</module>
         <module>effects</module>
         <module>profiler</module>
-        <module>midi</module>
-        <module>tools</module>
         <module>math</module>
     </modules>
 

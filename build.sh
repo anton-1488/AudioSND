@@ -23,7 +23,7 @@ print_error() {
 check_dependencies() {
     local deps=("javac" "cmake" "make" "g++")
     for dep in "${deps[@]}"; do
-        if ! command -v $dep &> /dev/null; then
+        if ! command -v "$dep" &> /dev/null; then
             print_error "$dep не найден. Установите его."
             exit 1
         fi
@@ -65,6 +65,7 @@ compile_java_modules() {
         print_warn "Файл classpath (cp.txt) не найден. Используется пустой classpath."
         local classpath=""
     else
+        # shellcheck disable=SC2155
         local classpath=$(cat ./build/cp.txt)
     fi
     
@@ -132,6 +133,7 @@ compile_java_modules() {
 find_cpp_files() {
     print_info "Поиск C++ файлов для CMake..."
     find . -name "*.cpp" > ./build/natives.txt
+    # shellcheck disable=SC2155
     local count=$(wc -l < ./build/natives.txt)
     print_info "  Найдено $count C++ файлов"
 }
@@ -141,6 +143,7 @@ compile_native_cmake() {
     print_info "Компиляция нативной библиотеки с CMake..."
     
     # Определяем платформу
+    # shellcheck disable=SC2155
     local os_name=$(uname -s)
     local jni_include_path=""
     local jni_include_darwin=""
@@ -171,6 +174,7 @@ compile_native_cmake() {
 
         # Автопоиск JDK
         if command -v java &> /dev/null; then
+            # shellcheck disable=SC2155
             local java_home=$(java -XshowSettings:properties -version 2>&1 | grep java.home | awk -F'=' '{print $2}' | tr -d ' ')
             jni_include_path="$java_home/include"
 
@@ -192,7 +196,7 @@ compile_native_cmake() {
     fi
 
     # Переходим в директорию сборки
-    cd ./build
+    cd ./build || exit
 
     # Конфигурация CMake
     print_info "  Конфигурация CMake..."
@@ -210,6 +214,7 @@ compile_native_cmake() {
             2>&1 | tee ../build/cmake_configure.log
     fi
 
+    # shellcheck disable=SC2181
     if [ $? -eq 0 ]; then
         print_info "    ✓ CMake сконфигурирован"
     else
@@ -264,6 +269,7 @@ main() {
     compile_native_cmake
     
     # Если CMake не сработал, пробуем старый способ
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         print_warn "CMake сборка не удалась..."
     fi
