@@ -2,9 +2,10 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
-import org.plovdev.audioengine.devices.Microphone;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
+import org.plovdev.audioengine.api.NativeAudioRecorder;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.devices.AudioDeviceManager;
+import org.plovdev.audioengine.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +16,11 @@ public class MicrophoneExample {
 
     void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine();
-             Microphone microphone = Microphone.open(WavTrackFormatFactory.wav16bitStereo44kHz())) {
+             NativeAudioRecorder microphone = new NativeAudioRecorder(WavTrackFormatFactory.wav16bitStereo44kHz(), AudioDeviceManager.getInstance().getDefaultInputAudioDevice())) {
 
             microphone.start(); // начинаем запись
             Thread.sleep(10000); // условно, ждем сколько надо.
-            Track track = microphone.getTrack(); // получаем результат, и делаем что надо.
+            Track track = microphone.stop(); // получаем результат, и делаем что надо.
 
             engine.exportTrack(track, new FileOutputStream("recorded.wav"));
         } catch (Exception e) {

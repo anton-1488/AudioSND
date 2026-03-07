@@ -4,8 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.plovdev.audioengine.tracks.meta.MetaKey.*;
-import static org.plovdev.audioengine.tracks.meta.MetadataUtils.convertId3ToReadable;
+import static org.plovdev.audioengine.metadata.MetadataUtils.convertId3ToReadable;
 
 public class MetadataUtilsTest {
     @Test

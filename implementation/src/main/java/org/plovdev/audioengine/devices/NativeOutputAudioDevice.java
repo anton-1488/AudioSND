@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,23 +44,6 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
     }
 
     /**
-     * Write data to audio device
-     * @param byteBuffer data to write
-     * @return wrote bytes
-     */
-    @Override
-    public int write(@NotNull ByteBuffer byteBuffer) {
-        checkForInited();
-
-        if (status == ERROR || status == CLOSING) {
-            throw new AudioDeviceException(String.format("Device %s is in %s state", info.id(), status));
-        }
-
-        status = RUNNING;
-        return _write(byteBuffer, nativeHandle);
-    }
-
-    /**
      * Open audio device.
      *
      * @param format working format
@@ -89,6 +72,27 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
             setStatus(ERROR);
             trackFormat = null;
             throw new OpenAudioDeviceException("Failed to open device");
+        }
+    }
+
+    /**
+     * Write data to audio device
+     * @param byteBuffer data to write
+     * @return wrote bytes
+     */
+    @Override
+    public int write(@NotNull ByteBuffer byteBuffer) {
+        checkForInited();
+
+        if (status == ERROR || status == CLOSING) {
+            throw new AudioDeviceException(String.format("Device %s is in %s state", info.id(), status));
+        }
+
+        try {
+            status = RUNNING;
+            return _write(byteBuffer, nativeHandle);
+        } finally {
+            status = OPENED;
         }
     }
 

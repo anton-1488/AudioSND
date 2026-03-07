@@ -7,10 +7,10 @@ import org.plovdev.audioengine.loaders.PathLocator;
 import org.plovdev.audioengine.loaders.TrackDecoder;
 import org.plovdev.audioengine.loaders.wav.WavTrackDecoder;
 import org.plovdev.audioengine.loaders.wav.WavTrackLoaderManager;
-import org.plovdev.audioengine.player.NativeTrackPlayer;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.api.NativeTrackPlayer;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.api.TrackPlayer;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

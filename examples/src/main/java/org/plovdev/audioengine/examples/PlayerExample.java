@@ -2,8 +2,8 @@ package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.NativeAudioEngine;
-import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.api.TrackPlayer;
+import org.plovdev.audioengine.api.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

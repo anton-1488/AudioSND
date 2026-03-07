@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.loaders.raw;
 
 import org.plovdev.audioengine.loaders.*;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 
 public class RawTrackLoaderManager implements TrackLoaderManager {
     private final RawTrackLoader loader;

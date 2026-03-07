@@ -1,6 +1,7 @@
 package org.plovdev.audioengine.examples;
 
 import org.plovdev.audioengine.*;
+import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.generator.TrackGenerator;
 import org.plovdev.audioengine.generator.config.GenerationConfig;
 import org.plovdev.audioengine.generator.note.Note;
@@ -8,10 +9,10 @@ import org.plovdev.audioengine.generator.strategies.envelope.*;
 import org.plovdev.audioengine.generator.strategies.frequency.*;
 import org.plovdev.audioengine.generator.strategies.noise.*;
 import org.plovdev.audioengine.generator.strategies.wave.*;
-import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
+import org.plovdev.audioengine.api.TrackPlayer;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public class GenerationExample {
     private static final Duration duration = Duration.ofSeconds(6);
 
     void main() {
-        Note note = Note.C2;
+        Note note = Note.C4;
         GenerationConfig config = GenerationConfig.builder()
                 .frequencyStrategy(new ConstantFrequency(2, note.frequency()))
                 .envelopeStrategy(new ConstantEnvelope(note.amplitude()))

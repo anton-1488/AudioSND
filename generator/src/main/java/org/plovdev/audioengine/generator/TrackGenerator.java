@@ -7,9 +7,9 @@ import org.plovdev.audioengine.generator.strategies.modulation.ModulationStrateg
 import org.plovdev.audioengine.generator.strategies.noise.NoiseStrategy;
 import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
 import org.plovdev.audioengine.math.AudioMath;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.metadata.TrackMetadata;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

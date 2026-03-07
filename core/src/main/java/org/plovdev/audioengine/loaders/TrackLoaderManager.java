@@ -1,8 +1,8 @@
 package org.plovdev.audioengine.loaders;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
 
 /**
  * Central management point for track loading and processing.

@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 
-import static org.plovdev.audioengine.engine.config.AudioEngineConfig.NativeLib;
+import static org.plovdev.audioengine.engineconfig.AudioEngineConfig.NativeLib;
 
 public class NativeLibraryUnpacker {
     private static final Logger log = LoggerFactory.getLogger(NativeLibraryUnpacker.class);

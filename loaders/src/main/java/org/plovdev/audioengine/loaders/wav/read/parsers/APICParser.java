@@ -2,9 +2,9 @@ package org.plovdev.audioengine.loaders.wav.read.parsers;
 
 import org.plovdev.audioengine.loaders.wav.chunks.APICStructure;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
-import org.plovdev.audioengine.tracks.meta.image.ImageMimeType;
-import org.plovdev.audioengine.tracks.meta.image.ImageType;
-import org.plovdev.audioengine.tracks.meta.image.TrackImage;
+import org.plovdev.audioengine.metadata.image.ImageMimeType;
+import org.plovdev.audioengine.metadata.image.ImageType;
+import org.plovdev.audioengine.metadata.image.TrackImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,9 +15,6 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_NativeAudioEngine__1init
   (JNIEnv* env, jobject obj) {
     if (engineInitialized) return;
 
-    // TODO: здесь можно инициализировать глобальные структуры аудиоустройств,
-    // создать пул потоков, буферы, синхронизацию и т.д.
-
     engineInitialized = true;
 }
 
@@ -29,9 +26,6 @@ JNIEXPORT void JNICALL Java_org_plovdev_audioengine_NativeAudioEngine__1init
 JNIEXPORT void JNICALL Java_org_plovdev_audioengine_NativeAudioEngine__1cleanup
   (JNIEnv* env, jobject obj) {
     if (!engineInitialized) return;
-
-    // TODO: освободить все глобальные ресурсы движка,
-    // закрыть открытые устройства, очистить буферы
 
     engineInitialized = false;
 }

@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.devices;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 
 import java.util.List;
 import java.util.Objects;

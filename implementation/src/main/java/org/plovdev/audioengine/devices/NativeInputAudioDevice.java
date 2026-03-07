@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.exceptions.devices.AudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.CloseAudioDeviceException;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,24 +43,6 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         this.info = info;
     }
 
-
-    /**
-     * Read data from input audio device to buffer.
-     *
-     * @param byteBuffer buffer to read.
-     * @return readed bytes.
-     */
-    @Override
-    public int read(@NotNull ByteBuffer byteBuffer) {
-        checkForInited();
-        try {
-            status = RUNNING;
-            return _read(byteBuffer, nativeHandle);
-        } finally {
-            status = OPENED;
-        }
-    }
-
     /**
      * Open audio device.
      *
@@ -90,6 +72,28 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
             throw new OpenAudioDeviceException("Fail to open audio device: " + e.getMessage());
         }
     }
+
+    /**
+     * Read data from input audio device to buffer.
+     *
+     * @param byteBuffer buffer to read.
+     * @return readed bytes.
+     */
+    @Override
+    public int read(@NotNull ByteBuffer byteBuffer) {
+        checkForInited();
+        if (status == ERROR || status == CLOSING) {
+            throw new AudioDeviceException(String.format("Device %s is in %s state", info.id(), status));
+        }
+
+        try {
+            status = RUNNING;
+            return _read(byteBuffer, nativeHandle);
+        } finally {
+            status = OPENED;
+        }
+    }
+
 
     /**
      * Return all info about audio device
@@ -161,19 +165,10 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
         return onStatusChanged;
     }
 
-    public void setApparatGain(int gain) {
-        _setGain(gain, 0, nativeHandle);
-    }
-    public void setApplicationGain(int gain) {
-        _setGain(gain, 1, nativeHandle);
-    }
-
     @Override
     public String toString() {
         return info.toString();
     }
-
-    private native void _setGain(int gain, int type, long handle);
 
     private native long _open(TrackFormat format, AudioDeviceInfo info);
 

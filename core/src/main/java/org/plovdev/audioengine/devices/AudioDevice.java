@@ -2,7 +2,7 @@ package org.plovdev.audioengine.devices;
 
 import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 
 /**
  * Base interface for all audio devices (input or output).

@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.plovdev.audioengine.exceptions.AudioEngineException;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.factories.WavTrackFormatFactory;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.factories.WavTrackFormatFactory;
+import org.plovdev.audioengine.metadata.TrackMetadata;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;

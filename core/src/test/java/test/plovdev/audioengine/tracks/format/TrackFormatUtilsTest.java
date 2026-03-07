@@ -1,9 +1,9 @@
 package test.plovdev.audioengine.tracks.format;
 
 import org.junit.jupiter.api.Test;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
-import org.plovdev.audioengine.tracks.format.TrackFormatUtils.QualityPreset;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormatUtils;
+import org.plovdev.audioengine.format.TrackFormatUtils.QualityPreset;
 
 import java.nio.ByteOrder;
 

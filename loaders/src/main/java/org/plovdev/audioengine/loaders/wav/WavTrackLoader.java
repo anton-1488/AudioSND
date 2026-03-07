@@ -12,10 +12,10 @@ import org.plovdev.audioengine.loaders.wav.chunks.TagEntry;
 import org.plovdev.audioengine.loaders.wav.read.WavParser;
 import org.plovdev.audioengine.loaders.wav.read.parsers.APICParser;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.format.TrackFormatUtils;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormatUtils;
+import org.plovdev.audioengine.metadata.TrackMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +31,8 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.plovdev.audioengine.format.TrackFormat.AudioCodec.*;
 import static org.plovdev.audioengine.loaders.ExportUtils.getFile;
-import static org.plovdev.audioengine.tracks.format.TrackFormat.AudioCodec.*;
 
 public class WavTrackLoader implements TrackLoader {
     private static final Logger log = LoggerFactory.getLogger(WavTrackLoader.class);

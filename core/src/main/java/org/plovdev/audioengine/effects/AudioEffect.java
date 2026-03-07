@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.effects;
 
 import org.jetbrains.annotations.NotNull;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 
 import java.nio.ByteBuffer;
 

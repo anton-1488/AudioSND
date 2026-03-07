@@ -2,7 +2,7 @@ package org.plovdev.audioengine.loaders.wav.chunks;
 
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 import org.plovdev.audioengine.loaders.wav.struct.WavChunkId;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 
 public class FormatChunk extends Chunk {
     private TrackFormat.AudioCodec audioCodec;

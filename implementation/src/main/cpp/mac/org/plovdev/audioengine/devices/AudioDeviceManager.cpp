@@ -196,20 +196,20 @@ void initTrackFormatClass(JNIEnv* env) {
     if (clsTrackFormat) return;
 
     clsTrackFormat = (jclass)env->NewGlobalRef(
-        env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat")
+        env->FindClass("org/plovdev/audioengine/format/TrackFormat")
     );
 
     if (clsTrackFormat) {
         ctorTrackFormat = env->GetMethodID(
             clsTrackFormat,
             "<init>",
-            "(IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;)V"
+            "(IIIZLjava/nio/ByteOrder;Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;)V"
         );
     }
 }
 
 jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asbd) {
-    jclass clsAudioCodec = env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec");
+    jclass clsAudioCodec = env->FindClass("org/plovdev/audioengine/format/TrackFormat$AudioCodec");
     if (!clsAudioCodec) return nullptr;
 
     bool isFloat  = (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0;
@@ -220,29 +220,29 @@ jobject getAudioCodecForASBD(JNIEnv* env, const AudioStreamBasicDescription& asb
     if (isFloat) {
         if (asbd.mBitsPerChannel == 32) {
             fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT32",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;");
         } else if (asbd.mBitsPerChannel == 64) {
             fidCodec = env->GetStaticFieldID(clsAudioCodec, "FLOAT64",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;");
         }
     } else if (isSigned) {
         switch(asbd.mBitsPerChannel) {
             case 8:  fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM8",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;"); break;
             case 16: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;"); break;
             case 20: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;"); break;
             case 24: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM24",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;"); break;
             case 32: fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM32",
-                "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;"); break;
+                "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;"); break;
         }
     }
 
     if (!fidCodec) {
         fidCodec = env->GetStaticFieldID(clsAudioCodec, "PCM16",
-            "Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+            "Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;");
     }
 
     if (!fidCodec) return nullptr;

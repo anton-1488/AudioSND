@@ -1,7 +1,7 @@
 package test.plovdev.audioengine.tracks.meta;
 
 import org.junit.jupiter.api.Test;
-import org.plovdev.audioengine.tracks.meta.MetadataEntry;
+import org.plovdev.audioengine.metadata.MetadataEntry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

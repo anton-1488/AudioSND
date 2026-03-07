@@ -162,7 +162,7 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
     }
 
     try {
-        jclass trackCls = env->FindClass("org/plovdev/audioengine/tracks/Track");
+        jclass trackCls = env->FindClass("org/plovdev/audioengine/api/Track");
         if (!trackCls) {
             env->ThrowNew(env->FindClass("java/lang/ClassNotFoundException"),
                          "Track class not found");
@@ -170,9 +170,9 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         }
 
         jmethodID getTrackData = env->GetMethodID(trackCls, "getTrackData", "()Ljava/nio/ByteBuffer;");
-        jmethodID getFormat = env->GetMethodID(trackCls, "getFormat", "()Lorg/plovdev/audioengine/tracks/format/TrackFormat;");
+        jmethodID getFormat = env->GetMethodID(trackCls, "getFormat", "()Lorg/plovdev/audioengine/format/TrackFormat;");
 
-        jclass formatCls = env->FindClass("org/plovdev/audioengine/tracks/format/TrackFormat");
+        jclass formatCls = env->FindClass("org/plovdev/audioengine/format/TrackFormat");
         if (!formatCls) {
             env->ThrowNew(env->FindClass("java/lang/ClassNotFoundException"),
                          "TrackFormat class not found");
@@ -233,8 +233,7 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         }
 
         if (tracks.empty()) {
-            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
-                         "No valid tracks to mix");
+            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "No valid tracks to mix");
             return nullptr;
         }
 
@@ -258,8 +257,7 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         std::vector<float> mixed = mixTracks(tracks, outChannels, outSampleRate);
 
         if (mixed.empty()) {
-            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
-                         "Mixing produced no audio");
+            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Mixing produced no audio");
             return nullptr;
         }
 
@@ -284,11 +282,11 @@ JNIEXPORT jobject JNICALL Java_org_plovdev_audioengine_mixer_NativeTrackMixer__1
         jmethodID ofMillis = env->GetStaticMethodID(durationCls, "ofMillis", "(J)Ljava/time/Duration;");
         jobject durationObj = env->CallStaticObjectMethod(durationCls, ofMillis, millis);
 
-        jclass metadataCls = env->FindClass("org/plovdev/audioengine/tracks/meta/TrackMetadata");
+        jclass metadataCls = env->FindClass("org/plovdev/audioengine/metadata/TrackMetadata");
         jmethodID metadataCtor = env->GetMethodID(metadataCls, "<init>", "()V");
         jobject metadataObj = env->NewObject(metadataCls, metadataCtor);
 
-        jmethodID trackCtor = env->GetMethodID(trackCls, "<init>", "(Ljava/nio/ByteBuffer;Ljava/time/Duration;Lorg/plovdev/audioengine/tracks/format/TrackFormat;Lorg/plovdev/audioengine/tracks/meta/TrackMetadata;)V");
+        jmethodID trackCtor = env->GetMethodID(trackCls, "<init>", "(Ljava/nio/ByteBuffer;Ljava/time/Duration;Lorg/plovdev/audioengine/format/TrackFormat;Lorg/plovdev/audioengine/metadata/TrackMetadata;)V");
         jobject newTrack = env->NewObject(trackCls, trackCtor, resultBuffer, durationObj, formatObj, metadataObj);
 
         return newTrack;

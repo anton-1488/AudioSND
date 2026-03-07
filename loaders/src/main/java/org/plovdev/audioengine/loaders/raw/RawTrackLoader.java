@@ -2,9 +2,9 @@ package org.plovdev.audioengine.loaders.raw;
 
 import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.loaders.*;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.metadata.TrackMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +15,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.plovdev.audioengine.format.TrackFormat.AudioCodec.*;
 import static org.plovdev.audioengine.loaders.ExportUtils.getFile;
-import static org.plovdev.audioengine.tracks.format.TrackFormat.AudioCodec.*;
 
 public class RawTrackLoader implements TrackLoader {
     private static final Logger log = LoggerFactory.getLogger(RawTrackLoader.class);

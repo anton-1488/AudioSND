@@ -31,6 +31,6 @@ public class LoadedTrakCounter {
         }
     }
     private static boolean filterLine(String line) {
-        return line.contains("org.plovdev.audioengine.tracks.Track");
+        return line.contains("org.plovdev.audioengine.api.Track");
     }
 }

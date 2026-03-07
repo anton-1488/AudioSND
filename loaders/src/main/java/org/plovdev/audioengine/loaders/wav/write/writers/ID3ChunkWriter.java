@@ -1,9 +1,9 @@
 package org.plovdev.audioengine.loaders.wav.write.writers;
 
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.meta.MetaKey;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
-import org.plovdev.audioengine.tracks.meta.image.TrackImage;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.metadata.MetaKey;
+import org.plovdev.audioengine.metadata.TrackMetadata;
+import org.plovdev.audioengine.metadata.image.TrackImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

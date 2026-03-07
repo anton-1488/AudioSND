@@ -43,7 +43,7 @@ create_dirs() {
 find_java_files() {
     print_info "Поиск Java файлов..."
     
-    local modules=("core" "implementation" "loaders" "generator" "examples" "effects" "profiler" "midi" "tools")
+    local modules=("core" "implementation" "loaders" "generator" "examples" "effects" "profiler" "midi" "tools" "math")
     
     for module in "${modules[@]}"; do
         if [ -d "${module}/src/main/java" ]; then
@@ -80,6 +80,12 @@ compile_java_modules() {
         print_info "  Компиляция loaders..."
         javac -d out/loaders -cp "out/core:$classpath" @./build/loaders.txt 2>&1 | tee ./build/loaders_compile.log
     fi
+
+    # Math (зависит от core)
+    if [ -s ./build/math.txt ]; then
+        print_info "  Компиляция math..."
+        javac -d out/math -cp "out/core:$classpath" @./build/math.txt 2>&1 | tee ./build/math_compile.log
+    fi
     
     # Effects (зависит от core)
     if [ -s ./build/effects.txt ]; then
@@ -108,7 +114,7 @@ compile_java_modules() {
     # Generator (зависит от core)
     if [ -s ./build/generator.txt ]; then
         print_info "  Компиляция generator..."
-        javac -d out/generator -cp "out/core:$classpath" @./build/generator.txt 2>&1 | tee ./build/generator_compile.log
+        javac -d out/generator -cp "out/core:out/math:$classpath" @./build/generator.txt 2>&1 | tee ./build/generator_compile.log
     fi
     
     # Implementation (зависит от core, генерирует заголовки для JNI)

@@ -2,7 +2,7 @@ package org.plovdev.audioengine.loaders.raw;
 
 import org.plovdev.audioengine.exceptions.loaders.TrackExportException;
 import org.plovdev.audioengine.loaders.TrackExporter;
-import org.plovdev.audioengine.tracks.Track;
+import org.plovdev.audioengine.api.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

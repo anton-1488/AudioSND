@@ -119,7 +119,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     int bits = env->CallIntMethod(fmt, env->GetMethodID(fmtCls, "bitDepth", "()I"));
     jboolean signedPcm = env->CallBooleanMethod(fmt, env->GetMethodID(fmtCls, "signed", "()Z"));
 
-    jmethodID audioCodecMethod = env->GetMethodID(fmtCls, "audioCodec", "()Lorg/plovdev/audioengine/tracks/format/TrackFormat$AudioCodec;");
+    jmethodID audioCodecMethod = env->GetMethodID(fmtCls, "audioCodec", "()Lorg/plovdev/audioengine/format/TrackFormat$AudioCodec;");
     jobject audioCodecObj = env->CallObjectMethod(fmt, audioCodecMethod);
     jclass audioCodecClass = env->GetObjectClass(audioCodecObj);
     jmethodID nameMethod = env->GetMethodID(audioCodecClass, "name", "()Ljava/lang/String;");

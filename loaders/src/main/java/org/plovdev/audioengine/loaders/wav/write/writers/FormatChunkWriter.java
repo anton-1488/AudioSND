@@ -1,7 +1,7 @@
 package org.plovdev.audioengine.loaders.wav.write.writers;
 
 import org.plovdev.audioengine.exceptions.loaders.TrackExportException;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

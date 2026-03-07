@@ -1,6 +1,7 @@
 package org.plovdev.audioengine;
 
 import org.jetbrains.annotations.NotNull;
+import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
 import org.plovdev.audioengine.devices.AudioDeviceManager;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
@@ -11,11 +12,10 @@ import org.plovdev.audioengine.loaders.TrackLoader;
 import org.plovdev.audioengine.loaders.TrackLoaderManager;
 import org.plovdev.audioengine.mixer.NativeTrackMixer;
 import org.plovdev.audioengine.mixer.TrackMixer;
-import org.plovdev.audioengine.player.NativeTrackPlayer;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
-import org.plovdev.audioengine.engine.config.AudioEngineConfig;
+import org.plovdev.audioengine.api.NativeTrackPlayer;
+import org.plovdev.audioengine.api.TrackPlayer;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.engineconfig.AudioEngineConfig;
 import org.plovdev.audioengine.utils.NativeLibraryUnpacker;
 import org.plovdev.audioengine.utils.TrackLoaderSearcher;
 import org.slf4j.Logger;

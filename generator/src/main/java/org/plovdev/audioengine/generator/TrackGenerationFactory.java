@@ -7,8 +7,8 @@ import org.plovdev.audioengine.generator.strategies.frequency.*;
 import org.plovdev.audioengine.generator.strategies.modulation.LFOModulation;
 import org.plovdev.audioengine.generator.strategies.noise.*;
 import org.plovdev.audioengine.generator.strategies.wave.*;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
 
 import java.time.Duration;
 

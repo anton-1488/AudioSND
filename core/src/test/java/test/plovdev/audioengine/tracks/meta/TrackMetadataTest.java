@@ -1,7 +1,7 @@
 package test.plovdev.audioengine.tracks.meta;
 
 import org.junit.jupiter.api.Test;
-import org.plovdev.audioengine.tracks.meta.TrackMetadata;
+import org.plovdev.audioengine.metadata.TrackMetadata;
 
 import java.util.Date;
 import java.util.Optional;

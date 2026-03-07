@@ -1,13 +1,13 @@
 package org.plovdev.audioengine;
 
+import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
-import org.plovdev.audioengine.engine.config.AudioEngineConfig;
+import org.plovdev.audioengine.engineconfig.AudioEngineConfig;
 import org.plovdev.audioengine.exceptions.AudioEngineException;
 import org.plovdev.audioengine.loaders.TrackLoaderManager;
 import org.plovdev.audioengine.mixer.TrackMixer;
-import org.plovdev.audioengine.tracks.Track;
-import org.plovdev.audioengine.player.TrackPlayer;
-import org.plovdev.audioengine.tracks.format.TrackFormat;
+import org.plovdev.audioengine.api.TrackPlayer;
+import org.plovdev.audioengine.format.TrackFormat;
 
 import java.io.File;
 import java.io.InputStream;
