@@ -19,11 +19,10 @@ public class SineWave implements WaveStrategy {
      * @param samplePosition current sample from start (0-based)
      * @param frequency      current frequency in Hz
      * @param phase          phase offset in radians
-     * @param dutyCycle      duty cycle for square wave (0.0-1.0)
      * @return sample value in range -1.0 to 1.0
      */
     @Override
-    public float generate(long samplePosition, float frequency, float phase, float dutyCycle, float sampleRate) {
+    public float generate(long samplePosition, float frequency, float phase, float sampleRate) {
         float time = samplePosition / sampleRate;
         return Functions.sine(time, frequency, phase);
     }

@@ -41,9 +41,8 @@ public class TrackGenerationFactory {
     public static Track generateSquareWave(Duration duration, TrackFormat format, Note note, float dutyCycle) {
         GenerationConfig config = GenerationConfig.builder()
                 .frequencyStrategy(new ConstantFrequency(format.channels(), note.frequency()))
-                .waveStrategy(new SquareWave())
+                .waveStrategy(new SquareWave(0.5f))
                 .envelopeStrategy(new ConstantEnvelope(note.amplitude()))
-                .dutyCycle(dutyCycle)
                 .build();
 
         return new TrackGenerator(config, format).generate(duration);
@@ -143,7 +142,7 @@ public class TrackGenerationFactory {
     public static Track generateSquareSweep(Duration duration, TrackFormat format, Note start, Note end) {
         GenerationConfig config = GenerationConfig.builder()
                 .frequencyStrategy(new LinearFrequency(format.channels(), start.frequency(), end.frequency()))
-                .waveStrategy(new SquareWave())
+                .waveStrategy(new SquareWave(0.5f))
                 .envelopeStrategy(new ConstantEnvelope((start.amplitude()) + end.amplitude() / 2f))
                 .build();
 
@@ -295,9 +294,8 @@ public class TrackGenerationFactory {
     public static Track generateGuitarLike(Duration duration, TrackFormat format, Note note, float dc) {
         GenerationConfig config = GenerationConfig.builder()
                 .frequencyStrategy(new ConstantFrequency(format.channels(), note.frequency()))
-                .waveStrategy(new SquareWave())
+                .waveStrategy(new SquareWave(0.5f))
                 .envelopeStrategy(new ADSRStrategy(0.5f, 0.5f, 0.8f, 0.1f))
-                .dutyCycle(dc)
                 .build();
 
         return new TrackGenerator(config, format).generate(duration);

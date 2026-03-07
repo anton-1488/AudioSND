@@ -71,4 +71,13 @@ public class Functions {
     public static float whiteNoise() {
         return (float) (ThreadLocalRandom.current().nextDouble() * 2.0 - 1.0);
     }
+    public static float brownNoise(float leak, float lastSample, float gain) {
+        float white = whiteNoise();
+        float brown = (leak * lastSample) + (gain * white);
+
+        if (brown > 1.0f) brown = 1.0f;
+        if (brown < -1.0f) brown = -1.0f;
+
+        return brown;
+    }
 }

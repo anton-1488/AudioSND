@@ -45,16 +45,18 @@ import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
  * @see WaveStrategy
  * @see ModulationStrategy
  * @see NoiseStrategy
+ *
+ * @version 1.0
+ * @author Anton
  */
 public class GenerationConfig {
-    private FrequencyStrategy frequencyStrategy = new ConstantFrequency(2, Note.A2.frequency());
-    private EnvelopeStrategy envelopeStrategy = new ConstantEnvelope(Note.A2.amplitude());
+    private FrequencyStrategy frequencyStrategy = new ConstantFrequency(2, Note.A4.frequency());
+    private EnvelopeStrategy envelopeStrategy = new ConstantEnvelope(Note.A4.amplitude());
     private WaveStrategy waveStrategy = new SineWave();
     private ModulationStrategy modulationStrategy = ((samplePosition, totalSamples, channel, input) -> 0);
     private NoiseStrategy noiseStrategy = (channel -> 0);
 
     private float phase;
-    private float dutyCycle;
     private float noiseLevel;
     private float pan;
 
@@ -66,18 +68,17 @@ public class GenerationConfig {
      * @param waveStrategy        strategy for waveform shape
      * @param modulationStrategy  strategy for modulation effects
      * @param noiseStrategy       strategy for noise generation
+     *
      * @param phase               initial phase in radians
-     * @param dutyCycle           duty cycle for square wave (0.0-1.0)
      * @param noiseLevel          mix level for noise (0.0-1.0)
+     * @param pan                 generated audio pan
      */
     public GenerationConfig(FrequencyStrategy frequencyStrategy,
                             EnvelopeStrategy envelopeStrategy,
                             WaveStrategy waveStrategy,
                             ModulationStrategy modulationStrategy,
                             NoiseStrategy noiseStrategy,
-                            float phase,
-                            float dutyCycle,
-                            float noiseLevel, float pan) {
+                            float phase, float noiseLevel, float pan) {
         this.frequencyStrategy = frequencyStrategy;
         this.envelopeStrategy = envelopeStrategy;
         this.waveStrategy = waveStrategy;
@@ -85,7 +86,6 @@ public class GenerationConfig {
         this.noiseStrategy = noiseStrategy;
 
         this.phase = phase;
-        this.dutyCycle = dutyCycle;
         this.noiseLevel = noiseLevel;
     }
 
@@ -159,14 +159,6 @@ public class GenerationConfig {
          * @return this builder
          */
         Builder phase(float phase);
-
-        /**
-         * Sets the duty cycle for square wave generation.
-         *
-         * @param dc duty cycle (0.0-1.0, 0.5 = square wave)
-         * @return this builder
-         */
-        Builder dutyCycle(float dc);
 
         /**
          * Sets the noise level (mix between pure tone and noise).
@@ -292,24 +284,6 @@ public class GenerationConfig {
      */
     public void setPhase(float phase) {
         this.phase = phase;
-    }
-
-    /**
-     * Returns the duty cycle for square wave generation.
-     *
-     * @return duty cycle (0.0-1.0)
-     */
-    public float getDutyCycle() {
-        return dutyCycle;
-    }
-
-    /**
-     * Sets the duty cycle for square wave generation.
-     *
-     * @param dutyCycle duty cycle (0.0-1.0)
-     */
-    public void setDutyCycle(float dutyCycle) {
-        this.dutyCycle = dutyCycle;
     }
 
     /**

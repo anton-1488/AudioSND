@@ -1,5 +1,16 @@
 package org.plovdev.audioengine.generator.strategies.envelope;
 
+/**
+ * Constant envelope strategy that applies the same amplitude multiplier to all samples.
+ * <p>
+ * This is the simplest envelope type - it maintains a fixed amplitude level.
+ * </p>
+ *
+ * @see EnvelopeStrategy
+ *
+ * @version 1.0
+ * @author Anton
+ */
 public class ConstantEnvelope implements EnvelopeStrategy {
     private float amplitude;
 

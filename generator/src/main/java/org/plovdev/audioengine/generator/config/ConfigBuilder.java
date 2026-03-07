@@ -29,6 +29,9 @@ import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
  *
  * @see GenerationConfig
  * @see GenerationConfig.Builder
+ *
+ * @version 1.0
+ * @author Anton
  */
 public class ConfigBuilder implements GenerationConfig.Builder {
     private FrequencyStrategy frequencyStrategy;
@@ -38,7 +41,6 @@ public class ConfigBuilder implements GenerationConfig.Builder {
     private NoiseStrategy noiseStrategy;
 
     private float phase;
-    private float dutyCycle;
     private float noiseLevel;
     private float pan;
 
@@ -115,18 +117,6 @@ public class ConfigBuilder implements GenerationConfig.Builder {
     }
 
     /**
-     * Sets the duty cycle for square wave generation.
-     *
-     * @param dc duty cycle (0.0-1.0, 0.5 = square wave)
-     * @return this builder
-     */
-    @Override
-    public GenerationConfig.Builder dutyCycle(float dc) {
-        this.dutyCycle = dc;
-        return this;
-    }
-
-    /**
      * Sets the noise level.
      *
      * @param noiseLevel noise level (0.0 = no noise, 1.0 = only noise)
@@ -138,6 +128,11 @@ public class ConfigBuilder implements GenerationConfig.Builder {
         return this;
     }
 
+    /**
+     * Sets the audio pan
+     * @param pan audio pan(-1...+1)
+     * @return this Builder
+     */
     @Override
     public GenerationConfig.Builder pan(float pan) {
         this.pan = pan;
@@ -155,6 +150,6 @@ public class ConfigBuilder implements GenerationConfig.Builder {
      */
     @Override
     public GenerationConfig build() {
-        return new GenerationConfig(frequencyStrategy, envelopeStrategy, waveStrategy, modulationStrategy, noiseStrategy, phase, dutyCycle, noiseLevel, pan);
+        return new GenerationConfig(frequencyStrategy, envelopeStrategy, waveStrategy, modulationStrategy, noiseStrategy, phase, noiseLevel, pan);
     }
 }

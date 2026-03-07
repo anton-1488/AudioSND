@@ -8,57 +8,50 @@ package org.plovdev.audioengine.generator.note;
  * transposition without recalculating the base frequency.
  * </p>
  *
- * <p>
- * Example usage:
- * <pre>
- * Note a4 = Note.A2;                    // A4 note (440 Hz)
- * Note a5 = a4.upOctave();               // A5 (880 Hz)
- * Note cSharp = a4.transpose(4);          // C#5 (4 semitones up)
- * float freq = a5.frequency();            // 880.0
- * </pre>
- * </p>
- *
  * @param frequency    base frequency in Hz (e.g., 440.0 for A4)
  * @param amplitude    volume (0.0 to 1.0)
  * @param octaveShift  number of octaves to shift (+1 = up one octave, -1 = down one octave)
  * @param semitoneShift number of semitones to shift (-12 to +12)
+ *
+ * @version 1.0
+ * @author Anton
  */
 public record Note(float frequency, float amplitude, int octaveShift, int semitoneShift) {
 
     /**
      * C4 note (261.63 Hz)
      */
-    public static Note C2 = ofFreq(261.63f);
+    public static Note C4 = ofFreq(261.63f);
 
     /**
      * D4 note (293.66 Hz)
      */
-    public static Note D2 = ofFreq(293.66f);
+    public static Note D4 = ofFreq(293.66f);
 
     /**
      * E4 note (329.63 Hz)
      */
-    public static Note E2 = ofFreq(329.63f);
+    public static Note E4 = ofFreq(329.63f);
 
     /**
      * F4 note (349.23 Hz)
      */
-    public static Note F2 = ofFreq(349.23f);
+    public static Note F4 = ofFreq(349.23f);
 
     /**
      * G4 note (392.00 Hz)
      */
-    public static Note G2 = ofFreq(392.00f);
+    public static Note G4 = ofFreq(392.00f);
 
     /**
      * A4 note (440.00 Hz)
      */
-    public static Note A2 = ofFreq(440.00f);
+    public static Note A4 = ofFreq(440.00f);
 
     /**
-     * B4 note (492.88 Hz)
+     * B4 note (493.88 Hz)
      */
-    public static Note B2 = ofFreq(492.88f);
+    public static Note B4 = ofFreq(493.88f);
 
     /**
      * Creates a note with the specified frequency and default amplitude (0.5).

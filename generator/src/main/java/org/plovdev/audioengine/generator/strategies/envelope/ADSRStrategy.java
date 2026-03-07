@@ -19,6 +19,8 @@ import org.plovdev.audioengine.math.Functions;
  * For example, attack=0.1 means the first 10% of the sound is the attack phase.
  * </p>
  *
+ * @version 1.0
+ * @author Anton
  */
 public class ADSRStrategy implements EnvelopeStrategy {
     private final float attack;

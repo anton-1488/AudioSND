@@ -2,6 +2,16 @@ package org.plovdev.audioengine.generator.strategies.frequency;
 
 import java.util.Arrays;
 
+/**
+ * Frequency strategy that linearly interpolates between start and end frequencies.
+ * <p>
+ * This strategy creates a smooth linear transition from a starting frequency
+ * </p>
+ *
+ * @version 1.0
+ * @author Anton
+ * @see FrequencyStrategy
+ */
 public class LinearFrequency implements FrequencyStrategy {
     private final float[] startFreqs;
     private final float[] endFreqs;

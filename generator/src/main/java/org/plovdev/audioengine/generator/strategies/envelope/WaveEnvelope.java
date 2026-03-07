@@ -1,9 +1,20 @@
 package org.plovdev.audioengine.generator.strategies.envelope;
 
+/**
+ * Wave envelope strategy that modulates amplitude with a sine wave.
+ * <p>
+ * This envelope creates periodic amplitude variations (tremolo) by applying
+ * </p>
+ *
+ * @see EnvelopeStrategy
+ *
+ * @version 1.0
+ * @author Anton
+ */
 public class WaveEnvelope implements EnvelopeStrategy {
-    private final float waveRate;      // частота волн (0.1-2 Гц)
-    private final float minAmplitude;   // минимальная громкость (0.0-1.0)
-    private final float maxAmplitude;   // максимальная громкость (0.0-1.0)
+    private final float waveRate;
+    private final float minAmplitude;
+    private final float maxAmplitude;
     private final float sampleRate;
 
     private static final float TWO_PI = (float) (2.0 * Math.PI);

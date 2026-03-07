@@ -2,6 +2,17 @@ package org.plovdev.audioengine.generator.strategies.envelope;
 
 import org.plovdev.audioengine.math.Functions;
 
+/**
+ * Exponential decay envelope strategy.
+ * <p>
+ *  This envelope creates an exponentially decaying amplitude over time.
+ * </p>
+ *
+ * @see EnvelopeStrategy
+ *
+ * @version 1.0
+ * @author Anton
+ */
 public class ExponentialEnvelope implements EnvelopeStrategy {
     private float decay;
 
