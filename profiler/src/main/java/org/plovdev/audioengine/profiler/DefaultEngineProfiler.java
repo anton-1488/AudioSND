@@ -3,6 +3,8 @@ package org.plovdev.audioengine.profiler;
 import com.sun.management.OperatingSystemMXBean;
 import org.plovdev.audioengine.AudioEngine;
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
+import org.plovdev.audioengine.profiler.benchmarking.ProfileProcessor;
+import org.plovdev.audioengine.profiler.benchmarking.ProfileResult;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -34,6 +36,10 @@ public class DefaultEngineProfiler implements AudioEngineProfiler {
         infos.addAll(engine.getAvailableOutputAudioDevices());
 
         return new EngineSnapshot(System.currentTimeMillis(), cpuUsage, usedMemory, nativeMemoryUsed, threads, LoadedTrakCounter.getTracksCount(), infos);
+    }
+
+    public List<ProfileResult<?>> execProfiling(Object cls) {
+        return ProfileProcessor.execProfile(cls);
     }
 
     @Override
