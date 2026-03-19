@@ -127,41 +127,6 @@ public interface TrackLoader {
     TrackFormat getTrackFormat(@NotNull URI src);
 
     /**
-     * Checks if this loader supports the given file.
-     *
-     * @param file file to check
-     * @return true if file format is supported
-     */
-    boolean isSupported(@NotNull File file);
-
-    /**
-     * Checks if this loader supports the given audio format.
-     * <p>
-     * Useful for quick pre-validation without accessing actual file/stream.
-     * </p>
-     *
-     * @param format audio format to check
-     * @return true if format is supported
-     */
-    boolean isSupported(@NotNull TrackFormat format);
-
-    /**
-     * Checks if this loader supports the given input stream.
-     *
-     * @param stream stream to check
-     * @return true if stream format is supported
-     */
-    boolean isSupported(@NotNull InputStream stream);
-
-    /**
-     * Checks if this loader supports the given URI.
-     *
-     * @param uri URI to check
-     * @return true if URI protocol and format are supported
-     */
-    boolean isSupported(@NotNull URI uri);
-
-    /**
      * Sets global listener for all load operations.
      * <p>
      * Note: Listener is shared between concurrent operations.

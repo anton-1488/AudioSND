@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Anton
  * @version 1.0
  */
-public interface AudioRecorder extends AudioApi {
+public interface AudioRecorder extends AudioController {
     /**
      * Starts recording from current input device.
      * Creates new track in memory for captured audio.

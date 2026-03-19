@@ -1,6 +1,9 @@
 package org.plovdev.audioengine.loaders.wav;
 
+import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
+import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.format.TrackFormatUtils;
 import org.plovdev.audioengine.loaders.LoadListener;
 import org.plovdev.audioengine.loaders.LoadListenerAdapter;
 import org.plovdev.audioengine.loaders.PathLocator;
@@ -12,34 +15,27 @@ import org.plovdev.audioengine.loaders.wav.chunks.TagEntry;
 import org.plovdev.audioengine.loaders.wav.read.WavParser;
 import org.plovdev.audioengine.loaders.wav.read.parsers.APICParser;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
-import org.plovdev.audioengine.api.Track;
-import org.plovdev.audioengine.format.TrackFormat;
-import org.plovdev.audioengine.format.TrackFormatUtils;
 import org.plovdev.audioengine.metadata.TrackMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.plovdev.audioengine.format.TrackFormat.AudioCodec.*;
 import static org.plovdev.audioengine.loaders.ExportUtils.getFile;
 
 public class WavTrackLoader implements TrackLoader {
     private static final Logger log = LoggerFactory.getLogger(WavTrackLoader.class);
     private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
-    private LoadListener loadListener = new LoadListenerAdapter() {};
-
-    private static final List<TrackFormat.AudioCodec> supportedCodecs = List.of(PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64, ALAW, ULAW, IMA_ADPCM, MIC_ADPCM);
+    private LoadListener loadListener = new LoadListenerAdapter() {
+    };
 
     public void addLoactor(PathLocator locator) {
         locators.add(locator);
@@ -150,17 +146,11 @@ public class WavTrackLoader implements TrackLoader {
 
     @Override
     public Track loadTrack(URI uri) throws TrackLoadException {
-        return switch (uri.getScheme()) {
-            case "file" -> loadTrack(new File(uri.toString()));
-            case "https", "http" -> {
-                try (InputStream stream = uri.toURL().openStream()) {
-                    yield loadTrack(stream);
-                } catch (Exception e) {
-                    throw new TrackLoadException(e.getMessage());
-                }
-            }
-            default -> throw new TrackLoadException("Unsupported URI scheme: " + uri.getScheme());
-        };
+        try (InputStream stream = uri.toURL().openStream()) {
+            return loadTrack(stream);
+        } catch (Exception e) {
+            throw new TrackLoadException(e.getMessage());
+        }
     }
 
     @Override
@@ -193,73 +183,6 @@ public class WavTrackLoader implements TrackLoader {
         return null;
     }
 
-    @Override
-    public boolean isSupported(File file) {
-        if (file == null) return false;
-        String filename = file.getName();
-
-        String lower = filename.toLowerCase().trim();
-        lower = lower.startsWith(".") ? lower : "." + lower;
-        return lower.endsWith(".wav") || lower.endsWith(".wave");
-    }
-
-    @Override
-    public boolean isSupported(TrackFormat format) {
-        TrackFormat.AudioCodec codec = format.audioCodec();
-        return supportedCodecs.contains(codec);
-    }
-
-    @Override
-    public boolean isSupported(InputStream stream) {
-        // Копируем первые 12 байт для проверки
-        byte[] header = new byte[12];
-
-        try {
-            if (stream.markSupported()) {
-                stream.mark(12);
-            }
-
-            int totalRead = 0;
-            while (totalRead < 12) {
-                int read = stream.read(header, totalRead, 12 - totalRead);
-                if (read == -1) {
-                    return false;
-                }
-                totalRead += read;
-            }
-
-            String riff = new String(header, 0, 4, StandardCharsets.US_ASCII);
-            if (!riff.equals("RIFF")) {
-                log.info("File is not RIFF based! {}", riff);
-                return false;
-            }
-
-            String wave = new String(header, 8, 4, StandardCharsets.US_ASCII);
-            if (!wave.equals("WAVE")) {
-                log.info("Not WAVE file pictureType! {}", wave);
-                return false;
-            }
-
-            return true;
-        } catch (Exception e) {
-            return false;
-        } finally {
-            // Возвращаем позицию
-            try {
-                if (stream.markSupported()) {
-                    stream.reset();
-                }
-            } catch (IOException e) {
-                log.warn("Не удалось сбросить поток", e);
-            }
-        }
-    }
-
-    @Override
-    public boolean isSupported(URI uri) {
-        return isSupported(new File(uri.getPath()));
-    }
-
     private Calendar parsePartialDate(String input) {
         String[] parts = input.split("-");
         int year = Integer.parseInt(parts[0]);
@@ -281,6 +204,7 @@ public class WavTrackLoader implements TrackLoader {
             return null;
         }
     }
+
     private Float safeParseFloar(String number) {
         try {
             return Float.parseFloat(number);

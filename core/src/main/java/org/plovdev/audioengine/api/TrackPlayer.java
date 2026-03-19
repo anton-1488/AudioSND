@@ -1,6 +1,7 @@
 package org.plovdev.audioengine.api;
 
 import org.plovdev.audioengine.devices.AudioDeviceInfo;
+
 import java.time.Duration;
 
 /**
@@ -25,13 +26,12 @@ import java.time.Duration;
  * </ul>
  * </p>
  *
- * @see Track
- * @see AudioRecorder
- *
  * @author Anton
  * @version 1.0
+ * @see Track
+ * @see AudioRecorder
  */
-public interface TrackPlayer extends AudioApi {
+public interface TrackPlayer extends AudioController {
 
     /**
      * Starts or resumes playback from current position.
@@ -77,7 +77,9 @@ public interface TrackPlayer extends AudioApi {
      *
      * @return speed multiplier (1.0 = normal)
      */
-    float getSpeed();
+    default float getSpeed() {
+        throw new UnsupportedOperationException("Not impl. yet");
+    }
 
     /**
      * Sets playback speed multiplier.
@@ -87,10 +89,12 @@ public interface TrackPlayer extends AudioApi {
      * </p>
      *
      * @param speed speed (0.5 = half, 1.0 = normal, 2.0 = double)
-     * @throws IllegalArgumentException if speed <= 0
+     * @throws IllegalArgumentException      if speed <= 0
      * @throws UnsupportedOperationException if speed change not supported by implementation
      */
-    void setSpeed(float speed);
+    default void setSpeed(float speed) {
+        throw new UnsupportedOperationException("Not impl. yet");
+    }
 
     /**
      * Gets loop (repeat) count.
@@ -135,7 +139,7 @@ public interface TrackPlayer extends AudioApi {
      * Player will pause briefly during device switch and resume automatically.
      *
      * @param newOutDevice new output device info
-     * @throws NullPointerException     if device is null
+     * @throws NullPointerException if device is null
      */
     void setAudioDevice(AudioDeviceInfo newOutDevice);
 }

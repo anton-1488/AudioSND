@@ -1,9 +1,9 @@
 package org.plovdev.audioengine.loaders.raw;
 
-import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
-import org.plovdev.audioengine.loaders.*;
 import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.format.TrackFormat;
+import org.plovdev.audioengine.loaders.*;
 import org.plovdev.audioengine.metadata.TrackMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,14 +15,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.plovdev.audioengine.format.TrackFormat.AudioCodec.*;
 import static org.plovdev.audioengine.loaders.ExportUtils.getFile;
 
 public class RawTrackLoader implements TrackLoader {
     private static final Logger log = LoggerFactory.getLogger(RawTrackLoader.class);
     private final List<PathLocator> locators = new CopyOnWriteArrayList<>();
     private LoadListener loadListener = new LoadListenerAdapter() {};
-    private static final List<TrackFormat.AudioCodec> supportedCodecs = List.of(PCM8, PCM16, PCM24, PCM32, FLOAT32, FLOAT64);
     private final TrackFormat format;
 
     public RawTrackLoader(TrackFormat format) {
@@ -152,32 +150,6 @@ public class RawTrackLoader implements TrackLoader {
     @Override
     public TrackFormat getTrackFormat(URI src) {
         throw new UnsupportedOperationException("Raw not supports format");
-    }
-
-    @Override
-    public boolean isSupported(File file) {
-        if (file == null) return false;
-        String filename = file.getName();
-
-        String lower = filename.toLowerCase().trim();
-        lower = lower.startsWith(".") ? lower : "." + lower;
-        return lower.endsWith(".raw");
-    }
-
-    @Override
-    public boolean isSupported(TrackFormat format) {
-        TrackFormat.AudioCodec codec = format.audioCodec();
-        return supportedCodecs.contains(codec);
-    }
-
-    @Override
-    public boolean isSupported(InputStream stream) {
-        throw new UnsupportedOperationException("Cann't check supports in RAW");
-    }
-
-    @Override
-    public boolean isSupported(URI uri) {
-        return isSupported(new File(uri.getPath()));
     }
 
     @Override

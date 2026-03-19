@@ -14,7 +14,7 @@ import org.plovdev.audioengine.format.TrackFormat;
  * @author Anton
  * @version 1.0
  */
-public interface AudioApi extends AutoCloseable {
+public interface AudioController extends AutoCloseable {
 
     /**
      * Initializes the player with track format and opens audio device.

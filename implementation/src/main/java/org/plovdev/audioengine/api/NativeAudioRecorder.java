@@ -108,13 +108,13 @@ public class NativeAudioRecorder implements AudioRecorder {
             return;
         }
 
+        isRecording.set(true);
+        setStatus(AudioStatus.RUNNING);
+
         Thread audioLoopThread = new Thread(this::recordLoop, "record-loop");
         audioLoopThread.setPriority(Thread.MAX_PRIORITY);
         audioLoopThread.setDaemon(true);
         audioLoopThread.start();
-
-        isRecording.set(true);
-        setStatus(AudioStatus.RUNNING);
     }
 
     /**
@@ -343,8 +343,6 @@ public class NativeAudioRecorder implements AudioRecorder {
             audioDevice.close();
             isInited.set(false);
             setStatus(AudioStatus.UNAVAILABLE);
-            eventExecutor.shutdown();
-            eventExecutor.shutdownNow();
             eventExecutor.close();
         }
     }

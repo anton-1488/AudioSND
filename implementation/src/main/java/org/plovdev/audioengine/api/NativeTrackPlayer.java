@@ -51,7 +51,6 @@ public class NativeTrackPlayer implements TrackPlayer {
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
     private final ExecutorService eventExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    private float speed;
     private float volume = 1f;
     private int totalCycles = 1;
 
@@ -141,13 +140,13 @@ public class NativeTrackPlayer implements TrackPlayer {
             return;
         }
 
+        isPlaying.set(true);
+        setStatus(AudioStatus.RUNNING);
+
         Thread audioLoopThread = new Thread(this::audioLoop, "audio-loop");
         audioLoopThread.setPriority(Thread.MAX_PRIORITY);
         audioLoopThread.setDaemon(true);
         audioLoopThread.start();
-
-        isPlaying.set(true);
-        setStatus(AudioStatus.RUNNING);
     }
 
     /**
@@ -215,30 +214,6 @@ public class NativeTrackPlayer implements TrackPlayer {
     public synchronized void setVolume(float volume) {
         this.volume = Math.clamp(volume, -10.0f, 10.0f);
         gainEffect.setGain(volume);
-    }
-
-    /**
-     * Gets current playback speed.
-     *
-     * @return speed multiplier (1.0 = normal)
-     */
-    @Override
-    public float getSpeed() {
-        return speed;
-    }
-
-    /**
-     * Sets playback speed multiplier.
-     * Note: Speed change may affect pitch unless advanced resampling is used.
-     *
-     * @param speed speed (0.5 = half, 1.0 = normal, 2.0 = double)
-     * @throws IllegalArgumentException      if speed <= 0
-     * @throws UnsupportedOperationException if speed change not supported by implementation
-     */
-    @Override
-    public synchronized void setSpeed(float speed) {
-        // this.speed = speed;
-        throw new UnsupportedOperationException("Not implementated yet.");
     }
 
     /**
@@ -500,10 +475,8 @@ public class NativeTrackPlayer implements TrackPlayer {
         if (isInited.get()) {
             stop();
             audioDeviceReference.get().close();
-            eventExecutor.shutdown();
-            eventExecutor.shutdownNow();
-            eventExecutor.close();
             setStatus(AudioStatus.UNAVAILABLE);
+            eventExecutor.close();
         }
     }
 }

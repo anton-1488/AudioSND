@@ -4,6 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.format.TrackFormat;
 
+import java.io.File;
+import java.io.InputStream;
+import java.net.URI;
+
 /**
  * Central management point for track loading and processing.
  * <p>
@@ -28,6 +32,41 @@ public interface TrackLoaderManager {
     @NotNull TrackExporter getTrackExporter();
     @NotNull TrackEncoder getTrackEncoder();
     @NotNull TrackDecoder getTrackDecoder();
+
+    /**
+     * Checks if this loader supports the given file.
+     *
+     * @param file file to check
+     * @return true if file format is supported
+     */
+    boolean isSupported(@NotNull File file);
+
+    /**
+     * Checks if this loader supports the given audio format.
+     * <p>
+     * Useful for quick pre-validation without accessing actual file/stream.
+     * </p>
+     *
+     * @param format audio format to check
+     * @return true if format is supported
+     */
+    boolean isSupported(@NotNull TrackFormat format);
+
+    /**
+     * Checks if this loader supports the given input stream.
+     *
+     * @param stream stream to check
+     * @return true if stream format is supported
+     */
+    boolean isSupported(@NotNull InputStream stream);
+
+    /**
+     * Checks if this loader supports the given URI.
+     *
+     * @param uri URI to check
+     * @return true if URI protocol and format are supported
+     */
+    boolean isSupported(@NotNull URI uri);
 
     void registerPathLocator(@NotNull PathLocator locator);
 }

@@ -128,7 +128,7 @@ public class NativeAudioEngine implements AudioEngine {
         checkIfInited();
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(file)) {
+            if (manager.isSupported(file)) {
                 return loader.loadTrack(file);
             }
         }
@@ -140,7 +140,7 @@ public class NativeAudioEngine implements AudioEngine {
         checkIfInited();
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(stream)) {
+            if (manager.isSupported(stream)) {
                 return loader.loadTrack(stream);
             }
         }
@@ -152,7 +152,7 @@ public class NativeAudioEngine implements AudioEngine {
         checkIfInited();
         for (TrackLoaderManager manager : getAvailableLoaders()) {
             TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(uri)) {
+            if (manager.isSupported(uri)) {
                 return loader.loadTrack(uri);
             }
         }
@@ -207,8 +207,7 @@ public class NativeAudioEngine implements AudioEngine {
     @Override
     public Optional<TrackLoaderManager> findLoaderFor(@NotNull TrackFormat format) {
         for (TrackLoaderManager manager : loaderManagers) {
-            TrackLoader loader = manager.getTrackLoader();
-            if (loader.isSupported(format)) {
+            if (manager.isSupported(format)) {
                 return Optional.of(manager);
             }
         }
