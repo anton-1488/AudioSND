@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.utils;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 
 public class TrackUtils {
@@ -20,5 +22,12 @@ public class TrackUtils {
         byte[] bytes = new byte[copy.capacity()];
         copy.get(0, bytes);
         return bytes;
+    }
+
+    public static MemorySegment createMemorySegment(ByteBuffer src) {
+        Arena arena = Arena.ofAuto();
+        MemorySegment resultSegment = arena.allocate(src.capacity());
+        resultSegment.asByteBuffer().put(src);
+        return resultSegment;
     }
 }

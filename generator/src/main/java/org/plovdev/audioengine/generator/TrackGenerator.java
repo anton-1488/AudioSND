@@ -10,6 +10,7 @@ import org.plovdev.audioengine.math.AudioMath;
 import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.metadata.TrackMetadata;
+import org.plovdev.audioengine.utils.TrackUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -100,7 +101,7 @@ public class TrackGenerator {
             }
         }
 
-        return new Track(buffer, duration, trackFormat, new TrackMetadata());
+        return new Track(TrackUtils.createMemorySegment(buffer), duration, trackFormat, new TrackMetadata());
     }
 
     private void writeSample(ByteBuffer buffer, float sample) {

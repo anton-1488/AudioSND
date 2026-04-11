@@ -5,6 +5,7 @@ import org.plovdev.audioengine.exceptions.loaders.TrackLoadException;
 import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.loaders.*;
 import org.plovdev.audioengine.metadata.TrackMetadata;
+import org.plovdev.audioengine.utils.TrackUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +84,7 @@ public class RawTrackLoader implements TrackLoader {
                 TrackMetadata metadata = getTrackMetadata(duration);
                 metadata.setFileSize((long) allBytes.length);
 
-                return new Track(data, duration, format, metadata);
+                return new Track(TrackUtils.createMemorySegment(data), duration, format, metadata);
 
             } catch (TrackLoadException e) {
                 if (loadListener != null) {

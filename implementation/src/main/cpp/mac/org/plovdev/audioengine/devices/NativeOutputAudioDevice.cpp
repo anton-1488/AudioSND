@@ -163,7 +163,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     ctx->src.mBytesPerFrame = ch * (ctx->src.mBitsPerChannel / 8);
     ctx->src.mBytesPerPacket = ctx->src.mBytesPerFrame;
 
-    ctx->dst = ctx->src; // Просто копируем!
+    ctx->dst = ctx->src;
 
     ctx->converter = nullptr;
 
@@ -220,9 +220,7 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1open
     return handle;
 }
 
-JNIEXPORT jint JNICALL
-Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
-(JNIEnv* env, jobject, jobject buffer, jlong handle) {
+JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write__Ljava_nio_ByteBuffer_2J(JNIEnv* env, jobject, jobject buffer, jlong handle) {
     auto* ctx = getContext(handle);
     if (!ctx || !ctx->running) return 0;
 
@@ -261,6 +259,44 @@ Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write
     }
 
     return cap;
+}
+
+JNIEXPORT jint JNICALL Java_org_plovdev_audioengine_devices_NativeOutputAudioDevice__1write__JJJJ(JNIEnv* env, jobject obj, jlong address, jlong start, jlong length, jlong handle) {
+    auto* ctx = getContext(handle);
+    if (!ctx || !ctx->running) return 0;
+
+    uint8_t* src = (uint8_t*)(intptr_t)address + start;
+    size_t frames = length / ctx->src.mBytesPerFrame;
+    size_t ch = ctx->src.mChannelsPerFrame;
+
+    std::unique_lock<std::mutex> lock(ctx->mtx);
+
+    while (frames > 0) {
+        size_t used = ctx->writeFrame.load(std::memory_order_acquire) -
+                      ctx->readFrame.load(std::memory_order_acquire);
+        size_t freeFrames = ctx->ringFrames - used;
+
+        while (freeFrames == 0) {
+            ctx->canWrite.wait(lock);
+            used = ctx->writeFrame.load(std::memory_order_acquire) -
+                   ctx->readFrame.load(std::memory_order_acquire);
+            freeFrames = ctx->ringFrames - used;
+        }
+
+        size_t toWrite = std::min(frames, freeFrames);
+        for (size_t i = 0; i < toWrite; i++) {
+            size_t idx = ((ctx->writeFrame + i) % ctx->ringFrames) * ch;
+            memcpy(&ctx->ring[idx],
+                   src + i * ctx->src.mBytesPerFrame,
+                   ctx->src.mBytesPerFrame);
+        }
+
+        ctx->writeFrame.fetch_add(toWrite, std::memory_order_release);
+        src += toWrite * ctx->src.mBytesPerFrame;
+        frames -= toWrite;
+    }
+
+    return length;
 }
 
 JNIEXPORT void JNICALL

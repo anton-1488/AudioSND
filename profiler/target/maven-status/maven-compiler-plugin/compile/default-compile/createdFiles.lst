@@ -1,2 +1,5 @@
+org/plovdev/audioengine/profiler/benchmarking/ProfileProcessor.class
 org/plovdev/audioengine/profiler/DefaultEngineProfiler.class
 org/plovdev/audioengine/profiler/LoadedTrakCounter.class
+org/plovdev/audioengine/profiler/benchmarking/ProfileResult.class
+org/plovdev/audioengine/profiler/benchmarking/Profile.class

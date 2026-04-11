@@ -11,13 +11,14 @@ import org.plovdev.audioengine.format.TrackFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -48,13 +49,14 @@ import java.util.concurrent.atomic.AtomicReference;
  * @see AudioRecorder
  */
 public class NativeTrackPlayer implements TrackPlayer {
+    private static final int CHUNK_DURATION_MS = 10;
     private static final Logger log = LoggerFactory.getLogger(NativeTrackPlayer.class);
     private final ExecutorService eventExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     private float volume = 1f;
     private int totalCycles = 1;
 
-    private final AtomicInteger position = new AtomicInteger(0);
+    private final AtomicLong position = new AtomicLong(0L);
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isInited = new AtomicBoolean(false);
     private final AtomicReference<NativeOutputAudioDevice> audioDeviceReference;
@@ -62,11 +64,10 @@ public class NativeTrackPlayer implements TrackPlayer {
 
     private final AtomicReference<AudioStatus> status = new AtomicReference<>(AudioStatus.UNAVAILABLE);
     private final Track track;
-    private final ByteBuffer data;
+    private final MemorySegment data;
 
     private final int chunkSize;
     private int currentCycle = 0;
-    private final int ms = 10;
 
     private Runnable onStatusChanged = () -> {
     };
@@ -98,7 +99,7 @@ public class NativeTrackPlayer implements TrackPlayer {
         data = track.getTrackData();
 
         init();
-        chunkSize = (TrackFormatUtils.calculateFrameSizeInBytes(track.getFormat()) * ms);
+        chunkSize = (TrackFormatUtils.calculateFrameSize(track.getFormat()) * CHUNK_DURATION_MS);
         gainEffect.setup(track.getFormat());
 
         log.debug("Native track player inited success");
@@ -160,8 +161,8 @@ public class NativeTrackPlayer implements TrackPlayer {
     public void seek(Duration position) {
         checkIfInited();
 
-        int toPosition = (int) position.toMillis() * (chunkSize / ms);
-        int limit = data.limit();
+        long toPosition = position.toMillis() * (chunkSize / CHUNK_DURATION_MS);
+        long limit = data.byteSize();
         if (toPosition >= limit) {
             toPosition = limit;
         }
@@ -283,7 +284,7 @@ public class NativeTrackPlayer implements TrackPlayer {
      */
     @Override
     public synchronized Duration getCurrentTime() {
-        return Duration.ofMillis(position.get() / (chunkSize / ms));
+        return Duration.ofMillis(position.get() / (chunkSize / CHUNK_DURATION_MS));
     }
 
     /**
@@ -347,16 +348,13 @@ public class NativeTrackPlayer implements TrackPlayer {
     private void audioLoop() {
         checkIfInited();
         if (totalCycles == 0) return;
-
-        final int limit = data.limit();
+        long limit = data.byteSize();
 
         NativeOutputAudioDevice audioDevice = audioDeviceReference.get();
-
         while (isPlaying.get()) {
-            int start = position.get();
-            int rem = limit - start;
+            long start = position.get();
 
-            if (start >= limit || rem <= 0) {
+            if (start >= limit) {
                 currentCycle++;
                 if (totalCycles < 0) {
                     position.set(0);
@@ -370,8 +368,7 @@ public class NativeTrackPlayer implements TrackPlayer {
                 }
             }
 
-            ByteBuffer chunk = processChunk(data.slice(start, Math.min(chunkSize, rem)));
-            audioDevice.write(chunk);
+            audioDevice.write(data, start, chunkSize);
             position.set(Math.min(start + chunkSize, limit));
             eventExecutor.execute(onChunkPlayed);
         }

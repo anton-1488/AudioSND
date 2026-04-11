@@ -135,7 +135,7 @@ public final class TrackFormatUtils {
      * @param format track format
      * @return frame size in bytes
      */
-    public static int calculateFrameSizeInBytes(TrackFormat format) {
+    public static int calculateFrameSize(TrackFormat format) {
         int bytesPerSample = format.bitDepth() / 8;
         int bytesPerFrame = bytesPerSample * format.channels();
         int framesPerMs = Math.max(1, format.sampleRate() / 1000);

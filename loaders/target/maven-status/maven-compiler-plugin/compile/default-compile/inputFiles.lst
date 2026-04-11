@@ -1,5 +1,10 @@
 /Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/Decoder.java
 /Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/ExportUtils.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/flac/FlacTrackDecoder.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/flac/FlacTrackEncoder.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/flac/FlacTrackExporter.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/flac/FlacTrackLoader.java
+/Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/flac/FlacTrackLoaderManager.java
 /Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/raw/RawTrackExporter.java
 /Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/raw/RawTrackLoader.java
 /Users/mac/IdeaProjects/AudioSND/loaders/src/main/java/org/plovdev/audioengine/loaders/raw/RawTrackLoaderManager.java

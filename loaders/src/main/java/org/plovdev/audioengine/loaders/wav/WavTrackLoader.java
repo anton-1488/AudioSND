@@ -16,6 +16,7 @@ import org.plovdev.audioengine.loaders.wav.read.WavParser;
 import org.plovdev.audioengine.loaders.wav.read.parsers.APICParser;
 import org.plovdev.audioengine.loaders.wav.struct.Chunk;
 import org.plovdev.audioengine.metadata.TrackMetadata;
+import org.plovdev.audioengine.utils.TrackUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,7 +136,7 @@ public class WavTrackLoader implements TrackLoader {
             if (loadListener != null) {
                 loadListener.onLoadFinished();
             }
-            return new Track(chunk.getData().order(format.byteOrder()), duration, format, metadata);
+            return new Track(TrackUtils.createMemorySegment(chunk.getData().order(format.byteOrder())), duration, format, metadata);
         } catch (Exception e) {
             if (loadListener != null) {
                 loadListener.onLoadFailed(new TrackLoadException(e));
