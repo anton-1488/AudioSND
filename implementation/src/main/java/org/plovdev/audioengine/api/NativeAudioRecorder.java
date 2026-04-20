@@ -39,7 +39,7 @@ public class NativeAudioRecorder implements AudioRecorder {
     private static final Logger log = LoggerFactory.getLogger(NativeAudioRecorder.class);
     private final ExecutorService eventExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    private final int chunkSize = 1024;
+    private final int chunkSize = 2048;
     private volatile float gain = 1f;
 
     private final AtomicBoolean isInited = new AtomicBoolean(false);

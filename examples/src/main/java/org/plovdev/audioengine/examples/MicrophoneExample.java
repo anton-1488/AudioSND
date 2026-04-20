@@ -5,24 +5,22 @@ import org.plovdev.audioengine.NativeAudioEngine;
 import org.plovdev.audioengine.api.NativeAudioRecorder;
 import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.devices.AudioDeviceManager;
-import org.plovdev.audioengine.format.factories.WavTrackFormatFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileOutputStream;
 
 public class MicrophoneExample {
     private static final Logger log = LoggerFactory.getLogger(MicrophoneExample.class);
 
     void main(String[] args) {
         try (AudioEngine engine = new NativeAudioEngine();
-             NativeAudioRecorder microphone = new NativeAudioRecorder(WavTrackFormatFactory.wav16bitStereo44kHz(), AudioDeviceManager.getInstance().getDefaultInputAudioDevice())) {
-
+             NativeAudioRecorder microphone = new NativeAudioRecorder(AudioDeviceManager.getInstance().getDefaultInputAudioDevice().supportedFormats().getFirst(), AudioDeviceManager.getInstance().getDefaultInputAudioDevice())) {
+            microphone.setOnChunkRecorded(() -> System.out.println("Chunk played"));
             microphone.start(); // начинаем запись
             Thread.sleep(10000); // условно, ждем сколько надо.
             Track track = microphone.stop(); // получаем результат, и делаем что надо.
 
-            engine.exportTrack(track, new FileOutputStream("recorded.wav"));
+            engine.createTrackPlayer(track).play();
+            Thread.sleep(track.getDuration());
         } catch (Exception e) {
             log.error("Audio engine error: ", e);
         }
