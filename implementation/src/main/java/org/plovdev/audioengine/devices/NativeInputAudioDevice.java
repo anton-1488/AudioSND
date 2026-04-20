@@ -69,7 +69,7 @@ public final class NativeInputAudioDevice implements InputAudioDevice {
             log.debug("Audio device {} opened", info.id());
         } catch (Throwable e) {
             setStatus(ERROR);
-            throw new OpenAudioDeviceException("Fail to open audio device: " + e.getMessage());
+            throw new OpenAudioDeviceException("Fail to open audio device: ", e);
         }
     }
 
