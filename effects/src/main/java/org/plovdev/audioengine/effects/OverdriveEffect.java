@@ -20,7 +20,7 @@ public class OverdriveEffect implements AudioEffect {
     private float maxSampleValue;
 
     public OverdriveEffect() {
-        this(Type.FUZZ, 0.5f, 0.8f, 0.5f, 0.5f);
+        this(Type.FUZZ, 1f, 0.0f, 1f, 0.9f);
     }
 
     public OverdriveEffect(Type type, float drive, float tone, float level, float mix) {

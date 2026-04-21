@@ -21,24 +21,26 @@ public class GuitarSimpleExample {
 
         try (AudioEngine engine = new NativeAudioEngine()) {
             AudioDeviceManager manager = AudioDeviceManager.getInstance();
-            AudioDeviceInfo inputInfo = manager.getDefaultInputAudioDevice();
-            AudioDeviceInfo outputInfo = manager.getDefaultOutputAudioDevice();
+            AudioDeviceInfo inputInfo = manager.getInputDeviceById("58");   // bluetooth input
+            AudioDeviceInfo outputInfo = manager.getOutputDeviceById("48"); // built-in output
+
             OverdriveEffect effect = new OverdriveEffect();
-
             effect.setup(outputInfo.supportedFormats().getFirst());
-            log.info("Available devices: {}", new DefaultEngineProfiler(engine).snapshot().availableAudioDevices());
 
+            log.info("Available devices: {}", new DefaultEngineProfiler(engine).snapshot().availableAudioDevices());
             try (InputAudioDevice input = new NativeInputAudioDevice(inputInfo);
                  OutputAudioDevice output = new NativeOutputAudioDevice(outputInfo)) {
                 input.open(inputInfo.supportedFormats().getFirst());
                 output.open(outputInfo.supportedFormats().getFirst());
 
+                ByteBuffer buffer = ByteBuffer.allocateDirect(1024);
+
                 log.info("Start cycle: isRunning: {}", isRunning.get());
                 while (isRunning.get()) {
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
                     input.read(buffer);
                     buffer = effect.process(buffer);
                     output.write(buffer);
+                    buffer.clear();
                 }
             }
         } catch (Exception e) {
