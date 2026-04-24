@@ -8,7 +8,6 @@ import org.plovdev.audioengine.exceptions.devices.OpenAudioDeviceException;
 import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.format.TrackFormatUtils;
 import org.plovdev.audioengine.metadata.TrackMetadata;
-import org.plovdev.audioengine.utils.TrackUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -329,7 +328,7 @@ public class NativeAudioRecorder implements AudioRecorder {
         totalBytes.flip();
 
         long durationMs = TrackFormatUtils.calculateDurationMs(trackFormat, recordedLength.get());
-        return new Track(TrackUtils.createMemorySegment(totalBytes), Duration.ofMillis(durationMs), trackFormat, new TrackMetadata());
+        return new Track(totalBytes, Duration.ofMillis(durationMs), trackFormat, new TrackMetadata());
     }
 
     /**

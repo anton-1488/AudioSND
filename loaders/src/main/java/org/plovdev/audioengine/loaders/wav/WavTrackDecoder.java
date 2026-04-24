@@ -1,17 +1,15 @@
 package org.plovdev.audioengine.loaders.wav;
 
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.loaders.TrackDecoder;
 import org.plovdev.audioengine.loaders.wav.decoders.ALawDecoder;
 import org.plovdev.audioengine.loaders.wav.decoders.IMAADPCMDecoder;
 import org.plovdev.audioengine.loaders.wav.decoders.ULawDecoder;
-import org.plovdev.audioengine.api.Track;
-import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.metadata.TrackMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
@@ -37,19 +35,12 @@ public class WavTrackDecoder implements TrackDecoder {
         Duration inputDuration = input.getDuration();
         TrackMetadata metadata = input.getMetaData();
 
-        ByteBuffer trackData = input.getTrackData().asByteBuffer();
+        ByteBuffer trackData = input.getTrackData();
         return switch (inCodec) {
-            case ULAW -> new Track(createMemorySegment(new ULawDecoder().decode(trackData)), inputDuration, outFormat, metadata);
-            case ALAW -> new Track(createMemorySegment(new ALawDecoder().decode(trackData)), inputDuration, outFormat, metadata);
-            case IMA_ADPCM -> new Track(createMemorySegment(new IMAADPCMDecoder(1024).decode(trackData)), inputDuration, outFormat, metadata);
+            case ULAW -> new Track(new ULawDecoder().decode(trackData), inputDuration, outFormat, metadata);
+            case ALAW -> new Track(new ALawDecoder().decode(trackData), inputDuration, outFormat, metadata);
+            case IMA_ADPCM -> new Track(new IMAADPCMDecoder(1024).decode(trackData), inputDuration, outFormat, metadata);
             default -> input;
         };
-    }
-
-    private MemorySegment createMemorySegment(ByteBuffer src) {
-        Arena arena = Arena.ofAuto();
-        MemorySegment resultSegment = arena.allocate(src.capacity());
-        resultSegment.asByteBuffer().put(src);
-        return resultSegment;
     }
 }

@@ -20,7 +20,7 @@ public class DataChunkWriter implements WavChunkWriter<Track> {
     public void write(OutputStream outputStream, Track track) {
         try {
             TrackFormat format = track.getFormat();
-            ByteBuffer trackData = track.getTrackData().asByteBuffer();
+            ByteBuffer trackData = track.getTrackData();
 
             int bitDepth = format.bitDepth();
             int dataChunkSize = trackData.remaining();

@@ -1,5 +1,7 @@
 package org.plovdev.audioengine.generator;
 
+import org.plovdev.audioengine.api.Track;
+import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.generator.config.GenerationConfig;
 import org.plovdev.audioengine.generator.strategies.envelope.EnvelopeStrategy;
 import org.plovdev.audioengine.generator.strategies.frequency.FrequencyStrategy;
@@ -7,10 +9,7 @@ import org.plovdev.audioengine.generator.strategies.modulation.ModulationStrateg
 import org.plovdev.audioengine.generator.strategies.noise.NoiseStrategy;
 import org.plovdev.audioengine.generator.strategies.wave.WaveStrategy;
 import org.plovdev.audioengine.math.AudioMath;
-import org.plovdev.audioengine.api.Track;
-import org.plovdev.audioengine.format.TrackFormat;
 import org.plovdev.audioengine.metadata.TrackMetadata;
-import org.plovdev.audioengine.utils.TrackUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -101,7 +100,7 @@ public class TrackGenerator {
             }
         }
 
-        return new Track(TrackUtils.createMemorySegment(buffer), duration, trackFormat, new TrackMetadata());
+        return new Track(buffer, duration, trackFormat, new TrackMetadata());
     }
 
     private void writeSample(ByteBuffer buffer, float sample) {

@@ -159,6 +159,7 @@ public final class NativeOutputAudioDevice implements OutputAudioDevice {
                 _close(nativeHandle);
                 isInited.set(false);
                 setStatus(CLOSED);
+                log.debug("Audio device {} closed", info.id());
             } catch (Exception e) {
                 log.error("Closing error: ", e);
                 setStatus(ERROR);

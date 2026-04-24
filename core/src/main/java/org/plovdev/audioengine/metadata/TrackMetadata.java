@@ -16,12 +16,20 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Track metadata storage.
  *
- * @see Track
- *
  * @author Anton
  * @version 1.0
+ * @see Track
  */
 public class TrackMetadata {
+    public static final TrackMetadata DEFAULT_METADATA = new TrackMetadata();
+
+    static {
+        DEFAULT_METADATA.setCopyright("PlovDev inc.");
+        DEFAULT_METADATA.setCreationDate(new Date());
+        DEFAULT_METADATA.setPublisher("AudioSND");
+        DEFAULT_METADATA.setEncoder("AudioSND(loaders)");
+    }
+
     private final Map<MetaKey, MetadataEntry> metadata = new ConcurrentHashMap<>();
 
     public TrackMetadata() {
@@ -337,7 +345,6 @@ public class TrackMetadata {
     public void setAlbumArtist(String artist) {
         putMetadata(MetaKey.ALBUM_ARTIST, artist);
     }
-
 
 
     public int getNumData() {

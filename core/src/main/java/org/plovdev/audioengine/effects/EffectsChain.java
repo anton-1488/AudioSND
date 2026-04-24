@@ -3,8 +3,6 @@ package org.plovdev.audioengine.effects;
 import org.plovdev.audioengine.api.Track;
 import org.plovdev.audioengine.format.TrackFormat;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,18 +54,13 @@ public class EffectsChain {
         }
 
         TrackFormat format = source.getFormat();
-        MemorySegment sourceSegment = source.getTrackData();
-        ByteBuffer processed = sourceSegment.asByteBuffer();
+        ByteBuffer processed = source.getTrackData();
 
         for (AudioEffect effect : effects) {
             effect.setup(format);
             processed = effect.process(processed);
         }
 
-        Arena arena = Arena.ofAuto();
-        MemorySegment resultSegment = arena.allocate(processed.remaining());
-        resultSegment.asByteBuffer().put(processed);
-
-        return new Track(resultSegment, source.getDuration(), format, source.getMetaData());
+        return new Track(processed, source.getDuration(), format, source.getMetaData());
     }
 }

@@ -180,6 +180,7 @@ Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open(
                           &ctx->format,
                           sizeof(ctx->format));
 
+
     AURenderCallbackStruct cb{};
     cb.inputProc = audioCallback;
     cb.inputProcRefCon = ctx.get();
@@ -195,7 +196,7 @@ Java_org_plovdev_audioengine_devices_NativeInputAudioDevice__1open(
 
     ctx->ringSize =
         ctx->format.mSampleRate *
-        ctx->format.mBytesPerFrame * 2;
+        ctx->format.mBytesPerFrame * 0.06;
 
     ctx->ring.resize(ctx->ringSize);
 

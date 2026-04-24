@@ -24,7 +24,7 @@ public class WavTrackExporter implements TrackExporter {
     public void save(Track track, OutputStream outputStream) {
         try {
             TrackFormat format = track.getFormat();
-            ByteBuffer trackData = track.getTrackData().asByteBuffer().rewind();
+            ByteBuffer trackData = track.getTrackData().rewind();
 
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             WavChunkWriterManager chunkWriter = new WavChunkWriterManager(buffer);

@@ -15,7 +15,7 @@ public class RawTrackExporter implements TrackExporter {
     @Override
     public void save(Track track, OutputStream outputStream) {
         try {
-            ByteBuffer data = track.getTrackData().asByteBuffer();
+            ByteBuffer data = track.getTrackData();
             data.rewind();
 
             byte[] allBytes = new byte[data.remaining()];

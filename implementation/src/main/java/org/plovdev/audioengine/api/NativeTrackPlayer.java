@@ -11,6 +11,7 @@ import org.plovdev.audioengine.format.TrackFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -96,7 +97,11 @@ public class NativeTrackPlayer implements TrackPlayer {
 
         this.track = track;
         audioDeviceReference = new AtomicReference<>(new NativeOutputAudioDevice(info));
-        data = track.getTrackData();
+
+        Arena arena = Arena.ofAuto();
+        MemorySegment segment = arena.allocate(track.getTrackData().remaining());
+        segment.asByteBuffer().put(track.getTrackData());
+        data = segment;
 
         init();
         chunkSize = (TrackFormatUtils.calculateFrameSize(track.getFormat()) * CHUNK_DURATION_MS);
